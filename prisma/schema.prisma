@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth (tables required by Better Auth)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  sheets        Sheet[]     @relation("SheetAuthor")
+  reviewed      Sheet[]     @relation("SheetReviewer")
+  views         SheetView[]
+  ratings       Rating[]
+  comments      Comment[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rateLimit")
+}
+
+// ---------------------------------------------------------------------------
+// Sheets
+// ---------------------------------------------------------------------------
+
+enum SheetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Grade {
+  M1
+  M2
+  M3
+  M4
+  M5
+  M6
+}
+
+enum CoverMode {
+  SUBJECT // each subject uses its own cover
+  UNIFORM // every sheet uses the same cover
+}
+
+model Subject {
+  id        String  @id // slug, e.g. "math"
+  name      String
+  sortOrder Int     @default(0)
+  // R2 key prefix of a custom cover ("covers/<uuid>"); null = built-in default
+  coverKey  String?
+  sheets    Sheet[]
+}
+
+model SiteSetting {
+  id              Int       @id @default(1)
+  coverMode       CoverMode @default(SUBJECT)
+  uniformCoverKey String?
+  // Instagram long-lived token for the news page (auto-refreshed; seeded from INSTAGRAM_ACCESS_TOKEN)
+  igAccessToken    String?
+  igTokenExpiresAt DateTime?
+  updatedAt       DateTime  @updatedAt
+}
+
+model Sheet {
+  id           String      @id @default(cuid())
+  title        String
+  description  String
+  subjectId    String
+  subject      Subject     @relation(fields: [subjectId], references: [id])
+  grade        Grade
+  semester     Int
+  academicYear Int
+
+  status       SheetStatus @default(PENDING)
+  rejectReason String?
+
+  // Admin-chosen cover for this sheet only (overrides subject / uniform cover)
+  coverKey     String?
+
+  // Merged PDF kept privately in R2 (admin preview + Drive re-upload)
+  pdfKey       String
+  pdfBytes     Int
+  pageCount    Int
+
+  driveFileId  String?
+  driveUrl     String?
+
+  viewCount    Int         @default(0)
+
+  authorId     String
+  author       User        @relation("SheetAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewedById String?
+  reviewedBy   User?       @relation("SheetReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  publishedAt  DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  views        SheetView[]
+  ratings      Rating[]
+  comments     Comment[]
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([status, viewCount(sort: Desc)])
+  @@index([status, subjectId])
+  @@index([status, grade])
+  @@index([status, academicYear, semester])
+  @@index([authorId, createdAt(sort: Desc)])
+}
+
+// One row per (sheet, user) so the view counter counts unique readers
+model SheetView {
+  sheetId   String
+  userId    String
+  createdAt DateTime @default(now())
+  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sheetId, userId])
+  @@index([userId])
+}
+
+// One star rating (1–5) per (sheet, user); rating again replaces the score
+model Rating {
+  sheetId   String
+  userId    String
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sheetId, userId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  sheetId   String
+  userId    String
+  createdAt DateTime @default(now())
+  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
+}
