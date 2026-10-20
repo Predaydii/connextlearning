@@ -16,6 +16,7 @@ const TABS: { value: SheetStatus | "ALL"; label: string }[] = [
   { value: "PENDING", label: "รอตรวจสอบ" },
   { value: "APPROVED", label: "เผยแพร่แล้ว" },
   { value: "REJECTED", label: "ไม่อนุมัติ" },
+  { value: "HIDDEN", label: "ซ่อนอยู่" },
   { value: "ALL", label: "ทั้งหมด" },
 ];
 

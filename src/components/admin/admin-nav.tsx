@@ -16,7 +16,7 @@ export function AdminNav({ pending, superAdmin }: { pending: number; superAdmin:
   // Works whether the browser shows "/sheets" (admin subdomain) or "/admin/sheets" (local dev)
   const current = usePathname().replace(/^\/admin(?=\/|$)/, "") || "/";
   return (
-    <nav aria-label="เมนูผู้ดูแล" className="-mb-px flex w-full gap-1 overflow-x-auto sm:w-auto">
+    <nav aria-label="เมนูผู้ดูแล" className="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none]">
       {(superAdmin ? [...TABS, { path: "/admins", label: "ผู้ดูแล" }] : TABS).map((t) => {
         const active = t.path === "/" ? current === "/" : current.startsWith(t.path);
         return (
@@ -24,7 +24,7 @@ export function AdminNav({ pending, superAdmin }: { pending: number; superAdmin:
             key={t.path}
             href={adminHref(t.path)}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-2 whitespace-nowrap border-b-[3px] px-4 pt-2 pb-3 font-medium transition ${
+            className={`flex items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-3 text-[15px] font-medium transition lg:py-[18px] ${
               active ? "border-primary text-primary" : "border-transparent text-ink hover:text-primary"
             }`}
           >

@@ -3,7 +3,7 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { resolveCover, type CoverSettings, type CoverSources } from "@/lib/covers";
-import { ACADEMIC_YEARS, GRADE_VALUES, PAGE_SIZE, SEMESTERS, SUBJECT_IDS } from "@/lib/constants";
+import { ACADEMIC_YEARS, GRADE_VALUES, gradeLabel, PAGE_SIZE, SEMESTERS, SUBJECT_IDS } from "@/lib/constants";
 import type { Grade, Prisma } from "@/generated/prisma/client";
 
 export const TAG_SHEETS = "sheets";
@@ -288,7 +288,15 @@ export const getSiteStats = unstable_cache(
   { tags: [TAG_SHEETS], revalidate: 300 },
 );
 
-export type Contributor = { id: string; name: string; image: string | null; sheets: number; lastSubject: string | null };
+/** `classLabel`: "ม.5/1" for students, "ครู · กลุ่มสาระ" for teachers, "ศิษย์เก่า" for alumni (from registration). */
+export type Contributor = { id: string; name: string; image: string | null; sheets: number; classLabel: string | null };
+
+function classLabel(u: { memberType: string | null; grade: Grade | null; room: number | null; department: string | null }) {
+  if (u.memberType === "STUDENT" && u.grade) return `${gradeLabel(u.grade)}${u.room ? `/${u.room}` : ""}`;
+  if (u.memberType === "TEACHER") return u.department ? `ครู · ${u.department}` : "ครู";
+  if (u.memberType === "ALUMNI") return "ศิษย์เก่า";
+  return null;
+}
 
 /** Students with published sheets, most prolific first (landing page marquee). */
 export const getContributors = unstable_cache(
@@ -302,8 +310,11 @@ export const getContributors = unstable_cache(
         id: true,
         name: true,
         image: true,
+        memberType: true,
+        grade: true,
+        room: true,
+        department: true,
         _count: { select: { sheets: { where: published } } },
-        sheets: { where: published, orderBy: { publishedAt: "desc" }, take: 1, select: { subject: { select: { name: true } } } },
       },
     });
     return rows.map((u) => ({
@@ -311,10 +322,10 @@ export const getContributors = unstable_cache(
       name: u.name,
       image: u.image,
       sheets: u._count.sheets,
-      lastSubject: u.sheets[0]?.subject.name ?? null,
+      classLabel: classLabel(u),
     }));
   },
-  ["contributors"],
+  ["contributors-v2"],
   { tags: [TAG_SHEETS], revalidate: 300 },
 );
 

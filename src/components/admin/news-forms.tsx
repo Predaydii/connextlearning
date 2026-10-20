@@ -59,8 +59,8 @@ export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: (
         </div>
       </div>
       <div className="grid content-start gap-2">
-        <span className="text-sm font-medium text-ink">ภาพประกอบ 16:9 (ไม่บังคับ)</span>
-        <div className="grid aspect-video place-items-center overflow-hidden rounded-xl bg-primary-50 text-xs ring-1 ring-line">
+        <span className="text-sm font-medium text-ink">ภาพประกอบ 4:5 (ไม่บังคับ)</span>
+        <div className="grid aspect-[4/5] place-items-center overflow-hidden rounded-xl bg-primary-50 text-xs ring-1 ring-line">
           {shown ? <img src={shown} alt="" className="size-full object-cover" /> : "ไม่มีภาพ"}
         </div>
         <input
@@ -110,7 +110,7 @@ export function NewsPostRow({ post, date }: { post: NewsFormPost; date: string }
   }
   return (
     <li className="flex flex-col gap-4 rounded-2xl p-4 ring-1 ring-line sm:flex-row sm:items-center">
-      <div className="aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-primary-50 sm:w-40">
+      <div className="aspect-[4/5] w-32 shrink-0 overflow-hidden rounded-xl bg-primary-50 sm:w-28">
         {post.image && <img src={post.image} alt="" className="size-full object-cover" />}
       </div>
       <div className="min-w-0 flex-1">

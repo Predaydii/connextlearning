@@ -43,14 +43,14 @@ export default async function NewsPage() {
             const body = (
               <>
                 {p.imageKey && (
-                  <div className="aspect-video overflow-hidden bg-primary-50">
+                  <div className="aspect-[4/5] overflow-hidden bg-primary-50">
                     <img
                       src={customCover(p.imageKey).small}
                       srcSet={`${customCover(p.imageKey).small} 640w, ${customCover(p.imageKey).large} 1280w`}
                       sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
                       alt=""
                       width={640}
-                      height={360}
+                      height={800}
                       loading={i < 3 ? "eager" : "lazy"}
                       decoding="async"
                       className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"

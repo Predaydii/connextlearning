@@ -9,7 +9,19 @@ import { makeCoverImages, UserFacingError } from "@/lib/pdf";
 import { assertAdmin, assertSuperAdmin, AuthError } from "@/lib/session";
 import { adminEmails } from "@/lib/env";
 import { TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
-import { MAX_VIDEO_BYTES, SCHOOL_DOMAIN, SUBJECT_IDS, VIDEO_TYPES } from "@/lib/constants";
+import {
+  ACADEMIC_YEARS,
+  DESCRIPTION_MAX,
+  GRADE_VALUES,
+  gradeLabel,
+  MAX_VIDEO_BYTES,
+  SCHOOL_DOMAIN,
+  SEMESTERS,
+  SUBJECT_IDS,
+  SUBJECTS,
+  TITLE_MAX,
+  VIDEO_TYPES,
+} from "@/lib/constants";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -82,6 +94,50 @@ export async function rejectSheet(_prev: ActionState, formData: FormData): Promi
     });
     refreshSheets(id);
     return { ok: true, message: "ไม่อนุมัติชีทแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Take a published sheet off the public site (approveSheet shows it again). */
+export async function hideSheet(id: string): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const sheet = await db.sheet.findUnique({ where: { id: sheetId.parse(id) }, select: { id: true, status: true } });
+    if (!sheet) throw new UserFacingError("ไม่พบชีทนี้");
+    if (sheet.status !== "APPROVED") throw new UserFacingError("ซ่อนได้เฉพาะชีทที่เผยแพร่อยู่");
+    await db.sheet.update({ where: { id: sheet.id }, data: { status: "HIDDEN" } });
+    refreshSheets(sheet.id);
+    return { ok: true, message: "ซ่อนจากหน้าสาธารณะแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+const detailsInput = z.object({
+  id: sheetId,
+  title: z.string().trim().min(1, "กรุณากรอกชื่อชีท").max(TITLE_MAX, `ชื่อชีทยาวได้ไม่เกิน ${TITLE_MAX} ตัวอักษร`),
+  description: z.string().trim().min(1, "กรุณากรอกคำอธิบาย").max(DESCRIPTION_MAX, `คำอธิบายยาวได้ไม่เกิน ${DESCRIPTION_MAX} ตัวอักษร`),
+  subjectId: z.enum(SUBJECT_IDS, { message: "กรุณาเลือกวิชา" }),
+  grade: z.enum(GRADE_VALUES, { message: "กรุณาเลือกระดับชั้น" }),
+  semester: z.coerce.number().refine((n) => (SEMESTERS as readonly number[]).includes(n), "กรุณาเลือกภาคเรียน"),
+  academicYear: z.coerce.number().refine((n) => (ACADEMIC_YEARS as readonly number[]).includes(n), "กรุณาเลือกปีการศึกษา"),
+});
+
+/** Admins can correct everything the sender chose (title, description, subject, grade, term). */
+export async function updateSheetDetails(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const { id, ...data } = detailsInput.parse(Object.fromEntries(formData));
+    const subject = SUBJECTS.find((s) => s.id === data.subjectId)!;
+    if (subject.levels && !subject.levels.includes(data.grade)) {
+      throw new UserFacingError(`${subject.name} ใช้ได้กับ ${subject.levels.map(gradeLabel).join(", ")} เท่านั้น`);
+    }
+    const sheet = await db.sheet.findUnique({ where: { id }, select: { id: true } });
+    if (!sheet) throw new UserFacingError("ไม่พบชีทนี้");
+    await db.sheet.update({ where: { id }, data });
+    refreshSheets(id);
+    return { ok: true, message: "บันทึกรายละเอียดแล้ว" };
   } catch (err) {
     return fail(err);
   }
@@ -229,7 +285,8 @@ export async function saveNewsPost(_prev: ActionState, formData: FormData): Prom
     const file = formData.get("file");
     const hasFile = file instanceof File && file.size > 0;
     const removeImage = formData.get("removeImage") === "1";
-    const imageKey = hasFile ? await storeCover(file) : removeImage ? null : (existing?.imageKey ?? null);
+    // News images are portrait 4:5
+    const imageKey = hasFile ? await storeCover(file, 5 / 4) : removeImage ? null : (existing?.imageKey ?? null);
 
     const data = { title: input.title, summary: input.summary, linkUrl: input.linkUrl, publishedAt: input.publishedAt, imageKey };
     if (existing) await db.newsPost.update({ where: { id: existing.id }, data });

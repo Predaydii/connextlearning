@@ -50,6 +50,7 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
           <span className="text-amber-900">
             {sheet.status === "PENDING" && "ชีทนี้กำลังรอผู้ดูแลตรวจสอบ ยังไม่แสดงต่อสาธารณะ"}
             {sheet.status === "REJECTED" && `ชีทนี้ไม่ผ่านการตรวจสอบ${sheet.rejectReason ? ` – ${sheet.rejectReason}` : ""}`}
+            {sheet.status === "HIDDEN" && "ผู้ดูแลซ่อนชีทนี้จากหน้าสาธารณะ"}
           </span>
           {user?.isAdmin && (
             <Link href={adminHref(`/sheets/${sheet.id}`)} className="ml-auto font-medium text-primary underline-offset-4 hover:underline">

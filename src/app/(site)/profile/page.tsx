@@ -13,7 +13,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
     where: { id: user.id },
     select: {
       prefix: true, firstName: true, lastName: true, memberType: true,
-      grade: true, room: true, studentNo: true, birthDate: true, gradYear: true,
+      grade: true, room: true, studentNo: true, birthDate: true, gradYear: true, department: true, teachGrades: true,
     },
   });
 
@@ -30,6 +30,8 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
     birthMonth: u.birthDate ? u.birthDate.getUTCMonth() + 1 : undefined,
     birthYear: u.birthDate ? u.birthDate.getUTCFullYear() + 543 : undefined,
     gradYear: u.gradYear ?? undefined,
+    department: u.department ?? undefined,
+    teachGrades: u.teachGrades,
   };
 
   return (

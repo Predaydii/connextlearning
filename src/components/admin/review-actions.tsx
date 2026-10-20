@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useState, useTransition } from "react";
-import { approveSheet, deleteSheet, rejectSheet, updateCover, type ActionState } from "@/app/actions/admin";
+import { approveSheet, deleteSheet, hideSheet, rejectSheet, updateCover, updateSheetDetails, type ActionState } from "@/app/actions/admin";
+import { ACADEMIC_YEARS, GRADES, SEMESTERS, SUBJECTS, DESCRIPTION_MAX, TITLE_MAX } from "@/lib/constants";
 import { adminHref } from "@/lib/urls";
 
 function Notice({ state }: { state: ActionState }) {
@@ -32,6 +33,84 @@ export function ApproveButton({ id, label = "อนุมัติและเ�
       </button>
       <Notice state={state} />
     </div>
+  );
+}
+
+/** Published sheet: take it off the public site (stays in the admin area; "approve" shows it again). */
+export function HideButton({ id }: { id: string }) {
+  const [state, setState] = useState<ActionState>(null);
+  const [pending, start] = useTransition();
+  return (
+    <div className="grid gap-2">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => start(async () => setState(await hideSheet(id)))}
+        className="btn w-full border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
+      >
+        {pending && <Spinner />}
+        ไม่แสดงสาธารณะ
+      </button>
+      <Notice state={state} />
+    </div>
+  );
+}
+
+export type SheetDetails = {
+  id: string;
+  title: string;
+  description: string;
+  subjectId: string;
+  grade: string;
+  semester: number;
+  academicYear: number;
+};
+
+/** Everything the sender chose, editable by admins. */
+export function SheetDetailsForm({ sheet }: { sheet: SheetDetails }) {
+  const [state, action, pending] = useActionState(updateSheetDetails, null);
+  const [subjectId, setSubjectId] = useState(sheet.subjectId);
+  const levels = SUBJECTS.find((s) => s.id === subjectId)?.levels;
+  return (
+    <form action={action} className="grid gap-3 sm:grid-cols-2">
+      <input type="hidden" name="id" value={sheet.id} />
+      <label className="sm:col-span-2">
+        <span className="field-label">ชื่อชีท</span>
+        <input name="title" required maxLength={TITLE_MAX} defaultValue={sheet.title} className="field text-sm" />
+      </label>
+      <label>
+        <span className="field-label">วิชา</span>
+        <select name="subjectId" required value={subjectId} onChange={(e) => setSubjectId(e.target.value)} className="field text-sm">
+          {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </label>
+      <label>
+        <span className="field-label">ระดับชั้น</span>
+        <select name="grade" required defaultValue={sheet.grade} key={subjectId} className="field text-sm">
+          {GRADES.filter((g) => !levels || levels.includes(g.value)).map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+        </select>
+      </label>
+      <label>
+        <span className="field-label">ภาคเรียน</span>
+        <select name="semester" required defaultValue={sheet.semester} className="field text-sm">
+          {SEMESTERS.map((s) => <option key={s} value={s}>ภาคเรียนที่ {s}</option>)}
+        </select>
+      </label>
+      <label>
+        <span className="field-label">ปีการศึกษา</span>
+        <select name="academicYear" required defaultValue={sheet.academicYear} className="field text-sm">
+          {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </label>
+      <label className="sm:col-span-2">
+        <span className="field-label">คำอธิบาย</span>
+        <textarea name="description" required maxLength={DESCRIPTION_MAX} rows={4} defaultValue={sheet.description} className="field text-sm" />
+      </label>
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+        <button disabled={pending} className="btn-primary btn-sm">{pending ? "กำลังบันทึก…" : "บันทึกรายละเอียด"}</button>
+        <Notice state={state} />
+      </div>
+    </form>
   );
 }
 

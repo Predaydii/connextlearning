@@ -85,3 +85,15 @@ export const THAI_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย."
 export function currentBuddhistYear() {
   return Number(new Date().toLocaleDateString("en-US", { year: "numeric", timeZone: "Asia/Bangkok" })) + 543;
 }
+/** กลุ่มสาระการเรียนรู้ (teachers) */
+export const DEPARTMENTS = [
+  "ภาษาไทย",
+  "คณิตศาสตร์",
+  "วิทยาศาสตร์และเทคโนโลยี",
+  "สังคมศึกษา ศาสนา และวัฒนธรรม",
+  "สุขศึกษาและพลศึกษา",
+  "ศิลปะ",
+  "การงานอาชีพ",
+  "ภาษาต่างประเทศ",
+  "สนับสนุนการศึกษา",
+] as const;

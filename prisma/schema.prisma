@@ -19,6 +19,7 @@ enum Role {
 enum MemberType {
   STUDENT // กำลังศึกษา
   ALUMNI // ศิษย์เก่า
+  TEACHER // ครู
 }
 
 model User {
@@ -41,6 +42,8 @@ model User {
   studentNo     Int? // students: เลขที่
   birthDate     DateTime? @db.Date // alumni
   gradYear      Int? // alumni: academic year of graduation (พ.ศ.)
+  department    String? // teachers: กลุ่มสาระการเรียนรู้ (see DEPARTMENTS)
+  teachGrades   Grade[] // teachers: levels they teach
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -120,6 +123,7 @@ enum SheetStatus {
   PENDING
   APPROVED
   REJECTED
+  HIDDEN // approved earlier, taken off the public site by an admin
 }
 
 enum Grade {

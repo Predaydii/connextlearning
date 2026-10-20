@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { currentBuddhistYear, GRADE_VALUES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES } from "@/lib/constants";
+import { currentBuddhistYear, DEPARTMENTS, GRADE_VALUES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES } from "@/lib/constants";
 import { TAG_SHEETS } from "@/lib/queries";
 import { assertSignedIn, AuthError } from "@/lib/session";
 
@@ -41,7 +41,13 @@ const alumni = base.extend({
   gradYear: int("กรุณาเลือกปีการศึกษาที่จบ"), // พ.ศ.
 });
 
-const input = z.discriminatedUnion("memberType", [student, alumni], { message: "กรุณาเลือกสถานะ" });
+const teacher = base.extend({
+  memberType: z.literal("TEACHER"),
+  department: z.enum(DEPARTMENTS, { message: "กรุณาเลือกกลุ่มสาระการเรียนรู้" }),
+  teachGrades: z.array(z.enum(GRADE_VALUES)).min(1, "กรุณาเลือกระดับชั้นที่สอนอย่างน้อย 1 ชั้น"),
+});
+
+const input = z.discriminatedUnion("memberType", [student, alumni, teacher], { message: "กรุณาเลือกสถานะ" });
 
 /** Redirect target after registering: same-site paths only. */
 function safeNext(v: FormDataEntryValue | null) {
@@ -54,19 +60,23 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
   let next: string;
   try {
     const user = await assertSignedIn();
-    const data = input.parse(Object.fromEntries(formData));
+    // getAll: the teacher's grade checkboxes share one name
+    const data = input.parse({ ...Object.fromEntries(formData), teachGrades: formData.getAll("teachGrades") });
     next = safeNext(formData.get("next"));
     const thisYear = currentBuddhistYear();
 
+    const none = { grade: null, room: null, studentNo: null, birthDate: null, gradYear: null, department: null, teachGrades: [] };
     let details;
-    if (data.memberType === "STUDENT") {
-      details = { grade: data.grade, room: data.room, studentNo: data.studentNo, birthDate: null, gradYear: null };
+    if (data.memberType === "TEACHER") {
+      details = { ...none, department: data.department, teachGrades: [...new Set(data.teachGrades)] };
+    } else if (data.memberType === "STUDENT") {
+      details = { ...none, grade: data.grade, room: data.room, studentNo: data.studentNo };
     } else {
       if (data.birthYear < thisYear - 100 || data.birthYear > thisYear - 10) throw new AuthError("ปีเกิดไม่ถูกต้อง");
       if (data.gradYear < data.birthYear + 12 || data.gradYear > thisYear) throw new AuthError("ปีการศึกษาที่จบไม่ถูกต้อง");
       const birthDate = new Date(Date.UTC(data.birthYear - 543, data.birthMonth - 1, data.birthDay));
       if (birthDate.getUTCDate() !== data.birthDay) throw new AuthError("วันเกิดไม่ถูกต้อง");
-      details = { grade: null, room: null, studentNo: null, birthDate, gradYear: data.gradYear };
+      details = { ...none, birthDate, gradYear: data.gradYear };
     }
 
     await db.user.update({

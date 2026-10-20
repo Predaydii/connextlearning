@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { register } from "@/app/actions/register";
-import { currentBuddhistYear, GRADES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
+import { currentBuddhistYear, DEPARTMENTS, GRADES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
 
 const range = (from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => (from <= to ? from + i : from - i));
 
@@ -11,7 +11,7 @@ export type ProfileValues = {
   prefix?: string;
   firstName: string;
   lastName: string;
-  memberType?: "STUDENT" | "ALUMNI";
+  memberType?: "STUDENT" | "ALUMNI" | "TEACHER";
   grade?: string;
   room?: number;
   studentNo?: number;
@@ -19,6 +19,8 @@ export type ProfileValues = {
   birthMonth?: number;
   birthYear?: number;
   gradYear?: number;
+  department?: string;
+  teachGrades?: string[];
 };
 
 const str = (v: string | number | undefined) => (v === undefined ? "" : String(v));
@@ -26,7 +28,7 @@ const str = (v: string | number | undefined) => (v === undefined ? "" : String(v
 /** Registration (first sign-in) and "แก้ไขโปรไฟล์" share this form and the same server action. */
 export function ProfileForm({ next, email, initial, submitLabel }: { next: string; email: string; initial: ProfileValues; submitLabel: string }) {
   const [state, action, pending] = useActionState(register, null);
-  const [type, setType] = useState<"STUDENT" | "ALUMNI">(initial.memberType ?? "STUDENT");
+  const [type, setType] = useState<"STUDENT" | "ALUMNI" | "TEACHER">(initial.memberType ?? "STUDENT");
   const year = currentBuddhistYear();
 
   return (
@@ -64,16 +66,17 @@ export function ProfileForm({ next, email, initial, submitLabel }: { next: strin
 
       <fieldset>
         <legend className="field-label">สถานะ</legend>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {(
             [
               ["STUDENT", "กำลังศึกษา"],
               ["ALUMNI", "ศิษย์เก่า"],
+              ["TEACHER", "ครู"],
             ] as const
           ).map(([v, label]) => (
             <label key={v} className="cursor-pointer">
               <input type="radio" name="memberType" value={v} checked={type === v} onChange={() => setType(v)} className="peer sr-only" />
-              <span className="block rounded-xl border-2 border-line bg-white px-4 py-3 text-center font-semibold text-ink transition peer-checked:border-primary peer-checked:bg-primary-50 peer-checked:text-primary peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20">
+              <span className="block whitespace-nowrap rounded-xl border-2 border-line bg-white px-1 py-3 text-center text-sm font-semibold sm:text-base text-ink transition peer-checked:border-primary peer-checked:bg-primary-50 peer-checked:text-primary peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20">
                 {label}
               </span>
             </label>
@@ -81,7 +84,30 @@ export function ProfileForm({ next, email, initial, submitLabel }: { next: strin
         </div>
       </fieldset>
 
-      {type === "STUDENT" ? (
+      {type === "TEACHER" ? (
+        <div key="teacher" className="grid gap-4 motion-safe:animate-rise">
+          <label>
+            <span className="field-label">กลุ่มสาระการเรียนรู้</span>
+            <select name="department" required defaultValue={initial.department ?? ""} className="field">
+              <option value="" disabled>เลือก</option>
+              {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
+            </select>
+          </label>
+          <fieldset>
+            <legend className="field-label">ครูผู้สอนระดับชั้น (เลือกได้หลายชั้น)</legend>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {GRADES.map((g) => (
+                <label key={g.value} className="cursor-pointer">
+                  <input type="checkbox" name="teachGrades" value={g.value} defaultChecked={initial.teachGrades?.includes(g.value)} className="peer sr-only" />
+                  <span className="block rounded-xl border-2 border-line bg-white py-2.5 text-center font-semibold text-ink transition peer-checked:border-primary peer-checked:bg-primary-50 peer-checked:text-primary peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20">
+                    {g.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      ) : type === "STUDENT" ? (
         <div key="student" className="grid grid-cols-3 gap-4 motion-safe:animate-rise">
           <label>
             <span className="field-label">ชั้น</span>

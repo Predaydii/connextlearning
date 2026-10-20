@@ -193,7 +193,7 @@ function PersonCard({ person, hidden }: { person: Contributor; hidden: boolean }
       <span className="min-w-0">
         <span className="inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold">แชร์ {person.sheets} ชีท</span>
         <span className="mt-1 block truncate text-lg font-bold">{shortName(person.name)}</span>
-        {person.lastSubject && <span className="block truncate text-sm text-white/80">ล่าสุด: {person.lastSubject}</span>}
+        {person.classLabel && <span className="block truncate text-sm text-white/80">{person.classLabel}</span>}
       </span>
     </Link>
   );

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { StatusBadge } from "@/components/status-badge";
-import { ApproveButton, CoverUploader, DeleteButton, RejectForm } from "@/components/admin/review-actions";
+import { ApproveButton, CoverUploader, DeleteButton, HideButton, RejectForm, SheetDetailsForm } from "@/components/admin/review-actions";
 import { db } from "@/lib/db";
 import { resolveCover } from "@/lib/covers";
 import { getCoverSettings } from "@/lib/queries";
@@ -57,11 +57,15 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
           <section className="card grid gap-4 p-6">
             <h3 className="font-semibold">การตรวจสอบ</h3>
             {sheet.status !== "APPROVED" && (
-              <ApproveButton id={sheet.id} label={sheet.status === "REJECTED" ? "อนุมัติ (เปลี่ยนเป็นเผยแพร่)" : undefined} />
+              <ApproveButton
+                id={sheet.id}
+                label={sheet.status === "REJECTED" ? "อนุมัติ (เปลี่ยนเป็นเผยแพร่)" : sheet.status === "HIDDEN" ? "แสดงสาธารณะอีกครั้ง" : undefined}
+              />
             )}
+            {sheet.status === "APPROVED" && <HideButton id={sheet.id} />}
             <RejectForm id={sheet.id} defaultReason={sheet.rejectReason} />
             {sheet.status === "APPROVED" && (
-              <p className="text-xs">การไม่อนุมัติชีทที่เผยแพร่แล้วจะซ่อนจากหน้าสาธารณะทันที และไม่มีใครเปิดอ่านได้อีก</p>
+              <p className="text-xs">“ไม่แสดงสาธารณะ” ซ่อนชีทไว้โดยไม่แจ้งเหตุผล · “ไม่อนุมัติ” ซ่อนพร้อมแจ้งเหตุผลให้ผู้ส่ง</p>
             )}
           </section>
 
@@ -98,6 +102,16 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
             </div>
           </section>
 
+          <section className="card grid gap-3 p-6">
+            <h3 className="font-semibold">แก้ไขรายละเอียด</h3>
+            <SheetDetailsForm
+              key={sheet.updatedAt.getTime()}
+              sheet={{
+                id: sheet.id, title: sheet.title, description: sheet.description, subjectId: sheet.subject.id,
+                grade: sheet.grade, semester: sheet.semester, academicYear: sheet.academicYear,
+              }}
+            />
+          </section>
 
           <section className="card grid gap-3 p-6">
             <h3 className="font-semibold">ภาพปกของชีทนี้ (16:9)</h3>
