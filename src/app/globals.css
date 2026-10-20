@@ -175,64 +175,51 @@ html.intro .intro-screen span {
   to { translate: 0 -100%; visibility: hidden; }
 }
 
+/* Footer top edge: a wave cut out of the footer, which slides up under the section above */
+.ft-wave {
+  --wave-h: clamp(36px, 6vw, 90px);
+  margin-top: calc(-1 * var(--wave-h));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%201440%2090'%20preserveAspectRatio%3D'none'%3E%3Cpath%20d%3D'M0%2060C90%2048%20200%2033%20330%2030c190-4%20350%2022%20590%2042%20190%2016%20360%208%20520-14V90H0z'%2F%3E%3C%2Fsvg%3E") top / 100% var(--wave-h) no-repeat,
+    linear-gradient(#000 0 0) 0 var(--wave-h) / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%201440%2090'%20preserveAspectRatio%3D'none'%3E%3Cpath%20d%3D'M0%2060C90%2048%20200%2033%20330%2030c190-4%20350%2022%20590%2042%20190%2016%20360%208%20520-14V90H0z'%2F%3E%3C%2Fsvg%3E") top / 100% var(--wave-h) no-repeat,
+    linear-gradient(#000 0 0) 0 var(--wave-h) / 100% 100% no-repeat;
+}
+
 /* ---------------------------------------------------------------------------
-   "Share a sheet" steps: each lights up in turn (6 s loop) while the bar fills
+   Footer glow: blue light drifting over black, forever (transform only, cheap)
    ------------------------------------------------------------------------- */
-/* The icon tile dims with a filter (stays opaque, so the track never shows through it) */
-.share-step { --d: 0s; }
-.share-step:nth-of-type(3) { --d: -4s; }
-.share-step:nth-of-type(4) { --d: -2s; }
+.ft-glow::before,
+.ft-glow::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+}
+.ft-glow::before {
+  width: 70%;
+  height: 80%;
+  left: -15%;
+  top: -10%;
+  background: radial-gradient(closest-side, rgb(32 60 199 / 0.85), rgb(32 60 199 / 0));
+}
+.ft-glow::after {
+  width: 60%;
+  height: 70%;
+  right: -10%;
+  bottom: -25%;
+  background: radial-gradient(closest-side, rgb(3 160 219 / 0.55), rgb(58 87 224 / 0));
+}
 @media (prefers-reduced-motion: no-preference) {
-  .share-icon {
-    animation: share-icon 6s ease-in-out var(--d) infinite;
-  }
-  .share-text {
-    animation: share-text 6s ease-in-out var(--d) infinite;
-  }
-  .share-fill {
-    animation: share-fill 6s ease-in-out infinite;
-  }
-  .share-upload {
-    animation: share-upload 2s ease-in-out infinite;
-  }
-  .share-check {
-    stroke-dasharray: 1;
-    animation: share-check 2s ease-out infinite;
-  }
-  .share-star {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: share-star 2s ease-in-out infinite;
-  }
+  .ft-glow::before { animation: ft-drift-a 16s ease-in-out infinite alternate; }
+  .ft-glow::after { animation: ft-drift-b 20s ease-in-out infinite alternate; }
 }
-@keyframes share-icon {
-  0%, 30% { scale: 1.06; filter: none; }
-  38%, 92% { scale: 0.94; filter: grayscale(0.7) brightness(0.82); }
-  100% { scale: 1.06; filter: none; }
+@keyframes ft-drift-a {
+  50% { transform: translate(35%, 25%) scale(1.25); }
+  100% { transform: translate(70%, -5%) scale(0.9); }
 }
-@keyframes share-text {
-  0%, 30% { opacity: 1; }
-  38%, 92% { opacity: 0.55; }
-  100% { opacity: 1; }
-}
-@keyframes share-fill {
-  0%, 30% { width: 0; }
-  38%, 63% { width: 50%; }
-  71%, 94% { width: 100%; }
-  100% { width: 0; }
-}
-@keyframes share-upload {
-  0% { translate: 0 6px; opacity: 0; }
-  30%, 70% { translate: 0 0; opacity: 1; }
-  100% { translate: 0 -6px; opacity: 0; }
-}
-@keyframes share-check {
-  0%, 20% { stroke-dashoffset: 1; }
-  60%, 100% { stroke-dashoffset: 0; }
-}
-@keyframes share-star {
-  0%, 100% { scale: 1; rotate: 0deg; }
-  50% { scale: 1.35; rotate: 20deg; }
+@keyframes ft-drift-b {
+  50% { transform: translate(-40%, -30%) scale(1.3); }
+  100% { transform: translate(-75%, 10%) scale(1); }
 }
 
 /* ---------------------------------------------------------------------------
@@ -354,4 +341,23 @@ html.intro .intro-screen span {
 @keyframes hv-burst-c {
   from { translate: -10vw 30svh; scale: 0.2; opacity: 0; }
   to { translate: 20vw -30svh; scale: 2; opacity: 0.7; }
+}
+
+/* Legal pages (/privacy, /terms, /cookies) */
+@layer components {
+  .legal h2 {
+    @apply mt-8 mb-2 text-lg font-semibold text-ink;
+  }
+  .legal p,
+  .legal li {
+    @apply leading-relaxed;
+  }
+  .legal ul {
+    @apply ml-5 list-disc space-y-1.5;
+  }
+  .legal p + p,
+  .legal p + ul,
+  .legal ul + p {
+    @apply mt-3;
+  }
 }

@@ -6,6 +6,8 @@ import { SheetCard } from "@/components/sheet-card";
 import { formatNumber, formatThaiDate } from "@/lib/format";
 import { getAuthorProfile } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
+import { SignOutButton } from "@/components/sign-out-button";
+import { adminHref } from "@/lib/urls";
 
 export async function generateMetadata(props: PageProps<"/u/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -20,6 +22,7 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
   if (!profile) notFound();
   const { user, sheets, totalViews, rating } = profile;
   const isMe = viewer?.id === user.id;
+  const pill = "btn-outline btn-sm";
 
   return (
     <div className="container-page py-10 md:py-14">
@@ -29,8 +32,18 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
           <h1 className="text-[clamp(1.5rem,3vw,2.1rem)] font-bold break-words">{user.name}</h1>
           <p className="mt-1 text-sm">เป็นสมาชิกตั้งแต่ {formatThaiDate(user.createdAt)}</p>
         </div>
-        {isMe && <Link href="/my-sheets" className="btn-outline btn-sm">จัดการชีทของฉัน</Link>}
       </section>
+
+      {/* Your own profile: everything that used to sit in the header's account menu */}
+      {isMe && (
+        <nav aria-label="บัญชีของฉัน" className="card mt-4 flex flex-wrap items-center gap-2 p-4">
+          <Link href="/profile" className={pill}>แก้ไขข้อมูล</Link>
+          <Link href="/my-sheets" className={pill}>ชีทของฉัน</Link>
+          <Link href="/sheets/upload" className="btn-primary btn-sm">อัปโหลดชีทสรุป</Link>
+          {viewer.isAdmin && <Link href={adminHref("/")} className={pill}>แดชบอร์ดผู้ดูแล</Link>}
+          <SignOutButton className="ml-auto cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60" />
+        </nav>
+      )}
 
       <dl className="card mt-4 grid grid-cols-3 divide-x divide-line py-4 text-center">
         <div className="flex flex-col-reverse">

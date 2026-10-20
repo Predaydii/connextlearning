@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <h1 className="sr-only">ผู้ดูแลระบบ</h1>
         <div className="container-page py-8">{children}</div>
       </main>
-      <SiteFooter />
+      <SiteFooter cta={false} />
     </>
   );
 }

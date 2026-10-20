@@ -33,35 +33,75 @@ const SOCIAL: { label: string; href: string; path: string; evenOdd?: boolean }[]
   },
 ];
 
-const ABOUT = [
+const MENU = [
   { href: "/", label: "หน้าหลัก" },
-  { href: "/#classroom", label: "ห้องเรียน" },
-  { href: "/sheets", label: "ชีทสรุป" },
+  { href: "/#classroom", label: "ห้องเรียนออนไลน์" },
+  { href: "/sheets", label: "ชีทสรุปทั้งหมด" },
   { href: "/news", label: "ข่าวสาร" },
 ];
+const SHEETS = [
+  { href: "/sheets/upload", label: "แชร์ชีทของคุณ" },
+  { href: "/sheets?grade=M1&grade=M2&grade=M3", label: "ชีทสรุป ม.ต้น" },
+  { href: "/sheets?grade=M4&grade=M5&grade=M6", label: "ชีทสรุป ม.ปลาย" },
+];
+const LEGAL = [
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms and Conditions" },
+  { href: "/cookies", label: "Cookie Policy" },
+];
 
-const linkCls = "transition hover:text-accent";
+const linkCls = "text-white/75 transition hover:text-white";
 
-/** `base` prefixes links (the main site's URL when rendered on the admin subdomain). */
-export async function SiteFooter({ base = "" }: { base?: string }) {
+/**
+ * Dark footer with a wavy top and a blue glow that keeps drifting (.ft-* in globals.css).
+ * `cta`: the "แชร์ชีทให้เพื่อน ๆ" call to action (off in the admin area).
+ * `base` prefixes links when rendered outside the public site.
+ */
+export async function SiteFooter({ base = "", cta = true }: { base?: string; cta?: boolean }) {
   const visits = await getVisitStats().catch(() => null);
   return (
-    <footer className="bg-primary text-[0.95rem] text-white/85">
-      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-8 pt-10 pb-8 sm:gap-10 sm:pt-16 sm:pb-10 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr]">
-        <div className="col-span-2 sm:col-span-1">
-          <img
-            src={withBase("/img/logo-white-240.webp")}
-            srcSet={`${withBase("/img/logo-white-240.webp")} 1x, ${withBase("/img/logo-white-480.webp")} 2x`}
-            width={200}
-            height={58}
-            alt="Connext Learning"
-            loading="lazy"
-            className="mb-4 h-auto w-[160px] sm:mb-5 sm:w-[200px]"
-          />
-          <p className="hidden max-w-[340px] leading-[1.9] sm:block">
-            แหล่งแลกเปลี่ยนเรียนรู้และห้องเรียนออนไลน์ที่เชื่อมโยงระบบนิเวศการศึกษาของโรงเรียนตราษตระการคุณ
+    <footer className="ft-wave relative isolate overflow-hidden bg-black text-[0.95rem] text-white/75">
+      {/* ft-wave (globals.css): the wavy top edge is cut out with a mask and overlaps the section above */}
+      <div aria-hidden className="ft-glow pointer-events-none absolute inset-0 -z-10" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.07)_1px,transparent_1.4px)] [background-size:22px_22px]" />
+
+      {cta && (
+        <section aria-labelledby="footer-cta" className="container-page pt-[clamp(88px,12vw,150px)] pb-[clamp(56px,8vw,96px)] text-center">
+          <img src={withBase("/img/logo-white-240.webp")} srcSet={`${withBase("/img/logo-white-240.webp")} 1x, ${withBase("/img/logo-white-480.webp")} 2x`} width={160} height={46} alt="" loading="lazy" className="mx-auto mb-6 h-auto w-[150px]" />
+          <h2 id="footer-cta" className="text-[clamp(2rem,6vw,3.6rem)] leading-tight font-bold text-white">แชร์ชีทให้เพื่อน ๆ</h2>
+          <p className="mx-auto mt-4 max-w-xl text-[clamp(1rem,1.8vw,1.15rem)] leading-relaxed text-white/75">
+            เตรียมพร้อมสอบเก็บคะแนน กลางภาค ปลายภาคไปด้วยกัน
+            <br />
+            <span className="font-semibold text-white">Connext Learning for All Learners.</span>
           </p>
-          <ul className="flex flex-wrap gap-3 sm:mt-6" aria-label="ช่องทางโซเชียล">
+          <div className="mx-auto mt-8 flex max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+            <Link href={`${base}/sheets/upload`} className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-accent">
+              แชร์ชีทของคุณ
+            </Link>
+            <Link href={`${base}/sheets`} className="inline-flex min-h-12 items-center justify-center rounded-full px-7 font-semibold text-white ring-1 ring-white/40 transition hover:-translate-y-0.5 hover:bg-white/10">
+              ดูชีทสรุปทั้งหมด
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <div className={`container-page grid grid-cols-2 gap-x-6 gap-y-9 pb-10 sm:grid-cols-4 lg:gap-10 ${cta ? "border-t border-white/10 pt-12" : "pt-[clamp(80px,10vw,120px)]"}`}>
+        <FooterCol title="เมนู">
+          {MENU.map((l) => <li key={l.label}><Link href={`${base}${l.href}`} className={linkCls}>{l.label}</Link></li>)}
+        </FooterCol>
+        <FooterCol title="ชีทสรุป">
+          {SHEETS.map((l) => <li key={l.label}><Link href={`${base}${l.href}`} className={linkCls}>{l.label}</Link></li>)}
+        </FooterCol>
+        <div className="col-span-2 sm:col-span-1">
+          <h3 className="mb-3 font-semibold text-white">ติดต่อเรา</h3>
+          <address className="not-italic leading-[1.8]">
+            สภานักเรียนโรงเรียนตราษตระการคุณ
+            <br />494 ถ.เนินตาแมว ต.วังกระแจะ อ.เมืองตราด จ.ตราด 23000
+          </address>
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <h3 className="mb-3 font-semibold text-white">ติดตามเรา</h3>
+          <ul className="flex flex-wrap gap-2.5" aria-label="ช่องทางโซเชียล">
             {SOCIAL.map((s) => (
               <li key={s.label}>
                 <a
@@ -70,46 +110,31 @@ export async function SiteFooter({ base = "" }: { base?: string }) {
                   title={s.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid size-10 place-items-center rounded-full bg-white text-primary transition hover:-translate-y-0.5 hover:bg-accent"
+                  className="grid size-10 place-items-center rounded-xl bg-white/10 text-white transition hover:-translate-y-0.5 hover:bg-white hover:text-ink"
                 >
-                  <svg viewBox="0 0 24 24" className="size-[22px] fill-current" aria-hidden>
+                  <svg viewBox="0 0 24 24" className="size-5 fill-current" aria-hidden>
                     <path d={s.path} fillRule={s.evenOdd ? "evenodd" : undefined} />
                   </svg>
                 </a>
               </li>
             ))}
           </ul>
-        </div>
-
-        <FooterCol title="เมนู">
-          {ABOUT.map((l) => (
-            <li key={l.label}><Link href={`${base}${l.href}`} className={linkCls}>{l.label}</Link></li>
-          ))}
-        </FooterCol>
-
-        <FooterCol title="ชีทสรุป">
-          <li><Link href={`${base}/sheets`} className={linkCls}>ชีทสรุปทั้งหมด</Link></li>
-          <li><Link href={`${base}/sheets/upload`} className={linkCls}>อัปโหลดชีทสรุป</Link></li>
-          {["M1", "M2", "M3", "M4", "M5", "M6"].map((g, i) => (
-            <li key={g} className="hidden sm:list-item"><Link href={`${base}/sheets?grade=${g}`} className={linkCls}>ชีทสรุป ม.{i + 1}</Link></li>
-          ))}
-        </FooterCol>
-
-        <div className="col-span-2 sm:col-span-1">
-          <h3 className="mb-3 text-lg font-semibold text-white sm:mb-[18px]">ติดต่อเรา</h3>
-          <address className="not-italic leading-[1.8]">
-            สภานักเรียนโรงเรียนตราษตระการคุณ
-            <br />494 ถ.เนินตาแมว ต.วังกระแจะ อ.เมืองตราด จ.ตราด 23000
-          </address>
+          <p className="mt-3 text-xs text-white/55">จัดทำและดูแลโดยสภานักเรียนโรงเรียนตราษตระการคุณ</p>
         </div>
       </div>
 
-      <div className="container-page flex flex-col items-center gap-2 border-t border-white/20 py-4 text-[0.85rem] font-medium text-white sm:flex-row sm:justify-between sm:py-5">
-        <span>© โรงเรียนตราษตระการคุณ สงวนลิขสิทธิ์</span>
+      <div className="container-page flex flex-col items-center gap-3 border-t border-white/10 py-6 text-[0.85rem] lg:flex-row lg:justify-between">
+        <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+          {LEGAL.map((l) => <li key={l.href}><Link href={`${base}${l.href}`} className={linkCls}>{l.label}</Link></li>)}
+        </ul>
+        <span className="text-white/70">© โรงเรียนตราษตระการคุณ สงวนลิขสิทธิ์</span>
         {visits && (
-          <span className="flex items-center gap-4 text-white/85" aria-label="สถิติการเข้าชม">
-            <span>ผู้เข้าชมวันนี้ <strong className="font-semibold text-white tabular-nums">{formatNumber(visits.today)}</strong></span>
-            <span aria-hidden className="h-3 w-px bg-white/30" />
+          <span className="flex items-center gap-4 text-white/70" aria-label="สถิติการเข้าชม">
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2 rounded-full bg-emerald-400" />
+              ผู้เข้าชมวันนี้ <strong className="font-semibold text-white tabular-nums">{formatNumber(visits.today)}</strong>
+            </span>
+            <span aria-hidden className="h-3 w-px bg-white/25" />
             <span>ทั้งหมด <strong className="font-semibold text-white tabular-nums">{formatNumber(visits.total)}</strong></span>
           </span>
         )}
@@ -122,8 +147,8 @@ export async function SiteFooter({ base = "" }: { base?: string }) {
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-3 text-lg font-semibold text-white sm:mb-[18px]">{title}</h3>
-      <ul className="space-y-1.5 sm:space-y-2">{children}</ul>
+      <h3 className="mb-3 font-semibold text-white">{title}</h3>
+      <ul className="space-y-2">{children}</ul>
     </div>
   );
 }

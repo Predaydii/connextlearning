@@ -56,10 +56,6 @@ export function ClassroomPicker() {
       </div>
 
       <div className="p-4 sm:p-6">
-        <p className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <span className="text-lg font-semibold text-ink">{info.full}</span>
-          <span className="text-sm">กดห้องของคุณเพื่อเข้า Google Meet</span>
-        </p>
         <ul key={grade} className="grid grid-cols-3 gap-2.5 sm:gap-3 md:grid-cols-5 lg:grid-cols-9">
           {classroomsOf(grade).map((c, i) => (
             <li key={c.room} className="motion-safe:animate-rise" style={{ animationDelay: `${i * 30}ms` }}>

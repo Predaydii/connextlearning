@@ -71,17 +71,20 @@ export function SiteHeader({ base = "" }: { base?: string }) {
 
           <UserMenu base={base} />
 
+          {/* Three lines that fold into a centred X */}
           <button
             type="button"
-            className="flex size-11 cursor-pointer flex-col justify-between rounded-xl bg-primary-50 p-2.5 md:hidden"
+            className="relative grid size-11 cursor-pointer place-items-center rounded-xl text-primary transition active:scale-95 md:hidden"
             aria-controls="nav-menu"
             aria-expanded={open}
             aria-label={open ? "ปิดเมนู" : "เปิดเมนู"}
             onClick={() => setOpen((v) => !v)}
           >
-            <span className={`h-[3px] rounded bg-primary transition ${open ? "translate-y-[8.5px] rotate-45" : ""}`} />
-            <span className={`h-[3px] rounded bg-primary transition ${open ? "opacity-0" : ""}`} />
-            <span className={`h-[3px] rounded bg-primary transition ${open ? "-translate-y-[8.5px] -rotate-45" : ""}`} />
+            <span aria-hidden className="relative block h-[18px] w-6">
+              <span className={`absolute left-0 h-[2.5px] w-6 rounded-full bg-current transition-all duration-300 ease-out ${open ? "top-[7.75px] rotate-45" : "top-0"}`} />
+              <span className={`absolute top-[7.75px] left-0 h-[2.5px] w-6 rounded-full bg-current transition-all duration-200 ${open ? "scale-x-0 opacity-0" : ""}`} />
+              <span className={`absolute left-0 h-[2.5px] w-6 rounded-full bg-current transition-all duration-300 ease-out ${open ? "top-[7.75px] -rotate-45" : "top-[15.5px]"}`} />
+            </span>
           </button>
         </div>
       </nav>

@@ -28,7 +28,6 @@ export default async function HomePage() {
       <Leaderboards topRated={boards.topRated} mostRead={boards.mostRead} />
       <ByGrade art={media.gradeArt} />
       <ClassroomSection />
-      <ShareBand />
     </>
   );
 }
@@ -61,8 +60,8 @@ function Hero() {
             หรือกดเข้าห้องเรียนออนไลน์ผ่าน Google Meet
           </p>
           <div style={at(240)} className={`${rise} flex flex-wrap justify-center gap-4 min-[901px]:justify-start`}>
-            <Link href="/sheets" className="btn-primary min-w-0 flex-[1_1_140px] sm:min-w-[180px] sm:flex-none">ดูชีทสรุป</Link>
-            <a href="#classroom" className="btn-outline min-w-0 flex-[1_1_140px] sm:min-w-[180px] sm:flex-none">เข้าห้องเรียน</a>
+            <Link href="/sheets" className="btn-primary min-h-11 min-w-0 flex-[1_1_130px] px-6 py-2 text-[15px] sm:min-w-[150px] sm:flex-none">ดูชีทสรุป</Link>
+            <a href="#classroom" className="btn-outline min-h-11 min-w-0 flex-[1_1_130px] px-6 py-2 text-[15px] sm:min-w-[150px] sm:flex-none">เข้าห้องเรียน</a>
           </div>
         </div>
 
@@ -102,10 +101,10 @@ function HeroVisual() {
 
 function Stats({ sheets, views, authors }: { sheets: number; views: number; authors: number }) {
   const items = [
-    { value: sheets, label: ["ชีทสรุป", "ที่เผยแพร่แล้ว"] },
-    { value: views, label: ["ครั้งที่", "เปิดอ่าน"] },
-    { value: authors, label: ["นักเรียน", "ที่ร่วมแชร์"] },
-    { value: ROOMS, label: ["ห้องเรียน", "ออนไลน์"] },
+    { value: sheets, label: "ชีทที่เผยแพร่" },
+    { value: views, label: "ครั้งที่เปิดอ่าน" },
+    { value: authors, label: "นักเรียนที่ร่วมแชร์" },
+    { value: ROOMS, label: "ห้องเรียนออนไลน์" },
   ];
   return (
     <section aria-label="ตัวเลขของ Connext Learning" className="bg-white pt-[clamp(28px,4vw,48px)]">
@@ -114,8 +113,8 @@ function Stats({ sheets, views, authors }: { sheets: number; views: number; auth
           <span aria-hidden className="absolute -top-12 -left-12 size-28 rounded-full border-[6px] border-primary-50" />
           <span aria-hidden className="absolute -right-10 -bottom-16 size-32 rounded-full border-[6px] border-primary-50" />
           {items.map((it) => (
-            <div key={it.label.join("")} className="relative flex items-center justify-center gap-3">
-              <dt className="order-2 text-sm leading-tight">{it.label[0]}<br />{it.label[1]}</dt>
+            <div key={it.label} className="relative flex flex-col items-center gap-1.5 text-center">
+              <dt className="order-2 text-sm leading-tight">{it.label}</dt>
               <dd className="order-1 text-[clamp(1.6rem,3vw,2.2rem)] leading-none font-bold text-ink"><CountUp value={it.value} /></dd>
             </div>
           ))}
@@ -274,16 +273,16 @@ function Board({ title, items, metric, empty }: { title: string; items: RankedSh
 
 function SectionHead({ id, title, sub, href, linkLabel }: { id: string; title: string; sub?: string; href?: string; linkLabel?: string }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h2 id={id} className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-primary-800">{title}</h2>
-        {sub && <p className="mt-1">{sub}</p>}
+    <div className="mb-8">
+      <div className="flex items-center justify-between gap-4">
+        <h2 id={id} className="text-[clamp(1.5rem,3vw,2.2rem)] font-bold text-primary-800">{title}</h2>
+        {href && (
+          <Link href={href} className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold whitespace-nowrap text-primary sm:text-base">
+            {linkLabel} <span aria-hidden className="transition group-hover:translate-x-1">→</span>
+          </Link>
+        )}
       </div>
-      {href && (
-        <Link href={href} className="group inline-flex items-center gap-1.5 font-semibold text-primary">
-          {linkLabel} <span aria-hidden className="transition group-hover:translate-x-1">→</span>
-        </Link>
-      )}
+      {sub && <p className="mt-1">{sub}</p>}
     </div>
   );
 }
@@ -332,94 +331,6 @@ function ClassroomSection() {
         <ClassroomPicker />
       </div>
     </section>
-  );
-}
-
-// The three steps light up one after another (6 s loop) while the bar fills, so the flow reads at a glance.
-// Without motion every step simply shows in full.
-const SHARE_STEPS = [
-  { title: "อัปโหลด", desc: "ส่งไฟล์ PDF หรือรูปถ่ายชีทของคุณ", icon: <UploadArt /> },
-  { title: "สภานักเรียนตรวจ", desc: "ตรวจความถูกต้องก่อนเผยแพร่", icon: <ReviewArt /> },
-  { title: "ขึ้นเว็บพร้อมชื่อคุณ", desc: "เพื่อน ๆ อ่านและให้ดาวได้ทันที", icon: <PublishArt /> },
-];
-
-function ShareBand() {
-  return (
-    <section aria-labelledby="share-title" className="py-[clamp(56px,8vw,88px)]">
-      <div className="container-page">
-        <div className="relative isolate overflow-hidden rounded-3xl bg-[linear-gradient(150deg,#3a57e0_0%,#203cc7_45%,#13237a_100%)] px-5 py-10 text-white shadow-brand-lg sm:px-10 md:px-14 md:py-14">
-          {/* same moving backdrop as the login page: sliding light bands, panning dots, drifting glows */}
-          <span aria-hidden className="absolute -top-1/4 left-[8%] -z-10 h-[150%] w-40 rotate-[25deg] bg-white/5 motion-safe:animate-band" />
-          <span aria-hidden className="absolute -top-1/4 left-[40%] -z-10 h-[150%] w-24 rotate-[25deg] bg-white/5 motion-safe:animate-band [animation-delay:-3s] [animation-direction:alternate-reverse]" />
-          <span aria-hidden className="absolute -top-1/4 right-[12%] -z-10 h-[150%] w-32 rotate-[25deg] bg-white/5 motion-safe:animate-band [animation-delay:-6s]" />
-          <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.12)_1.2px,transparent_1.6px)] [background-size:24px_24px] motion-safe:animate-dots" />
-          <span aria-hidden className="absolute -right-24 -bottom-24 -z-10 size-[420px] rounded-full bg-sky/40 blur-3xl will-change-transform motion-safe:animate-drift" />
-          <span aria-hidden className="absolute -top-32 -left-24 -z-10 size-[360px] rounded-full bg-[#3a57e0]/50 blur-3xl will-change-transform motion-safe:animate-drift-slow" />
-          <div className="relative text-center">
-            <h2 id="share-title" className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-white">มีชีทดี ๆ อยากแบ่งปัน?</h2>
-            <p className="mt-2 text-white/90">แชร์ได้ใน 3 ขั้นตอน ชื่อของคุณจะอยู่บนชีทที่เพื่อน ๆ อ่าน</p>
-          </div>
-
-          <ol className="share-flow relative mt-10 grid gap-4 md:grid-cols-3 md:gap-6">
-            {/* track between the step centres (desktop) */}
-            <li aria-hidden className="absolute top-[50px] right-[16.66%] left-[16.66%] hidden h-1 rounded-full bg-white/25 md:block">
-              <span className="share-fill block h-full rounded-full bg-accent" />
-            </li>
-            {SHARE_STEPS.map((s, i) => (
-              <li key={s.title} className="share-step relative flex items-center gap-4 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 md:flex-col md:bg-transparent md:p-0 md:text-center md:ring-0">
-                <span className="share-icon relative z-[1] grid size-[72px] shrink-0 place-items-center rounded-2xl bg-white text-primary shadow-[0_10px_30px_rgb(0_0_0/0.25)] md:size-[104px] md:rounded-3xl">
-                  {s.icon}
-                  <span className="absolute -top-2 -left-2 grid size-7 place-items-center rounded-full bg-accent text-sm font-bold text-ink">{i + 1}</span>
-                </span>
-                <span className="share-text">
-                  <span className="block text-lg font-semibold text-white">{s.title}</span>
-                  <span className="block text-sm text-white/85">{s.desc}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-
-          <div className="relative mt-10 text-center">
-            <Link href="/sheets/upload" className="btn border-accent bg-accent text-ink hover:brightness-105">
-              แชร์ชีทของคุณ
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function UploadArt() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="size-10 md:size-14" aria-hidden>
-      <path d="M12 30v8a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2v-8" />
-      <g className="share-upload">
-        <path d="M24 30V10" />
-        <path d="m16 17 8-8 8 8" />
-      </g>
-    </svg>
-  );
-}
-
-function ReviewArt() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="size-10 md:size-14" aria-hidden>
-      <path d="M30 6H14a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V12z" />
-      <path d="M30 6v6h6" />
-      <path className="share-check text-sky" d="m18 26 5 5 9-10" pathLength={1} />
-    </svg>
-  );
-}
-
-function PublishArt() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="size-10 md:size-14" aria-hidden>
-      <rect x="6" y="10" width="36" height="28" rx="3" />
-      <circle cx="15" cy="20" r="3.5" />
-      <path d="M22 18h13M22 23h9M12 31h24" />
-      <path className="share-star fill-accent stroke-accent" d="m38 4 1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" strokeWidth="1" />
-    </svg>
   );
 }
 
