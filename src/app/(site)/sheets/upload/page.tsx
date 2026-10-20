@@ -13,7 +13,6 @@ export default async function UploadPage() {
     <div className="bg-primary-50/60 py-10 md:py-14">
       <div className="container-page max-w-4xl">
         <h1 className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold">แชร์ชีทสรุป</h1>
-        <p className="mt-2 max-w-2xl">ชีทจะขึ้นหน้าเว็บหลังผู้ดูแลตรวจ ใช้เวลาไม่นาน</p>
         <UploadForm userName={user.name} />
       </div>
     </div>

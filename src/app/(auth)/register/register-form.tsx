@@ -1,0 +1,126 @@
+"use client";
+
+import { startTransition, useActionState, useState } from "react";
+import { register } from "@/app/actions/register";
+import { classroomsOf } from "@/lib/classrooms";
+import { currentBuddhistYear, GRADES, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
+import type { Grade } from "@/generated/prisma/enums";
+
+const range = (from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => (from <= to ? from + i : from - i));
+
+export function RegisterForm({ next, email, firstName, lastName }: { next: string; email: string; firstName: string; lastName: string }) {
+  const [state, action, pending] = useActionState(register, null);
+  const [type, setType] = useState<"STUDENT" | "ALUMNI">("STUDENT");
+  const [grade, setGrade] = useState<Grade | "">("");
+  const year = currentBuddhistYear();
+
+  return (
+    <form
+      // Submitted by hand so a validation error keeps what was typed (form actions reset the form)
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => action(fd));
+      }}
+      className="grid gap-5"
+    >
+      <input type="hidden" name="next" value={next} />
+      <p className="rounded-xl bg-primary-50 px-4 py-2.5 text-sm">
+        บัญชี <strong className="font-semibold text-ink">{email}</strong>
+      </p>
+
+      <div className="grid gap-4 sm:grid-cols-[9rem_1fr_1fr]">
+        <label>
+          <span className="field-label">คำนำหน้า</span>
+          <select name="prefix" required defaultValue="" className="field">
+            <option value="" disabled>เลือก</option>
+            {NAME_PREFIXES.map((p) => <option key={p}>{p}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="field-label">ชื่อ</span>
+          <input name="firstName" required maxLength={60} defaultValue={firstName} autoComplete="given-name" className="field" />
+        </label>
+        <label>
+          <span className="field-label">นามสกุล</span>
+          <input name="lastName" required maxLength={60} defaultValue={lastName} autoComplete="family-name" className="field" />
+        </label>
+      </div>
+
+      <fieldset>
+        <legend className="field-label">สถานะ</legend>
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            [
+              ["STUDENT", "กำลังศึกษา"],
+              ["ALUMNI", "ศิษย์เก่า"],
+            ] as const
+          ).map(([v, label]) => (
+            <label key={v} className="cursor-pointer">
+              <input type="radio" name="memberType" value={v} checked={type === v} onChange={() => setType(v)} className="peer sr-only" />
+              <span className="block rounded-xl border-2 border-line bg-white px-4 py-3 text-center font-semibold text-ink transition peer-checked:border-primary peer-checked:bg-primary-50 peer-checked:text-primary peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20">
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {type === "STUDENT" ? (
+        <div key="student" className="grid grid-cols-3 gap-4 motion-safe:animate-rise">
+          <label>
+            <span className="field-label">ชั้น</span>
+            <select name="grade" required value={grade} onChange={(e) => setGrade(e.target.value as Grade)} className="field">
+              <option value="" disabled>เลือก</option>
+              {GRADES.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+            </select>
+          </label>
+          <label>
+            <span className="field-label">ห้อง</span>
+            <select name="room" required defaultValue="" disabled={!grade} className="field">
+              <option value="" disabled>เลือก</option>
+              {grade && classroomsOf(grade).map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+            </select>
+          </label>
+          <label>
+            <span className="field-label">เลขที่</span>
+            <input name="studentNo" type="number" inputMode="numeric" required min={1} max={MAX_STUDENT_NO} className="field" />
+          </label>
+        </div>
+      ) : (
+        <div key="alumni" className="grid gap-4 motion-safe:animate-rise">
+          <div>
+            <span className="field-label">วันเดือนปีเกิด (พ.ศ.)</span>
+            <div className="grid grid-cols-3 gap-3 [&_select]:px-3">
+              <select name="birthDay" required defaultValue="" aria-label="วันเกิด" className="field">
+                <option value="" disabled>วัน</option>
+                {range(1, 31).map((d) => <option key={d}>{d}</option>)}
+              </select>
+              <select name="birthMonth" required defaultValue="" aria-label="เดือนเกิด" className="field">
+                <option value="" disabled>เดือน</option>
+                {THAI_MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+              <select name="birthYear" required defaultValue="" aria-label="ปีเกิด (พ.ศ.)" className="field">
+                <option value="" disabled>ปี</option>
+                {range(year - 10, year - 100).map((y) => <option key={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
+          <label>
+            <span className="field-label">ปีการศึกษาที่จบ (พ.ศ.)</span>
+            <select name="gradYear" required defaultValue="" className="field">
+              <option value="" disabled>เลือก</option>
+              {range(year, year - 80).map((y) => <option key={y}>{y}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {state && (
+        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{state.message}</p>
+      )}
+
+      <button disabled={pending} className="btn-primary">{pending ? "กำลังบันทึก…" : "ลงทะเบียนและเริ่มใช้งาน"}</button>
+    </form>
+  );
+}

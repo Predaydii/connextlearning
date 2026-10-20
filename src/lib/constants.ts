@@ -75,3 +75,12 @@ export const COMMENT_WINDOW_MIN = 10;
 // Admin-uploaded site videos (stored in R2, played straight from it)
 export const VIDEO_TYPES = { "video/mp4": "mp4", "video/webm": "webm" } as const;
 export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
+
+// First-sign-in registration
+export const NAME_PREFIXES = ["เด็กชาย", "เด็กหญิง", "นาย", "นางสาว", "นาง"] as const;
+export const MAX_STUDENT_NO = 60;
+export const THAI_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+/** Current year in พ.ศ. (Asia/Bangkok) */
+export function currentBuddhistYear() {
+  return Number(new Date().toLocaleDateString("en-US", { year: "numeric", timeZone: "Asia/Bangkok" })) + 543;
+}

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { withBase } from "@/lib/urls";
+import { formatNumber } from "@/lib/format";
+import { getVisitStats } from "@/lib/queries";
+import { VisitPing } from "@/components/visit-ping";
 
-const SOCIAL = [
+const SOCIAL: { label: string; href: string; path: string; evenOdd?: boolean }[] = [
   {
     label: "Facebook",
     href: "https://www.facebook.com/profile.php?id=61558304188276&locale=th_TH",
@@ -10,7 +13,8 @@ const SOCIAL = [
   {
     label: "Instagram",
     href: "https://www.instagram.com/tratcouncil/",
-    path: "M12 7.3A4.7 4.7 0 1 0 16.7 12 4.7 4.7 0 0 0 12 7.3zm0 7.7a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm6-7.9a1.1 1.1 0 1 1-1.1-1.1A1.1 1.1 0 0 1 18 7.1zM21 8.1a5.4 5.4 0 0 0-1.5-3.8A5.4 5.4 0 0 0 15.8 3C14.3 2.9 9.7 2.9 8.2 3a5.4 5.4 0 0 0-3.8 1.5A5.4 5.4 0 0 0 3 8.2c-.1 1.5-.1 6.1 0 7.6a5.4 5.4 0 0 0 1.5 3.8A5.4 5.4 0 0 0 8.2 21c1.5.1 6.1.1 7.6 0a5.4 5.4 0 0 0 3.8-1.5 5.4 5.4 0 0 0 1.5-3.8c0-1.5 0-6.1-.1-7.6z",
+    path: "M7.6 2h8.8A5.6 5.6 0 0 1 22 7.6v8.8a5.6 5.6 0 0 1-5.6 5.6H7.6A5.6 5.6 0 0 1 2 16.4V7.6A5.6 5.6 0 0 1 7.6 2zm-.2 2A3.4 3.4 0 0 0 4 7.4v9.2A3.4 3.4 0 0 0 7.4 20h9.2a3.4 3.4 0 0 0 3.4-3.4V7.4A3.4 3.4 0 0 0 16.6 4zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm5.3-3.6a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z",
+    evenOdd: true,
   },
   {
     label: "TikTok",
@@ -39,7 +43,8 @@ const ABOUT = [
 const linkCls = "transition hover:text-accent";
 
 /** `base` prefixes links (the main site's URL when rendered on the admin subdomain). */
-export function SiteFooter({ base = "" }: { base?: string }) {
+export async function SiteFooter({ base = "" }: { base?: string }) {
+  const visits = await getVisitStats().catch(() => null);
   return (
     <footer className="bg-primary text-[0.95rem] text-white/85">
       <div className="container-page grid grid-cols-2 gap-x-6 gap-y-8 pt-10 pb-8 sm:gap-10 sm:pt-16 sm:pb-10 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr]">
@@ -68,7 +73,7 @@ export function SiteFooter({ base = "" }: { base?: string }) {
                   className="grid size-10 place-items-center rounded-full bg-white text-primary transition hover:-translate-y-0.5 hover:bg-accent"
                 >
                   <svg viewBox="0 0 24 24" className="size-[22px] fill-current" aria-hidden>
-                    <path d={s.path} />
+                    <path d={s.path} fillRule={s.evenOdd ? "evenodd" : undefined} />
                   </svg>
                 </a>
               </li>
@@ -99,8 +104,16 @@ export function SiteFooter({ base = "" }: { base?: string }) {
         </div>
       </div>
 
-      <div className="container-page border-t border-white/20 py-4 text-center text-[0.85rem] font-medium text-white sm:py-5">
-        © โรงเรียนตราษตระการคุณ สงวนลิขสิทธิ์
+      <div className="container-page flex flex-col items-center gap-2 border-t border-white/20 py-4 text-[0.85rem] font-medium text-white sm:flex-row sm:justify-between sm:py-5">
+        <span>© โรงเรียนตราษตระการคุณ สงวนลิขสิทธิ์</span>
+        {visits && (
+          <span className="flex items-center gap-4 text-white/85" aria-label="สถิติการเข้าชม">
+            <span>ผู้เข้าชมวันนี้ <strong className="font-semibold text-white tabular-nums">{formatNumber(visits.today)}</strong></span>
+            <span aria-hidden className="h-3 w-px bg-white/30" />
+            <span>ทั้งหมด <strong className="font-semibold text-white tabular-nums">{formatNumber(visits.total)}</strong></span>
+          </span>
+        )}
+        <VisitPing />
       </div>
     </footer>
   );

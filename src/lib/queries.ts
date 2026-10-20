@@ -383,3 +383,19 @@ export const getHomeMedia = unstable_cache(
   ["home-media"],
   { tags: [TAG_SETTINGS], revalidate: 300 },
 );
+
+// ---------------------------------------------------------------------------
+// Visits (footer)
+// ---------------------------------------------------------------------------
+
+export const getVisitStats = unstable_cache(
+  async () => {
+    const [today, total] = await Promise.all([
+      db.$queryRaw<{ count: number }[]>`SELECT "count" FROM "SiteVisit" WHERE "day" = (now() AT TIME ZONE 'Asia/Bangkok')::date`,
+      db.siteVisit.aggregate({ _sum: { count: true } }),
+    ]);
+    return { today: today[0]?.count ?? 0, total: total._sum.count ?? 0 };
+  },
+  ["visit-stats"],
+  { revalidate: 600 },
+);

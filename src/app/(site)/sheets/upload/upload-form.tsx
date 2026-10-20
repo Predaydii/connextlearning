@@ -331,7 +331,7 @@ export function UploadForm({ userName }: { userName: string }) {
 
       <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
         <p className="text-center text-xs sm:mr-auto sm:text-left">
-          กดส่ง = ยืนยันว่าคุณเป็นเจ้าของเนื้อหา หรือได้รับอนุญาตให้เผยแพร่
+          เมื่อกดส่งถือว่าคุณยินยอมให้เผยแพร่ชีทสรุปและระบุเจ้าของ
         </p>
         <button type="submit" className="btn-primary min-w-[220px]" disabled={busy}>
           {phase === "uploading" && <Spinner />}

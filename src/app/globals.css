@@ -182,14 +182,7 @@ html.intro .intro-screen span {
 .share-step { --d: 0s; }
 .share-step:nth-of-type(3) { --d: -4s; }
 .share-step:nth-of-type(4) { --d: -2s; }
-.share-band {
-  background: linear-gradient(115deg, #203cc7 0%, #2f6bf0 30%, #03a0db 55%, #3a57e0 80%, #203cc7 100%);
-  background-size: 300% 300%;
-}
 @media (prefers-reduced-motion: no-preference) {
-  .share-band {
-    animation: share-band 14s ease-in-out infinite alternate;
-  }
   .share-icon {
     animation: share-icon 6s ease-in-out var(--d) infinite;
   }
@@ -211,9 +204,6 @@ html.intro .intro-screen span {
     transform-origin: center;
     animation: share-star 2s ease-in-out infinite;
   }
-}
-@keyframes share-band {
-  to { background-position: 100% 50%; }
 }
 @keyframes share-icon {
   0%, 30% { scale: 1.06; filter: none; }

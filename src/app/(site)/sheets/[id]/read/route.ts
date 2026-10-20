@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { presignPdfGet } from "@/lib/r2";
 import { recordView } from "@/lib/queries";
-import { getCurrentUser, loginUrl } from "@/lib/session";
+import { getCurrentUser, loginUrl, registerUrl } from "@/lib/session";
 import { withBase } from "@/lib/urls";
 
 /**
@@ -18,6 +18,7 @@ export async function GET(req: Request, ctx: RouteContext<"/sheets/[id]/read">) 
 
   const user = await getCurrentUser();
   if (!user) return NextResponse.redirect(new URL(withBase(loginUrl(here)), origin));
+  if (!user.registered) return NextResponse.redirect(new URL(withBase(registerUrl(here)), origin));
 
   const sheet = await db.sheet.findUnique({ where: { id }, select: { status: true, title: true, pdfKey: true } });
   if (!sheet || sheet.status !== "APPROVED") return NextResponse.redirect(detail);

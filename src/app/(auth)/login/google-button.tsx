@@ -14,7 +14,8 @@ export function GoogleSignInButton({ callbackUrl }: { callbackUrl: string }) {
     const { error } = await authClient.signIn.social({
       provider: "google",
       // Better Auth redirects to these as-is, so they need the base path
-      callbackURL: withBase(callbackUrl),
+      // Through /register: first-time users fill in their details, everyone else goes straight on
+      callbackURL: withBase(`/register?next=${encodeURIComponent(callbackUrl)}`),
       errorCallbackURL: withBase("/login"),
     });
     // On success the browser is redirected to Google, so we only get here on failure

@@ -8,6 +8,7 @@ import { GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
 import { GRADES, gradeLabel } from "@/lib/constants";
 import { classroomsOf } from "@/lib/classrooms";
 import { formatNumber } from "@/lib/format";
+import { CountUp } from "@/components/count-up";
 
 // Static page, refreshed every 2 minutes (all data comes from cached queries)
 export const revalidate = 120;
@@ -114,7 +115,7 @@ function Stats({ sheets, views, authors }: { sheets: number; views: number; auth
           {items.map((it) => (
             <div key={it.label.join("")} className="relative flex items-center justify-center gap-3">
               <dt className="order-2 text-sm leading-tight">{it.label[0]}<br />{it.label[1]}</dt>
-              <dd className="order-1 text-[clamp(1.6rem,3vw,2.2rem)] leading-none font-bold text-ink">{formatNumber(it.value)}</dd>
+              <dd className="order-1 text-[clamp(1.6rem,3vw,2.2rem)] leading-none font-bold text-ink"><CountUp value={it.value} /></dd>
             </div>
           ))}
         </dl>
@@ -146,9 +147,9 @@ function Contributors({ people }: { people: Contributor[] }) {
   return (
     <section aria-labelledby="people-title" className="overflow-hidden py-[clamp(48px,7vw,80px)]">
       <div className="container-page mb-10 text-center">
-        <p className="text-sm font-medium text-body/80 sm:text-base">ขอบคุณเพื่อน ๆ ทุกคนที่แชร์ชีทสรุป</p>
+        <p className="text-sm font-medium text-body/80 sm:text-base">พร้อมทุกสนามสอบ</p>
         <h2 id="people-title" className="mt-2 text-[clamp(1.75rem,4.6vw,3rem)] leading-tight font-bold text-ink">
-          พร้อมทุกสนามสอบ <span className="text-primary">‘อ่านชีท แชร์ชีท’</span> ทุกที่ทุกเวลา
+          <span className="text-primary">‘อ่านชีท แชร์ชีท’</span> ทุกที่ทุกเวลา
         </h2>
         <p className="mt-3 text-[clamp(1.05rem,2.2vw,1.5rem)] font-medium text-ink">
           ตั้งแต่ <span className="text-primary">ม.1–ม.6</span> ไปจนถึง<span className="text-primary">การสอบแข่งขัน</span>
@@ -345,12 +346,15 @@ function ShareBand() {
   return (
     <section aria-labelledby="share-title" className="py-[clamp(56px,8vw,88px)]">
       <div className="container-page">
-        <div className="share-band relative isolate overflow-hidden rounded-3xl px-5 py-10 text-white shadow-brand-lg sm:px-10 md:px-14 md:py-14">
-          {/* drifting colour glows over the moving gradient */}
-          <span aria-hidden className="absolute -top-20 -left-16 -z-10 size-72 rounded-full bg-accent/35 blur-3xl motion-safe:animate-drift" />
-          <span aria-hidden className="absolute -right-20 -bottom-24 -z-10 size-80 rounded-full bg-[#7dd3fc]/40 blur-3xl motion-safe:animate-drift-slow" />
-          <span aria-hidden className="absolute top-1/3 left-1/2 -z-10 size-56 rounded-full bg-[#f472b6]/25 blur-3xl motion-safe:animate-drift [animation-delay:-8s]" />
-          <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.14)_1.2px,transparent_1.6px)] [background-size:22px_22px] motion-safe:animate-dots" />
+        <div className="relative isolate overflow-hidden rounded-3xl bg-[linear-gradient(150deg,#3a57e0_0%,#203cc7_45%,#13237a_100%)] px-5 py-10 text-white shadow-brand-lg sm:px-10 md:px-14 md:py-14">
+          {/* same moving backdrop as the login page: sliding light bands, panning dots, drifting glows */}
+          <span aria-hidden className="absolute -top-1/4 left-[8%] -z-10 h-[150%] w-40 rotate-[25deg] bg-white/5 motion-safe:animate-band" />
+          <span aria-hidden className="absolute -top-1/4 left-[40%] -z-10 h-[150%] w-24 rotate-[25deg] bg-white/5 motion-safe:animate-band [animation-delay:-3s] [animation-direction:alternate-reverse]" />
+          <span aria-hidden className="absolute -top-1/4 right-[12%] -z-10 h-[150%] w-32 rotate-[25deg] bg-white/5 motion-safe:animate-band [animation-delay:-6s]" />
+          <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.12)_1.2px,transparent_1.6px)] [background-size:24px_24px] motion-safe:animate-dots" />
+          <span aria-hidden className="absolute -right-24 -bottom-24 -z-10 size-[420px] rounded-full bg-sky/40 blur-3xl will-change-transform motion-safe:animate-drift" />
+          <span aria-hidden className="absolute -top-32 -left-24 -z-10 size-[360px] rounded-full bg-[#3a57e0]/50 blur-3xl will-change-transform motion-safe:animate-drift-slow" />
+          <span aria-hidden className="absolute top-1/3 left-1/2 -z-10 size-[260px] rounded-full bg-accent/15 blur-3xl will-change-transform motion-safe:animate-drift [animation-delay:-9s]" />
           <div className="relative text-center">
             <h2 id="share-title" className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-white">มีชีทดี ๆ อยากแบ่งปัน?</h2>
             <p className="mt-2 text-white/90">แชร์ได้ใน 3 ขั้นตอน ชื่อของคุณจะอยู่บนชีทที่เพื่อน ๆ อ่าน</p>

@@ -16,6 +16,11 @@ enum Role {
   ADMIN
 }
 
+enum MemberType {
+  STUDENT // กำลังศึกษา
+  ALUMNI // ศิษย์เก่า
+}
+
 model User {
   id            String    @id
   name          String
@@ -23,6 +28,20 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   role          Role      @default(USER)
+
+  // First-sign-in registration (/register); null registeredAt = not registered yet.
+  // Personal data: never shown publicly (the public name stays `name`).
+  registeredAt  DateTime?
+  prefix        String? // เด็กชาย, เด็กหญิง, นาย, นางสาว, นาง
+  firstName     String?
+  lastName      String?
+  memberType    MemberType?
+  grade         Grade? // students
+  room          Int? // students
+  studentNo     Int? // students: เลขที่
+  birthDate     DateTime? @db.Date // alumni
+  gradYear      Int? // alumni: academic year of graduation (พ.ศ.)
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -242,4 +261,10 @@ model Comment {
 
   @@index([sheetId, createdAt(sort: Desc)])
   @@index([userId, createdAt])
+}
+
+// Visits per day (Asia/Bangkok) for the footer: each browser counts once a day, nothing personal is stored
+model SiteVisit {
+  day   DateTime @id @db.Date
+  count Int      @default(0)
 }

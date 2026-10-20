@@ -35,6 +35,8 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: { type: "string", required: false, defaultValue: "USER", input: false },
+      // Set by /register (first sign-in); kept in the session so most requests skip a DB lookup
+      registeredAt: { type: "date", required: false, input: false },
     },
   },
 

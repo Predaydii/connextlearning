@@ -15,13 +15,15 @@ export type SessionUser = {
   isAdmin: boolean;
   /** Listed in ADMIN_EMAILS: can add and remove the other admins */
   isSuperAdmin: boolean;
+  /** Finished the first-sign-in registration (/register) */
+  registered: boolean;
 };
 
 /** Current user for this request (deduplicated per render). */
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
-  const u = session.user as typeof session.user & { role?: string };
+  const u = session.user as typeof session.user & { role?: string; registeredAt?: Date | string | null };
   const isSuperAdmin = adminEmails().includes(u.email.toLowerCase());
   // A cached ADMIN role may be stale (removed in the last 5 minutes): confirm sub-admins in the DB
   const isAdmin =
@@ -34,6 +36,9 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     image: u.image ?? null,
     isAdmin,
     isSuperAdmin,
+    // The cookie may predate registration (cached up to 5 minutes): confirm in the DB until it says so
+    registered:
+      !!u.registeredAt || !!(await db.user.findUnique({ where: { id: u.id }, select: { registeredAt: true } }))?.registeredAt,
   };
 });
 
@@ -51,10 +56,15 @@ export function loginUrl(callback: string) {
   return `/login?callbackUrl=${encodeURIComponent(callback)}`;
 }
 
+export function registerUrl(next: string) {
+  return `/register?next=${encodeURIComponent(next)}`;
+}
+
 /** For pages: redirect to the login page when signed out. */
 export async function requireUser(callbackPath: string): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) redirect(loginUrl(callbackPath));
+  if (!user.registered) redirect(registerUrl(callbackPath));
   return user;
 }
 
@@ -65,6 +75,7 @@ export async function requireUser(callbackPath: string): Promise<SessionUser> {
 export async function requireAdminPage(adminPath: string): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) redirect(loginUrl(adminHref(adminPath)));
+  if (!user.registered) redirect(registerUrl(adminHref(adminPath)));
   if (!(await hasAdminAccess(user))) redirect("/");
   return { ...user, isAdmin: true };
 }
@@ -75,10 +86,17 @@ export async function requireSuperAdminPage(adminPath: string): Promise<SessionU
   return user;
 }
 
-/** For server actions / route handlers: throw instead of redirecting. */
-export async function assertUser(): Promise<SessionUser> {
+/** For server actions / route handlers: throw instead of redirecting. Signed in, registration not required. */
+export async function assertSignedIn(): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) throw new AuthError("กรุณาเข้าสู่ระบบก่อน");
+  return user;
+}
+
+/** Signed in and registered. */
+export async function assertUser(): Promise<SessionUser> {
+  const user = await assertSignedIn();
+  if (!user.registered) throw new AuthError("กรุณาลงทะเบียนให้เสร็จก่อนใช้งาน");
   return user;
 }
 
