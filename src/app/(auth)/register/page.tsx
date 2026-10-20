@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { ProfileForm } from "@/components/profile-form";
 import { getCurrentUser, loginUrl } from "@/lib/session";
 import { isAllowedRedirect, withBase } from "@/lib/urls";
-import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = { title: "ลงทะเบียน", robots: { index: false } };
 
@@ -25,12 +25,11 @@ export default async function RegisterPage(props: PageProps<"/register">) {
     <section className="flex flex-1 justify-center bg-primary-50/60 px-4 py-10 sm:py-14">
       <div className="w-full max-w-xl">
         <div className="card p-6 motion-safe:animate-rise sm:p-8">
-          <img src={withBase("/img/logo-480.webp")} alt="Connext Learning" width={240} height={69} className="mb-6 h-auto w-[170px]" />
-          <h1 className="text-2xl font-bold">ลงทะเบียนครั้งแรก</h1>
-          <p className="mt-1 mb-6 text-sm">
-            กรอกข้อมูลครั้งเดียวก่อนเริ่มใช้งาน · ข้อมูลส่วนตัวใช้ภายในสภานักเรียนเท่านั้น หน้าเว็บจะแสดงเพียงชื่อและนามสกุล
-          </p>
-          <RegisterForm next={next} email={user.email} firstName={first} lastName={rest.join(" ")} />
+          <div className="mb-6 text-center">
+            <img src={withBase("/img/logo-480.webp")} alt="Connext Learning" width={240} height={69} className="mx-auto mb-5 h-auto w-[180px]" />
+            <h1 className="text-2xl font-bold">ลงทะเบียนครั้งแรก</h1>
+          </div>
+          <ProfileForm next={next} email={user.email} initial={{ firstName: first, lastName: rest.join(" ") }} submitLabel="ลงทะเบียนและเริ่มใช้งาน" />
         </div>
       </div>
     </section>

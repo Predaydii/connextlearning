@@ -1,10 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { classroomsOf } from "@/lib/classrooms";
-import { currentBuddhistYear, GRADE_VALUES, MAX_STUDENT_NO, NAME_PREFIXES } from "@/lib/constants";
+import { currentBuddhistYear, GRADE_VALUES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES } from "@/lib/constants";
+import { TAG_SHEETS } from "@/lib/queries";
 import { assertSignedIn, AuthError } from "@/lib/session";
 
 export type RegisterState = { ok: false; message: string } | null;
@@ -28,7 +29,7 @@ const base = z.object({
 const student = base.extend({
   memberType: z.literal("STUDENT"),
   grade: z.enum(GRADE_VALUES, { message: "กรุณาเลือกชั้น" }),
-  room: int("กรุณาเลือกห้อง").min(1, "กรุณาเลือกห้อง"),
+  room: int("กรุณาเลือกห้อง").min(1, "กรุณาเลือกห้อง").max(MAX_ROOMS, "ห้องไม่ถูกต้อง"),
   studentNo: int("กรุณากรอกเลขที่").min(1, "เลขที่ไม่ถูกต้อง").max(MAX_STUDENT_NO, "เลขที่ไม่ถูกต้อง"),
 });
 
@@ -48,6 +49,7 @@ function safeNext(v: FormDataEntryValue | null) {
   return s.startsWith("/") && !s.startsWith("//") && !s.startsWith("/\\") && !s.startsWith("/register") ? s : "/sheets";
 }
 
+/** First registration and later profile edits (/profile). */
 export async function register(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
   let next: string;
   try {
@@ -58,7 +60,6 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
 
     let details;
     if (data.memberType === "STUDENT") {
-      if (data.room > classroomsOf(data.grade).length) throw new AuthError("ห้องไม่ถูกต้อง");
       details = { grade: data.grade, room: data.room, studentNo: data.studentNo, birthDate: null, gradYear: null };
     } else {
       if (data.birthYear < thisYear - 100 || data.birthYear > thisYear - 10) throw new AuthError("ปีเกิดไม่ถูกต้อง");
@@ -78,9 +79,12 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
         name: `${data.firstName} ${data.lastName}`,
         memberType: data.memberType,
         ...details,
-        registeredAt: new Date(),
+        // Kept from the first registration when editing the profile
+        ...(user.registered ? {} : { registeredAt: new Date() }),
       },
     });
+    // The public name appears on cached sheet lists and the contributor rows
+    updateTag(TAG_SHEETS);
   } catch (err) {
     if (err instanceof AuthError) return { ok: false, message: err.message };
     if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };

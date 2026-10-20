@@ -89,6 +89,7 @@ export function UserMenu({ base = "", variant = "header" }: { base?: string; var
             <Link role="menuitem" href={`${base}/sheets/upload`} className={item}>อัปโหลดชีทสรุป</Link>
             <Link role="menuitem" href={`${base}/my-sheets`} className={item}>ชีทของฉัน</Link>
             <Link role="menuitem" href={`${base}/u/${user.id}`} className={item}>โปรไฟล์ของฉัน</Link>
+            <Link role="menuitem" href={`${base}/profile`} className={item}>แก้ไขโปรไฟล์</Link>
             {isAdmin && (
               <Link role="menuitem" href={adminHref("/")} className={`${item} font-medium text-primary`}>แดชบอร์ดผู้ดูแล</Link>
             )}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { CalendarIcon, EyeIcon } from "@/components/sheet-card";
-import { BackButton } from "./back-button";
+import { BackButton } from "@/components/back-button";
 import { StatusBadge } from "@/components/status-badge";
 import { gradeLabel } from "@/lib/constants";
 import { formatNumber, formatThaiDate, formatThaiDateTime } from "@/lib/format";

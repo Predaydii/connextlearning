@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/session";
+import { BackButton } from "@/components/back-button";
 import { UploadForm } from "./upload-form";
 
 export const metadata: Metadata = { title: "อัปโหลดชีทสรุป", robots: { index: false } };
@@ -12,6 +13,7 @@ export default async function UploadPage() {
   return (
     <div className="bg-primary-50/60 py-10 md:py-14">
       <div className="container-page max-w-4xl">
+        <BackButton />
         <h1 className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold">แชร์ชีทสรุป</h1>
         <UploadForm userName={user.name} />
       </div>

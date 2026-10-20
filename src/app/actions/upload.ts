@@ -85,16 +85,17 @@ export async function requestUploadUrls(
 
 const submitInput = z.object({
   keys: z.array(z.string()).min(1, "กรุณาอัปโหลดไฟล์").max(MAX_FILES),
-  title: z.string().trim().min(3, "ชื่อชีทต้องมีอย่างน้อย 3 ตัวอักษร").max(TITLE_MAX, `ชื่อชีทยาวได้ไม่เกิน ${TITLE_MAX} ตัวอักษร`),
+  title: z.string().trim().min(1, "กรุณากรอกชื่อชีท").max(TITLE_MAX, `ชื่อชีทยาวได้ไม่เกิน ${TITLE_MAX} ตัวอักษร`),
   description: z
     .string()
     .trim()
-    .min(10, "คำอธิบายต้องมีอย่างน้อย 10 ตัวอักษร")
+    .min(1, "กรุณากรอกคำอธิบาย")
     .max(DESCRIPTION_MAX, `คำอธิบายยาวได้ไม่เกิน ${DESCRIPTION_MAX} ตัวอักษร`),
   subjectId: z.enum(SUBJECT_IDS, { message: "กรุณาเลือกวิชา" }),
   grade: z.enum(GRADE_VALUES, { message: "กรุณาเลือกระดับชั้น" }),
   semester: z.coerce.number().refine((n) => (SEMESTERS as readonly number[]).includes(n), "กรุณาเลือกภาคเรียน"),
   academicYear: z.coerce.number().refine((n) => (ACADEMIC_YEARS as readonly number[]).includes(n), "กรุณาเลือกปีการศึกษา"),
+  consent: z.literal(true, { message: "กรุณาติ๊กยินยอมให้เผยแพร่ชีทสรุปแบบระบุผู้จัดทำ" }),
 });
 
 export type SubmitSheetInput = z.input<typeof submitInput>;

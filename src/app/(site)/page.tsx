@@ -354,7 +354,6 @@ function ShareBand() {
           <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.12)_1.2px,transparent_1.6px)] [background-size:24px_24px] motion-safe:animate-dots" />
           <span aria-hidden className="absolute -right-24 -bottom-24 -z-10 size-[420px] rounded-full bg-sky/40 blur-3xl will-change-transform motion-safe:animate-drift" />
           <span aria-hidden className="absolute -top-32 -left-24 -z-10 size-[360px] rounded-full bg-[#3a57e0]/50 blur-3xl will-change-transform motion-safe:animate-drift-slow" />
-          <span aria-hidden className="absolute top-1/3 left-1/2 -z-10 size-[260px] rounded-full bg-accent/15 blur-3xl will-change-transform motion-safe:animate-drift [animation-delay:-9s]" />
           <div className="relative text-center">
             <h2 id="share-title" className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-white">มีชีทดี ๆ อยากแบ่งปัน?</h2>
             <p className="mt-2 text-white/90">แชร์ได้ใน 3 ขั้นตอน ชื่อของคุณจะอยู่บนชีทที่เพื่อน ๆ อ่าน</p>

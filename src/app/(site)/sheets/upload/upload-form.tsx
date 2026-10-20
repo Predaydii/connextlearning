@@ -116,6 +116,7 @@ export function UploadForm({ userName }: { userName: string }) {
     const fd = new FormData(e.currentTarget);
 
     if (!items.length) return setError("กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์");
+    if (fd.get("consent") !== "on") return setError("กรุณาติ๊กยินยอมให้เผยแพร่ชีทสรุปแบบระบุผู้จัดทำ");
     if (totalBytes > MAX_TOTAL_BYTES) return setError(`ขนาดไฟล์รวมต้องไม่เกิน ${formatBytes(MAX_TOTAL_BYTES)}`);
 
     setPhase("uploading");
@@ -146,6 +147,7 @@ export function UploadForm({ userName }: { userName: string }) {
         grade: String(fd.get("grade") ?? "") as never,
         semester: String(fd.get("semester") ?? ""),
         academicYear: String(fd.get("academicYear") ?? ""),
+        consent: true, // checked above; the server checks again
       });
       if (!res.ok) throw new Error(res.error);
       setPhase("done");
@@ -253,7 +255,7 @@ export function UploadForm({ userName }: { userName: string }) {
 
         <div className="sm:col-span-2">
           <label htmlFor={`${uid}-title`} className="field-label">ชื่อชีท</label>
-          <input id={`${uid}-title`} name="title" required minLength={3} maxLength={TITLE_MAX} className="field" placeholder="เช่น สรุปเรื่องเซตและตรรกศาสตร์" disabled={busy} />
+          <input id={`${uid}-title`} name="title" required maxLength={TITLE_MAX} className="field" placeholder="เช่น สรุปเรื่องเซตและตรรกศาสตร์" disabled={busy} />
         </div>
 
         <div>
@@ -313,7 +315,6 @@ export function UploadForm({ userName }: { userName: string }) {
             id={`${uid}-desc`}
             name="description"
             required
-            minLength={10}
             maxLength={DESCRIPTION_MAX}
             rows={3}
             className="field resize-y"
@@ -329,16 +330,21 @@ export function UploadForm({ userName }: { userName: string }) {
         <p role="alert" className="whitespace-pre-line rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{error}</p>
       )}
 
-      <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <p className="text-center text-xs sm:mr-auto sm:text-left">
-          เมื่อกดส่งถือว่าคุณยินยอมให้เผยแพร่ชีทสรุปและระบุเจ้าของ
-        </p>
-        <button type="submit" className="btn-primary min-w-[220px]" disabled={busy}>
+      {/* 3. Consent + send */}
+      <section className="card flex flex-col gap-5 p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
+        <label className="flex cursor-pointer items-start gap-3 text-ink">
+          <input type="checkbox" name="consent" required disabled={busy} className="mt-1 size-5 shrink-0 cursor-pointer accent-primary" />
+          <span>
+            <span className="block font-medium">ยินยอมให้เผยแพร่ชีทสรุปแบบระบุผู้จัดทำ</span>
+            <span className="block text-sm text-body">ชื่อของคุณจะแสดงบนชีทที่เผยแพร่</span>
+          </span>
+        </label>
+        <button type="submit" className="btn-primary w-full shrink-0 md:w-auto md:min-w-[240px]" disabled={busy}>
           {phase === "uploading" && <Spinner />}
           {phase === "processing" && <Spinner />}
           {phase === "uploading" ? "กำลังอัปโหลดไฟล์…" : phase === "processing" ? "กำลังรวมไฟล์เป็น PDF…" : "ส่งชีทสรุป"}
         </button>
-      </div>
+      </section>
     </form>
   );
 }

@@ -62,8 +62,8 @@ export const MAX_TOTAL_BYTES = 80 * 1024 * 1024; // 80 MB per sheet
 export const MAX_PAGES = 300;
 export const UPLOADS_PER_DAY = 20;
 
-export const TITLE_MAX = 120;
-export const DESCRIPTION_MAX = 300;
+export const TITLE_MAX = 100;
+export const DESCRIPTION_MAX = 500;
 
 export const PAGE_SIZE = 24;
 
@@ -79,6 +79,7 @@ export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
 // First-sign-in registration
 export const NAME_PREFIXES = ["เด็กชาย", "เด็กหญิง", "นาย", "นางสาว", "นาง"] as const;
 export const MAX_STUDENT_NO = 60;
+export const MAX_ROOMS = 9;
 export const THAI_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 /** Current year in พ.ศ. (Asia/Bangkok) */
 export function currentBuddhistYear() {
