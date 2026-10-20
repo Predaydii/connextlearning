@@ -234,3 +234,65 @@ html.intro .intro-screen span {
   0%, 100% { scale: 1; rotate: 0deg; }
   50% { scale: 1.35; rotate: 20deg; }
 }
+
+/* ---------------------------------------------------------------------------
+   Landing video right after the hero: the blue stage rises with a curved top,
+   the frame tilts up and grows, orbs drift at different speeds, all tied to
+   scrolling. Final state is the plain layout (no support / reduced motion).
+   ------------------------------------------------------------------------- */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hv-section {
+      view-timeline: --hv block;
+    }
+    .hv-stage,
+    .hv-frame,
+    .hv-title,
+    .hv-orb {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --hv;
+    }
+    .hv-stage {
+      animation-name: hv-stage;
+      animation-range: entry 0% entry 90%;
+    }
+    .hv-frame {
+      animation-name: hv-frame;
+      animation-range: entry 10% cover 50%;
+      transform-origin: 50% 100%;
+    }
+    .hv-title {
+      animation-name: hv-title;
+      animation-range: entry 20% cover 35%;
+    }
+    .hv-orb-a { animation-name: hv-orb-up; animation-range: entry 0% exit 100%; }
+    .hv-orb-b { animation-name: hv-orb-down; animation-range: entry 0% exit 100%; }
+    .hv-orb-c { animation-name: hv-orb-spin; animation-range: entry 0% exit 100%; }
+  }
+}
+@keyframes hv-stage {
+  from { clip-path: ellipse(55% 0% at 50% 0%); }
+  to { clip-path: ellipse(160% 100% at 50% 100%); }
+}
+@keyframes hv-frame {
+  from { transform: perspective(1400px) translateY(120px) rotateX(38deg) scale(0.62); border-radius: 64px; opacity: 0.2; }
+  60% { opacity: 1; }
+  to { transform: perspective(1400px) translateY(0) rotateX(0) scale(1); border-radius: 24px; opacity: 1; }
+}
+@keyframes hv-title {
+  from { opacity: 0; translate: 0 40px; letter-spacing: 0.2em; }
+  to { opacity: 1; translate: 0 0; letter-spacing: normal; }
+}
+@keyframes hv-orb-up {
+  from { translate: 0 160px; }
+  to { translate: 0 -160px; }
+}
+@keyframes hv-orb-down {
+  from { translate: 0 -120px; }
+  to { translate: 0 120px; }
+}
+@keyframes hv-orb-spin {
+  from { translate: -120px 200px; scale: 0.4; }
+  to { translate: 120px -200px; scale: 1.4; }
+}
