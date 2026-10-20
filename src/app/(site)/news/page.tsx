@@ -3,6 +3,7 @@ import { getInstagramPosts, INSTAGRAM_PROFILE_URL, INSTAGRAM_USERNAME } from "@/
 import { customCover, videoUrl } from "@/lib/covers";
 import { formatThaiDate } from "@/lib/format";
 import { getNews } from "@/lib/queries";
+import { AutoVideo } from "@/components/auto-video";
 
 export const metadata: Metadata = {
   title: "ข่าวสารการศึกษา",
@@ -28,13 +29,9 @@ export default async function NewsPage() {
       )}
 
       {videoKey && (
-        <video
-          src={videoUrl(videoKey)}
-          controls
-          playsInline
-          preload="metadata"
-          className="mx-auto mb-10 aspect-video w-full max-w-5xl rounded-2xl bg-ink shadow-card ring-1 ring-line/60"
-        />
+        <div className="mx-auto mb-10 w-full max-w-5xl rounded-2xl bg-ink shadow-card ring-1 ring-line/60 overflow-hidden">
+          <AutoVideo src={videoUrl(videoKey)} className="block aspect-video w-full" />
+        </div>
       )}
 
       {posts.length > 0 && (

@@ -9,6 +9,7 @@ import { GRADES, gradeLabel } from "@/lib/constants";
 import { classroomsOf } from "@/lib/classrooms";
 import { formatNumber } from "@/lib/format";
 import { CountUp } from "@/components/count-up";
+import { AutoVideo } from "@/components/auto-video";
 
 // Static page, refreshed every 2 minutes (all data comes from cached queries)
 export const revalidate = 120;
@@ -423,26 +424,25 @@ function PublishArt() {
 }
 
 /**
- * Straight after the hero: a deep-blue stage rises with a curved edge, and the video
- * tilts up from a 3D angle and grows to full size as it scrolls in (CSS scroll
- * timeline, see .hv-* in globals.css). Without support / with reduced motion it
- * simply sits in its final place.
+ * Straight after the hero, pinned while you scroll: the page darkens like house
+ * lights going down, the video grows from a small tilted card to a full-width frame,
+ * the big title drifts away behind it and the glows burst outwards (CSS scroll
+ * timeline, .hv* in globals.css). Without support / with reduced motion: a plain
+ * dark section with the video.
  */
 function HomeVideo({ src }: { src: string }) {
   return (
-    <section aria-labelledby="video-title" className="hv-section relative isolate overflow-hidden pt-[clamp(72px,10vw,140px)] pb-[clamp(56px,8vw,96px)]">
-      <div aria-hidden className="hv-stage absolute inset-0 -z-10 bg-[linear-gradient(180deg,#203cc7_0%,#13237a_100%)]" />
-      <span aria-hidden className="hv-orb hv-orb-a absolute top-[18%] left-[6%] -z-10 size-40 rounded-full bg-sky/50 blur-2xl" />
-      <span aria-hidden className="hv-orb hv-orb-b absolute right-[8%] bottom-[12%] -z-10 size-56 rounded-full bg-[#3a57e0]/70 blur-3xl" />
-      <span aria-hidden className="hv-orb hv-orb-c absolute top-[30%] right-[22%] -z-10 size-6 rounded-full bg-accent" />
-      <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.10)_1.2px,transparent_1.6px)] [background-size:24px_24px]" />
-
-      <div className="container-page">
-        <h2 id="video-title" className="hv-title mb-[clamp(24px,4vw,40px)] text-center text-[clamp(1.6rem,3.4vw,2.6rem)] font-bold text-white">
-          รู้จัก <span className="text-accent">Connext Learning</span>
+    <section aria-labelledby="video-title" className="hv">
+      <div className="hv-pin">
+        <div aria-hidden className="hv-dark" />
+        <span aria-hidden className="hv-glow hv-glow-a" />
+        <span aria-hidden className="hv-glow hv-glow-b" />
+        <span aria-hidden className="hv-glow hv-glow-c" />
+        <h2 id="video-title" className="hv-title">
+          รู้จัก <span className="text-accent">Connext</span> Learning
         </h2>
-        <div className="hv-frame mx-auto max-w-5xl overflow-hidden rounded-3xl bg-ink shadow-[0_40px_100px_rgb(0_0_0/0.45)] ring-1 ring-white/15">
-          <video src={src} controls playsInline preload="metadata" className="block aspect-video w-full" />
+        <div className="hv-frame">
+          <AutoVideo src={src} className="block aspect-video w-full bg-ink object-cover" />
         </div>
       </div>
     </section>

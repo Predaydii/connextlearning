@@ -236,63 +236,122 @@ html.intro .intro-screen span {
 }
 
 /* ---------------------------------------------------------------------------
-   Landing video right after the hero: the blue stage rises with a curved top,
-   the frame tilts up and grows, orbs drift at different speeds, all tied to
-   scrolling. Final state is the plain layout (no support / reduced motion).
+   Landing video right after the hero (see HomeVideo). Base = plain dark section;
+   with scroll timelines it becomes a pinned zoom: lights go down, the card grows
+   to a full-width frame, the title drifts away, glows burst outwards.
    ------------------------------------------------------------------------- */
+.hv {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--color-primary-800);
+}
+.hv-pin {
+  display: grid;
+  justify-items: center;
+  gap: clamp(20px, 4vw, 40px);
+  padding: clamp(56px, 8vw, 96px) 16px;
+}
+.hv-dark {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(120% 90% at 50% 40%, #1a2a8f 0%, #0b1240 70%);
+}
+.hv-glow {
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(48px);
+  pointer-events: none;
+}
+.hv-glow-a { width: 22rem; height: 22rem; left: 8%; top: 12%; background: rgb(3 160 219 / 0.45); }
+.hv-glow-b { width: 26rem; height: 26rem; right: 6%; bottom: 8%; background: rgb(58 87 224 / 0.6); }
+.hv-glow-c { width: 10rem; height: 10rem; right: 30%; top: 22%; background: rgb(255 190 20 / 0.35); }
+.hv-title {
+  text-align: center;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+}
+.hv-frame {
+  width: 100%;
+  max-width: 64rem;
+  overflow: hidden;
+  border-radius: 24px;
+  box-shadow: 0 40px 100px rgb(0 0 0 / 0.45);
+  outline: 1px solid rgb(255 255 255 / 0.15);
+}
+
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .hv-section {
+    .hv {
+      /* the scroll distance the pinned scene plays over */
+      height: 260vh;
+      background: #fff;
       view-timeline: --hv block;
     }
-    .hv-stage,
-    .hv-frame,
+    .hv-pin {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      align-content: center;
+      overflow: hidden;
+      padding: 0;
+      gap: 0;
+    }
+    .hv-title {
+      position: absolute;
+      inset: auto 16px 50%;
+      translate: 0 -24svh;
+      font-size: clamp(2.4rem, 8vw, 6.5rem);
+    }
+    .hv-frame {
+      max-width: none;
+      transform-origin: 50% 50%;
+    }
+    .hv-dark,
     .hv-title,
-    .hv-orb {
+    .hv-frame,
+    .hv-glow {
       animation-timing-function: linear;
       animation-fill-mode: both;
       animation-timeline: --hv;
     }
-    .hv-stage {
-      animation-name: hv-stage;
-      animation-range: entry 0% entry 90%;
-    }
-    .hv-frame {
-      animation-name: hv-frame;
-      animation-range: entry 10% cover 50%;
-      transform-origin: 50% 100%;
-    }
-    .hv-title {
-      animation-name: hv-title;
-      animation-range: entry 20% cover 35%;
-    }
-    .hv-orb-a { animation-name: hv-orb-up; animation-range: entry 0% exit 100%; }
-    .hv-orb-b { animation-name: hv-orb-down; animation-range: entry 0% exit 100%; }
-    .hv-orb-c { animation-name: hv-orb-spin; animation-range: entry 0% exit 100%; }
+    .hv-dark { animation-name: hv-dark; animation-range: contain 0% contain 30%; }
+    .hv-title { animation-name: hv-title; animation-range: contain 0% contain 55%; }
+    .hv-frame { animation-name: hv-frame; animation-range: contain 0% contain 72%; }
+    .hv-glow-a { animation-name: hv-burst-a; animation-range: contain 0% contain 80%; }
+    .hv-glow-b { animation-name: hv-burst-b; animation-range: contain 0% contain 80%; }
+    .hv-glow-c { animation-name: hv-burst-c; animation-range: contain 0% contain 80%; }
   }
 }
-@keyframes hv-stage {
-  from { clip-path: ellipse(55% 0% at 50% 0%); }
-  to { clip-path: ellipse(160% 100% at 50% 100%); }
-}
-@keyframes hv-frame {
-  from { transform: perspective(1400px) translateY(120px) rotateX(38deg) scale(0.62); border-radius: 64px; opacity: 0.2; }
-  60% { opacity: 1; }
-  to { transform: perspective(1400px) translateY(0) rotateX(0) scale(1); border-radius: 24px; opacity: 1; }
+@keyframes hv-dark {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes hv-title {
-  from { opacity: 0; translate: 0 40px; letter-spacing: 0.2em; }
-  to { opacity: 1; translate: 0 0; letter-spacing: normal; }
+  0% { color: var(--color-ink); opacity: 1; scale: 1; }
+  35% { color: #fff; opacity: 1; }
+  100% { color: #fff; opacity: 0; scale: 1.5; translate: 0 -40svh; letter-spacing: 0.08em; }
 }
-@keyframes hv-orb-up {
-  from { translate: 0 160px; }
-  to { translate: 0 -160px; }
+@keyframes hv-frame {
+  0% { transform: translateY(26svh) scale(0.38) rotate(-7deg); border-radius: 56px; box-shadow: 0 0 0 10px rgb(255 190 20 / 0.9), 0 40px 80px rgb(16 26 77 / 0.35); }
+  45% { transform: translateY(6svh) scale(0.7) rotate(1.5deg); border-radius: 36px; box-shadow: 0 0 0 4px rgb(255 190 20 / 0.6), 0 50px 120px rgb(0 0 0 / 0.5); }
+  100% { transform: none; border-radius: 0; box-shadow: 0 0 0 0 rgb(255 190 20 / 0), 0 0 0 rgb(0 0 0 / 0); }
 }
-@keyframes hv-orb-down {
-  from { translate: 0 -120px; }
-  to { translate: 0 120px; }
+@keyframes hv-burst-a {
+  from { translate: 30vw 20svh; scale: 0.3; opacity: 0; }
+  50% { opacity: 1; }
+  to { translate: -10vw -20svh; scale: 1.4; opacity: 0.8; }
 }
-@keyframes hv-orb-spin {
-  from { translate: -120px 200px; scale: 0.4; }
-  to { translate: 120px -200px; scale: 1.4; }
+@keyframes hv-burst-b {
+  from { translate: -30vw -20svh; scale: 0.3; opacity: 0; }
+  50% { opacity: 1; }
+  to { translate: 10vw 20svh; scale: 1.5; opacity: 0.8; }
+}
+@keyframes hv-burst-c {
+  from { translate: -10vw 30svh; scale: 0.2; opacity: 0; }
+  to { translate: 20vw -30svh; scale: 2; opacity: 0.7; }
 }
