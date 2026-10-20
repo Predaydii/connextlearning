@@ -379,3 +379,7 @@ html.intro .intro-screen span {
   }
 }
 
+/* Typewriter caret (hero line) */
+@keyframes caret {
+  50% { opacity: 0; }
+}

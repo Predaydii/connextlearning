@@ -61,3 +61,8 @@ export function gradeArt(slot: number, key: string | undefined): { src: string; 
 export function videoUrl(key: string) {
   return withBase(`/media/${key}`);
 }
+
+/** Banner artwork (2000×600 and 1000×300 WebP). */
+export function bannerSrc(key: string) {
+  return { small: withBase(`/media/${key}-1000.webp`), large: withBase(`/media/${key}-2000.webp`) };
+}

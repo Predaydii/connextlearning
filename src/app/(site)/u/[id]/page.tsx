@@ -28,7 +28,10 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
   const label = classLabel(user);
   const contacts = readContacts(user.contacts);
   const links = CONTACTS.filter((c) => contacts[c.key]);
-  const pill = "btn-outline btn-sm";
+  const item = "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-50 hover:text-primary";
+  const icon = (d: string) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[18px]" aria-hidden><path d={d} /></svg>
+  );
 
   const profileUrl = `${process.env.BETTER_AUTH_URL ? new URL(process.env.BETTER_AUTH_URL).origin : "https://connextlearning.tratcouncil.com"}/u/${user.id}`;
   const fields = [
@@ -120,11 +123,11 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
 
         {/* Your own profile: account actions */}
         {isMe && (
-          <nav aria-label="บัญชีของฉัน" className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center gap-2">
-            <Link href="/profile" className={pill}>แก้ไขข้อมูล</Link>
-            <Link href="/my-sheets" className={pill}>ชีทของฉัน</Link>
-            {viewer.isAdmin && <Link href={adminHref("/")} className={pill}>แดชบอร์ดผู้ดูแล</Link>}
-            <SignOutButton className="ml-auto cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60" />
+          <nav aria-label="บัญชีของฉัน" className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center gap-1 rounded-2xl bg-white p-1.5 shadow-card ring-1 ring-line/60">
+            <Link href="/profile" className={item}>{icon("M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z")}แก้ไขข้อมูล</Link>
+            <Link href="/my-sheets" className={item}>{icon("M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zm0 0v6h6M8 13h8M8 17h5")}ชีทของฉัน</Link>
+            {viewer.isAdmin && <Link href={adminHref("/")} className={item}>{icon("M4 13h6V4H4zm0 7h6v-5H4zm10 0h6v-9h-6zm0-16v5h6V4z")}แดชบอร์ดผู้ดูแล</Link>}
+            <SignOutButton className="ml-auto inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60" />
           </nav>
         )}
       </div>

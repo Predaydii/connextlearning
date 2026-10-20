@@ -82,8 +82,11 @@ export async function mergeToPdf(
   return { bytes, pageCount: out.getPageCount() };
 }
 
-/** 1280px and 640px wide WebP crops; `ratio` is height / width (16:9 covers by default, 5/4 for 4:5 tiles). */
-export async function makeCoverImages(bytes: Uint8Array, ratio = 9 / 16) {
+/**
+ * Two WebP crops (`widths`, large first); `ratio` is height / width
+ * (16:9 covers by default, 5/4 for 4:5 tiles, 0.3 for 2000×600 banners).
+ */
+export async function makeCoverImages(bytes: Uint8Array, ratio = 9 / 16, widths: [number, number] = [1280, 640]) {
   const kind = sniffKind(bytes);
   const isWebp = bytes.length > 12 && Buffer.from(bytes.subarray(0, 4)).toString("latin1") === "RIFF" &&
     Buffer.from(bytes.subarray(8, 12)).toString("latin1") === "WEBP";
@@ -91,7 +94,7 @@ export async function makeCoverImages(bytes: Uint8Array, ratio = 9 / 16) {
   try {
     const base = sharp(bytes, { limitInputPixels: 60_000_000 }).rotate();
     const [large, small] = await Promise.all(
-      [1280, 640].map((width) =>
+      widths.map((width) =>
         base
           .clone()
           .resize({ width, height: Math.round(width * ratio), fit: "cover", position: "attention" })

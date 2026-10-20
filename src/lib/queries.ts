@@ -386,15 +386,18 @@ export const getNews = unstable_cache(
 export const getHomeMedia = unstable_cache(
   async () => {
     const [setting, images] = await Promise.all([
-      db.siteSetting.findUnique({ where: { id: 1 }, select: { homeVideoKey: true } }),
+      db.siteSetting.findUnique({ where: { id: 1 }, select: { homeVideoKey: true, homeVideoMobileKey: true } }),
       db.homeImage.findMany(),
     ]);
+    const banners = await db.banner.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { id: true, imageKey: true, linkUrl: true } });
     return {
+      banners,
       videoKey: setting?.homeVideoKey ?? null,
+      videoMobileKey: setting?.homeVideoMobileKey ?? null,
       gradeArt: Object.fromEntries(images.map((i) => [i.slot, i.imageKey])) as Record<number, string>,
     };
   },
-  ["home-media"],
+  ["home-media-v2"],
   { tags: [TAG_SETTINGS], revalidate: 300 },
 );
 

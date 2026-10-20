@@ -18,7 +18,8 @@ function putWithProgress(url: string, file: File, onProgress: (pct: number) => v
   });
 }
 
-export function VideoUploader({ slot, src }: { slot: "news" | "home"; src: string | null }) {
+/** `portrait`: a 9:16 phone video (preview shape and size hint). */
+export function VideoUploader({ slot, src, portrait = false }: { slot: "news" | "home" | "homeMobile"; src: string | null; portrait?: boolean }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -59,7 +60,7 @@ export function VideoUploader({ slot, src }: { slot: "news" | "home"; src: strin
 
   return (
     <div className="grid gap-3">
-      <div className="grid aspect-video max-w-xl place-items-center overflow-hidden rounded-xl bg-primary-50 text-sm ring-1 ring-line">
+      <div className={`grid place-items-center overflow-hidden rounded-xl bg-primary-50 text-sm ring-1 ring-line ${portrait ? "aspect-[9/16] w-48" : "aspect-video max-w-xl"}`}>
         {file && preview ? (
           <video key={preview} src={preview} controls muted className="size-full bg-ink object-contain" />
         ) : src ? (
@@ -81,7 +82,7 @@ export function VideoUploader({ slot, src }: { slot: "news" | "home"; src: strin
         }}
         className="block w-full max-w-xl cursor-pointer text-xs file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary hover:file:text-white"
       />
-      <p className="text-xs">MP4 หรือ WebM ไม่เกิน {MAX_VIDEO_BYTES / 1024 / 1024} MB · แนะนำ 1920×1080 (16:9) H.264</p>
+      <p className="text-xs">MP4 หรือ WebM ไม่เกิน {MAX_VIDEO_BYTES / 1024 / 1024} MB · แนะนำ {portrait ? "1080×1920 (แนวตั้ง 9:16)" : "1920×1080 (แนวนอน 16:9)"} H.264</p>
       {progress !== null && file && (
         <div className="h-2 max-w-xl overflow-hidden rounded-full bg-primary-50" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full bg-primary transition-[width]" style={{ width: `${progress}%` }} />

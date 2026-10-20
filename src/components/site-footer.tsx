@@ -70,7 +70,7 @@ export async function SiteFooter({ base = "", cta = true }: { base?: string; cta
           <img src={withBase("/img/logo-white-240.webp")} srcSet={`${withBase("/img/logo-white-240.webp")} 1x, ${withBase("/img/logo-white-480.webp")} 2x`} width={160} height={46} alt="" loading="lazy" className="mx-auto mb-6 h-auto w-[150px]" />
           <h2 id="footer-cta" className="text-[clamp(2rem,6vw,3.6rem)] leading-tight font-bold text-white">แชร์ชีทให้เพื่อน ๆ</h2>
           <p className="mx-auto mt-4 max-w-xl text-[clamp(1rem,1.8vw,1.15rem)] leading-relaxed text-white/75">
-            เตรียมพร้อมสอบเก็บคะแนน กลางภาค ปลายภาคไปด้วยกัน
+            เตรียมพร้อมก่อนสอบไปด้วยกัน
             <br />
             <span className="font-semibold text-white">Connext Learning for All Learners.</span>
           </p>

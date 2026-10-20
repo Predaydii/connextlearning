@@ -4,11 +4,13 @@ import { ClassroomPicker } from "@/components/classroom-picker";
 import { Avatar } from "@/components/avatar";
 import { EyeIcon } from "@/components/sheet-card";
 import { getContributors, getHomeMedia, getLeaderboards, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
-import { GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
+import { bannerSrc, GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
+import { BannerCarousel } from "@/components/banner-carousel";
 import { GRADES, gradeLabel } from "@/lib/constants";
 import { classroomsOf } from "@/lib/classrooms";
 import { formatNumber } from "@/lib/format";
 import { CountUp } from "@/components/count-up";
+import { Typewriter } from "@/components/typewriter";
 import { AutoVideo } from "@/components/auto-video";
 
 // Static page, refreshed every 2 minutes (all data comes from cached queries)
@@ -22,11 +24,24 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
-      {media.videoKey && <HomeVideo src={videoUrl(media.videoKey)} />}
+      {(media.videoKey || media.videoMobileKey) && (
+        <HomeVideo
+          sources={[
+            // landscape for computers and tablets, portrait for phones (either one alone works everywhere)
+            ...(media.videoKey && media.videoMobileKey ? [{ src: videoUrl(media.videoKey), media: "(min-width: 768px)" }] : []),
+            { src: videoUrl((media.videoMobileKey ?? media.videoKey)!) },
+          ]}
+        />
+      )}
       <Stats sheets={stats.sheets} views={stats.views} authors={stats.authors} />
       {contributors.length > 0 && <Contributors people={contributors} />}
       <Leaderboards topRated={boards.topRated} mostRead={boards.mostRead} />
       <ByGrade art={media.gradeArt} />
+      {media.banners.length > 0 && (
+        <BannerCarousel
+          banners={media.banners.map((b) => ({ id: b.id, ...bannerSrc(b.imageKey), linkUrl: b.linkUrl }))}
+        />
+      )}
       <ClassroomSection />
     </>
   );
@@ -56,8 +71,12 @@ function Hero() {
             </span>
           </h1>
           <p style={at(160)} className={`${rise} mx-auto mb-8 max-w-[520px] text-[1.05rem] min-[901px]:mx-0`}>
-            <strong className="font-semibold text-ink">Learn &amp; Share</strong> แลกเปลี่ยนชีทสรุปทุกวิชา ม.1–ม.6
-            หรือกดเข้าห้องเรียนออนไลน์ผ่าน Google Meet
+            <Typewriter
+              segments={[
+                { text: "Learn & Share", strong: true },
+                { text: " แลกเปลี่ยนชีทสรุปทุกวิชา ม.1–ม.6 หรือกดเข้าห้องเรียนออนไลน์ผ่าน Google Meet" },
+              ]}
+            />
           </p>
           <div style={at(240)} className={`${rise} flex flex-wrap justify-center gap-4 min-[901px]:justify-start`}>
             <Link href="/sheets" className="btn-primary min-h-11 min-w-0 flex-[1_1_130px] px-6 py-2 text-[15px] sm:min-w-[150px] sm:flex-none">ดูชีทสรุป</Link>
@@ -256,6 +275,10 @@ function Chart({ title, items, metric, empty }: { title: string; items: RankedSh
             <span className="min-w-0">
               <span className="line-clamp-2 text-lg leading-snug font-semibold text-ink group-hover:text-primary">{first.title}</span>
               <span className="mt-1 block text-sm">{first.subjectName} · {gradeLabel(first.grade)}</span>
+              <span className="mt-3 flex items-center gap-2 text-sm">
+                <Avatar name={first.author.name} image={first.author.image} size={24} />
+                <span className="truncate">โดย <span className="font-medium text-ink">{first.author.name}</span></span>
+              </span>
               <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-ink">{metric(first)}</span>
             </span>
           </Link>
@@ -268,7 +291,7 @@ function Chart({ title, items, metric, empty }: { title: string; items: RankedSh
                     <img src={s.cover.small} alt="" width={640} height={360} loading="lazy" className="aspect-video w-20 shrink-0 rounded-lg object-cover" />
                     <span className="min-w-0 flex-1">
                       <span className="line-clamp-1 font-semibold text-ink group-hover:text-primary">{s.title}</span>
-                      <span className="block text-xs">{s.subjectName} · {gradeLabel(s.grade)}</span>
+                      <span className="block truncate text-xs">{s.subjectName} · {gradeLabel(s.grade)} · โดย {s.author.name}</span>
                     </span>
                     <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-ink">{metric(s)}</span>
                   </Link>
@@ -356,7 +379,7 @@ function ClassroomSection() {
  * timeline, .hv* in globals.css). Without support / with reduced motion: a plain
  * dark section with the video.
  */
-function HomeVideo({ src }: { src: string }) {
+function HomeVideo({ sources }: { sources: { src: string; media?: string }[] }) {
   return (
     <section aria-labelledby="video-title" className="hv">
       <div className="hv-pin">
@@ -368,7 +391,7 @@ function HomeVideo({ src }: { src: string }) {
           รู้จัก <span className="text-accent">Connext</span> Learning
         </h2>
         <div className="hv-frame">
-          <AutoVideo src={src} className="hv-video block aspect-video w-full bg-ink object-cover" />
+          <AutoVideo src={sources} className="hv-video block aspect-video w-full bg-ink object-cover" />
         </div>
       </div>
     </section>

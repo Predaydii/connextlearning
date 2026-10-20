@@ -1,7 +1,7 @@
 import { getObjectStream, presignVideoGet } from "@/lib/r2";
 
 // Only admin-uploaded images and videos are public; everything else in the bucket stays private.
-const PUBLIC_IMAGE = /^covers\/[a-f0-9-]{36}-(640|1280)\.webp$/;
+const PUBLIC_IMAGE = /^covers\/[a-f0-9-]{36}-(640|1000|1280|2000)\.webp$/;
 const PUBLIC_VIDEO = /^videos\/[a-f0-9-]{36}\.(mp4|webm)$/;
 
 export async function GET(_req: Request, ctx: RouteContext<"/media/[...key]">) {

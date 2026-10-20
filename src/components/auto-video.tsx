@@ -12,7 +12,12 @@ const attr = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").rep
  * this way it starts before any JavaScript runs. Once hydrated it pauses while
  * off-screen and resumes when back; with reduced motion it stays paused.
  */
-export function AutoVideo({ src, className = "" }: { src: string; className?: string }) {
+/**
+ * `src`: one file, or several `{ src, media }` sources: the browser loads only the
+ * first whose media query matches (e.g. a landscape cut for wide screens, then a
+ * portrait one). List the safe default last, without `media`.
+ */
+export function AutoVideo({ src, className = "" }: { src: string | { src: string; media?: string }[]; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,7 +40,9 @@ export function AutoVideo({ src, className = "" }: { src: string; className?: st
       ref={ref}
       className="contents"
       dangerouslySetInnerHTML={{
-        __html: `<video src="${attr(src)}" class="${attr(className)}" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback preload="auto" style="pointer-events:none"></video>`,
+        __html: `<video ${typeof src === "string" ? `src="${attr(src)}" ` : ""}class="${attr(className)}" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback preload="auto" style="pointer-events:none">${
+          typeof src === "string" ? "" : src.map((s) => `<source src="${attr(s.src)}"${s.media ? ` media="${attr(s.media)}"` : ""}>`).join("")
+        }</video>`,
       }}
     />
   );

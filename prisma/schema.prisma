@@ -160,8 +160,20 @@ model SiteSetting {
   igTokenExpiresAt DateTime?
   // Admin-uploaded videos in R2 ("videos/<uuid>.mp4|webm", served by /media)
   newsVideoKey     String? // top of the news page
-  homeVideoKey     String? // landing page, above the footer
+  homeVideoKey     String? // landing page after the hero: landscape 16:9 (computers, tablets)
+  homeVideoMobileKey String? // the same spot on phones: portrait 9:16 (falls back to homeVideoKey)
   updatedAt       DateTime  @updatedAt
+}
+
+// Landing-page banner carousel (2000×600 artwork), ordered by sortOrder
+model Banner {
+  id        String   @id @default(cuid())
+  imageKey  String // R2 key prefix "covers/<uuid>" (-2000.webp / -1000.webp)
+  linkUrl   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sortOrder])
 }
 
 // Admin-chosen artwork (4:5) of a "sheets by grade" tile on the landing page; no row = built-in image

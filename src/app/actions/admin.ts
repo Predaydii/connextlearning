@@ -325,8 +325,8 @@ export async function deleteNewsPost(id: string): Promise<ActionState> {
 // The browser uploads straight to R2 with a presigned PUT, then we save the key.
 // ---------------------------------------------------------------------------
 
-const videoSlot = z.enum(["news", "home"]);
-const VIDEO_FIELD = { news: "newsVideoKey", home: "homeVideoKey" } as const;
+const videoSlot = z.enum(["news", "home", "homeMobile"]);
+const VIDEO_FIELD = { news: "newsVideoKey", home: "homeVideoKey", homeMobile: "homeVideoMobileKey" } as const;
 const VIDEO_KEY_RE = /^videos\/[0-9a-f-]{36}\.(mp4|webm)$/;
 
 const videoUploadInput = z.object({
@@ -407,6 +407,77 @@ export async function removeAdmin(userId: string): Promise<ActionState> {
     await db.user.update({ where: { id: user.id }, data: { role: "USER" } });
     revalidatePath("/admin", "layout");
     return { ok: true, message: "ถอดสิทธิ์ผู้ดูแลแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Landing banners (2000×600 carousel)
+// ---------------------------------------------------------------------------
+
+const BANNER_WIDTHS: [number, number] = [2000, 1000];
+const bannerFiles = (key: string) => BANNER_WIDTHS.map((w) => `${key}-${w}.webp`);
+
+function refreshBanners() {
+  updateTag(TAG_SETTINGS);
+  revalidatePath("/admin", "layout");
+}
+
+const bannerLink = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((v) => !v || /^https?:\/\//i.test(v), "ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://");
+
+/** formData: file, linkUrl (optional). Goes to the end of the carousel. */
+export async function addBanner(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const linkUrl = bannerLink.parse(formData.get("linkUrl") ?? "");
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) throw new UserFacingError("กรุณาเลือกไฟล์รูปภาพ");
+    if (file.size > MAX_COVER_BYTES) throw new UserFacingError("รูปภาพต้องมีขนาดไม่เกิน 5 MB");
+    const { large, small } = await makeCoverImages(new Uint8Array(await file.arrayBuffer()), 0.3, BANNER_WIDTHS);
+    const key = `covers/${randomUUID()}`;
+    const [bigKey, smallKey] = bannerFiles(key);
+    const immutable = "public, max-age=31536000, immutable";
+    await Promise.all([putObject(bigKey, large, "image/webp", immutable), putObject(smallKey, small, "image/webp", immutable)]);
+    const last = await db.banner.aggregate({ _max: { sortOrder: true } });
+    await db.banner.create({ data: { imageKey: key, linkUrl: linkUrl || null, sortOrder: (last._max.sortOrder ?? 0) + 1 } });
+    refreshBanners();
+    return { ok: true, message: "เพิ่มแบนเนอร์แล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function deleteBanner(id: string): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const b = await db.banner.findUnique({ where: { id: z.string().min(1).max(40).parse(id) } });
+    if (!b) throw new UserFacingError("ไม่พบแบนเนอร์นี้");
+    await db.banner.delete({ where: { id: b.id } });
+    await deleteObjects(bannerFiles(b.imageKey));
+    refreshBanners();
+    return { ok: true, message: "ลบแบนเนอร์แล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Swap with the neighbour above (-1) or below (+1). */
+export async function moveBanner(id: string, dir: number): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const all = await db.banner.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { id: true } });
+    const i = all.findIndex((b) => b.id === id);
+    const j = i + (dir < 0 ? -1 : 1);
+    if (i < 0 || j < 0 || j >= all.length) return null;
+    [all[i], all[j]] = [all[j], all[i]];
+    await db.$transaction(all.map((b, n) => db.banner.update({ where: { id: b.id }, data: { sortOrder: n + 1 } })));
+    refreshBanners();
+    return null;
   } catch (err) {
     return fail(err);
   }
