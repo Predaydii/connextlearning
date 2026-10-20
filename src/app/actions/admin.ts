@@ -6,9 +6,10 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { deleteObjects, headObject, presignPut, putObject } from "@/lib/r2";
 import { makeCoverImages, UserFacingError } from "@/lib/pdf";
-import { assertAdmin, AuthError } from "@/lib/session";
+import { assertAdmin, assertSuperAdmin, AuthError } from "@/lib/session";
+import { adminEmails } from "@/lib/env";
 import { TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
-import { MAX_VIDEO_BYTES, SUBJECT_IDS, VIDEO_TYPES } from "@/lib/constants";
+import { MAX_VIDEO_BYTES, SCHOOL_DOMAIN, SUBJECT_IDS, VIDEO_TYPES } from "@/lib/constants";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -302,6 +303,47 @@ export async function saveVideo(slotInput: string, keyInput: string | null): Pro
     updateTag(slot === "news" ? TAG_NEWS : TAG_SETTINGS);
     revalidatePath("/admin", "layout");
     return { ok: true, message: key ? "บันทึกวิดีโอแล้ว" : "นำวิดีโอออกแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Admins (super admins = ADMIN_EMAILS add and remove the others)
+// ---------------------------------------------------------------------------
+
+export async function addAdmin(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertSuperAdmin();
+    const email = z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("อีเมลไม่ถูกต้อง")
+      .refine((e) => e.endsWith(`@${SCHOOL_DOMAIN}`), `ใช้ได้เฉพาะบัญชี @${SCHOOL_DOMAIN}`)
+      .parse(formData.get("email"));
+    const user = await db.user.findUnique({ where: { email }, select: { id: true, role: true } });
+    if (!user) throw new UserFacingError("ยังไม่พบบัญชีนี้ ให้เจ้าของบัญชีเข้าสู่ระบบเว็บนี้ 1 ครั้งก่อน แล้วลองเพิ่มอีกครั้ง");
+    if (user.role === "ADMIN") return { ok: true, message: "บัญชีนี้เป็นผู้ดูแลอยู่แล้ว" };
+    await db.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: "เพิ่มผู้ดูแลแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function removeAdmin(userId: string): Promise<ActionState> {
+  try {
+    const me = await assertSuperAdmin();
+    const user = await db.user.findUnique({ where: { id: z.string().min(1).max(64).parse(userId) }, select: { id: true, email: true } });
+    if (!user) throw new UserFacingError("ไม่พบบัญชีนี้");
+    if (user.id === me.id || adminEmails().includes(user.email.toLowerCase())) {
+      throw new UserFacingError("ผู้ดูแลระบบหลักถอดสิทธิ์ที่นี่ไม่ได้ (แก้ได้ที่ ADMIN_EMAILS)");
+    }
+    await db.user.update({ where: { id: user.id }, data: { role: "USER" } });
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: "ถอดสิทธิ์ผู้ดูแลแล้ว" };
   } catch (err) {
     return fail(err);
   }

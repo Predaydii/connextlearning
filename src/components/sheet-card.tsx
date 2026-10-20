@@ -35,10 +35,7 @@ export function SheetCard({ sheet, priority = false }: { sheet: SheetCardData; p
             {sheet.title}
           </Link>
         </h3>
-        <div className="mt-2.5">
-          <SubjectBadge id={sheet.subjectId} name={sheet.subjectName} />
-        </div>
-        <p className="mt-3 line-clamp-2 text-sm">{sheet.excerpt}</p>
+        <p className="mt-2 line-clamp-2 text-sm">{sheet.excerpt}</p>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3.5">

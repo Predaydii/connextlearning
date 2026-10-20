@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
-  await requireAdminPage("/");
+  const admin = await requireAdminPage("/");
   const pending = await db.sheet.count({ where: { status: "PENDING" } });
   return (
     <>
@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
               <p className="text-sm font-medium text-sky">Connext Learning</p>
               <h1 className="text-2xl font-bold">ผู้ดูแลระบบ</h1>
             </div>
-            <AdminNav pending={pending} />
+            <AdminNav pending={pending} superAdmin={admin.isSuperAdmin} />
           </div>
         </div>
         <div className="container-page py-8">{children}</div>

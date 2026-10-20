@@ -145,8 +145,14 @@ function Contributors({ people }: { people: Contributor[] }) {
   const rows = people.length > 6 ? [people.slice(0, half), people.slice(half)] : [people, [...people].reverse()];
   return (
     <section aria-labelledby="people-title" className="overflow-hidden py-[clamp(48px,7vw,80px)]">
-      <div className="container-page mb-8">
-        <SectionHead id="people-title" title="คนแชร์ชีท" sub="ขอบคุณนักเรียนทุกคนที่ส่งชีทสรุปให้เพื่อน ๆ" />
+      <div className="container-page mb-10 text-center">
+        <p className="text-sm font-medium text-body/80 sm:text-base">ขอบคุณเพื่อน ๆ ทุกคนที่แชร์ชีทสรุป</p>
+        <h2 id="people-title" className="mt-2 text-[clamp(1.75rem,4.6vw,3rem)] leading-tight font-bold text-ink">
+          พร้อมทุกสนามสอบ <span className="text-primary">‘อ่านชีท แชร์ชีท’</span> ทุกที่ทุกเวลา
+        </h2>
+        <p className="mt-3 text-[clamp(1.05rem,2.2vw,1.5rem)] font-medium text-ink">
+          ตั้งแต่ <span className="text-primary">ม.1–ม.6</span> ไปจนถึง<span className="text-primary">การสอบแข่งขัน</span>
+        </p>
       </div>
       <div className="group space-y-4 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
         {rows.map((row, r) => {
@@ -339,27 +345,31 @@ function ShareBand() {
   return (
     <section aria-labelledby="share-title" className="py-[clamp(56px,8vw,88px)]">
       <div className="container-page">
-        <div className="relative overflow-hidden rounded-3xl bg-primary-800 px-5 py-10 text-white sm:px-10 md:px-14 md:py-14">
-          <span aria-hidden className="absolute -top-24 -right-24 size-72 rounded-full border-[36px] border-white/5" />
+        <div className="share-band relative isolate overflow-hidden rounded-3xl px-5 py-10 text-white shadow-brand-lg sm:px-10 md:px-14 md:py-14">
+          {/* drifting colour glows over the moving gradient */}
+          <span aria-hidden className="absolute -top-20 -left-16 -z-10 size-72 rounded-full bg-accent/35 blur-3xl motion-safe:animate-drift" />
+          <span aria-hidden className="absolute -right-20 -bottom-24 -z-10 size-80 rounded-full bg-[#7dd3fc]/40 blur-3xl motion-safe:animate-drift-slow" />
+          <span aria-hidden className="absolute top-1/3 left-1/2 -z-10 size-56 rounded-full bg-[#f472b6]/25 blur-3xl motion-safe:animate-drift [animation-delay:-8s]" />
+          <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgb(255_255_255/0.14)_1.2px,transparent_1.6px)] [background-size:22px_22px] motion-safe:animate-dots" />
           <div className="relative text-center">
             <h2 id="share-title" className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-white">มีชีทดี ๆ อยากแบ่งปัน?</h2>
-            <p className="mt-2 text-white/75">แชร์ได้ใน 3 ขั้นตอน ชื่อของคุณจะอยู่บนชีทที่เพื่อน ๆ อ่าน</p>
+            <p className="mt-2 text-white/90">แชร์ได้ใน 3 ขั้นตอน ชื่อของคุณจะอยู่บนชีทที่เพื่อน ๆ อ่าน</p>
           </div>
 
           <ol className="share-flow relative mt-10 grid gap-4 md:grid-cols-3 md:gap-6">
             {/* track between the step centres (desktop) */}
-            <li aria-hidden className="absolute top-[52px] right-[16.66%] left-[16.66%] hidden h-1 rounded-full bg-white/15 md:block">
+            <li aria-hidden className="absolute top-[50px] right-[16.66%] left-[16.66%] hidden h-1 rounded-full bg-white/25 md:block">
               <span className="share-fill block h-full rounded-full bg-accent" />
             </li>
             {SHARE_STEPS.map((s, i) => (
-              <li key={s.title} className="share-step relative flex items-center gap-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 md:flex-col md:bg-transparent md:p-0 md:text-center md:ring-0">
+              <li key={s.title} className="share-step relative flex items-center gap-4 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 md:flex-col md:bg-transparent md:p-0 md:text-center md:ring-0">
                 <span className="share-icon relative z-[1] grid size-[72px] shrink-0 place-items-center rounded-2xl bg-white text-primary shadow-[0_10px_30px_rgb(0_0_0/0.25)] md:size-[104px] md:rounded-3xl">
                   {s.icon}
                   <span className="absolute -top-2 -left-2 grid size-7 place-items-center rounded-full bg-accent text-sm font-bold text-ink">{i + 1}</span>
                 </span>
-                <span>
+                <span className="share-text">
                   <span className="block text-lg font-semibold text-white">{s.title}</span>
-                  <span className="block text-sm text-white/70">{s.desc}</span>
+                  <span className="block text-sm text-white/85">{s.desc}</span>
                 </span>
               </li>
             ))}

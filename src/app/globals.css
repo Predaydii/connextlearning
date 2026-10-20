@@ -68,11 +68,13 @@
 
 @layer base {
   :root {
+    /* light design only: never follow the device's dark mode (also stops forced dark in Chrome/Samsung Internet) */
+    color-scheme: only light;
     /* extra delay for the hero while the opening screen plays (first visit of a session) */
     --intro-delay: 0s;
   }
   html.intro {
-    --intro-delay: 0.85s;
+    --intro-delay: 2.75s;
   }
   html {
     -webkit-text-size-adjust: 100%;
@@ -139,8 +141,9 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Opening screen: logo pops in, then the blue screen slides up (first visit of a
-   session only; the inline script in the root layout adds html.intro)
+   Opening screen (3 s): logo pops in, the tagline follows, a bar fills, then the
+   blue screen slides up (first visit of a session only; the inline script in the
+   root layout adds html.intro)
    ------------------------------------------------------------------------- */
 .intro-screen {
   display: none;
@@ -152,11 +155,18 @@ html.intro .intro-screen {
   display: grid;
   place-items: center;
   pointer-events: none;
-  background: var(--color-primary);
-  animation: intro-out 0.55s cubic-bezier(0.7, 0, 0.3, 1) 0.6s forwards;
+  background: radial-gradient(60% 50% at 50% 45%, #3a57e0 0%, var(--color-primary) 60%, var(--color-primary-800) 100%);
+  animation: intro-out 0.55s cubic-bezier(0.7, 0, 0.3, 1) 2.45s forwards;
 }
 html.intro .intro-screen img {
-  animation: intro-logo 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: intro-logo 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+html.intro .intro-screen p {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.6s both;
+}
+html.intro .intro-screen span {
+  transform-origin: left;
+  animation: highlight 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.7s both;
 }
 @keyframes intro-logo {
   from { opacity: 0; scale: 0.7; }
@@ -168,12 +178,24 @@ html.intro .intro-screen img {
 /* ---------------------------------------------------------------------------
    "Share a sheet" steps: each lights up in turn (6 s loop) while the bar fills
    ------------------------------------------------------------------------- */
+/* The icon tile dims with a filter (stays opaque, so the track never shows through it) */
+.share-step { --d: 0s; }
+.share-step:nth-of-type(3) { --d: -4s; }
+.share-step:nth-of-type(4) { --d: -2s; }
+.share-band {
+  background: linear-gradient(115deg, #203cc7 0%, #2f6bf0 30%, #03a0db 55%, #3a57e0 80%, #203cc7 100%);
+  background-size: 300% 300%;
+}
 @media (prefers-reduced-motion: no-preference) {
-  .share-step {
-    animation: share-step 6s ease-in-out infinite;
+  .share-band {
+    animation: share-band 14s ease-in-out infinite alternate;
   }
-  .share-step:nth-of-type(3) { animation-delay: -4s; }
-  .share-step:nth-of-type(4) { animation-delay: -2s; }
+  .share-icon {
+    animation: share-icon 6s ease-in-out var(--d) infinite;
+  }
+  .share-text {
+    animation: share-text 6s ease-in-out var(--d) infinite;
+  }
   .share-fill {
     animation: share-fill 6s ease-in-out infinite;
   }
@@ -190,10 +212,18 @@ html.intro .intro-screen img {
     animation: share-star 2s ease-in-out infinite;
   }
 }
-@keyframes share-step {
-  0%, 30% { opacity: 1; scale: 1; }
-  38%, 92% { opacity: 0.45; scale: 0.96; }
-  100% { opacity: 1; scale: 1; }
+@keyframes share-band {
+  to { background-position: 100% 50%; }
+}
+@keyframes share-icon {
+  0%, 30% { scale: 1.06; filter: none; }
+  38%, 92% { scale: 0.94; filter: grayscale(0.7) brightness(0.82); }
+  100% { scale: 1.06; filter: none; }
+}
+@keyframes share-text {
+  0%, 30% { opacity: 1; }
+  38%, 92% { opacity: 0.55; }
+  100% { opacity: 1; }
 }
 @keyframes share-fill {
   0%, 30% { width: 0; }

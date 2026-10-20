@@ -82,9 +82,10 @@ export const auth = betterAuth({
           if (!user || !isSchoolEmail(user.email)) {
             throw new APIError("FORBIDDEN", { message: `ใช้ได้เฉพาะบัญชี @${SCHOOL_DOMAIN}` });
           }
-          // Keep the role in sync with ADMIN_EMAILS on every sign-in
-          const role = adminEmails().includes(user.email.toLowerCase()) ? "ADMIN" : "USER";
-          if (user.role !== role) await db.user.update({ where: { id: session.userId }, data: { role } });
+          // ADMIN_EMAILS (super admins) are always admins; other admins are managed in /admin/admins
+          if (adminEmails().includes(user.email.toLowerCase()) && user.role !== "ADMIN") {
+            await db.user.update({ where: { id: session.userId }, data: { role: "ADMIN" } });
+          }
         },
       },
     },

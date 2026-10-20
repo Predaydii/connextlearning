@@ -12,12 +12,12 @@ const TABS = [
   { path: "/news", label: "ข่าวสาร" },
 ];
 
-export function AdminNav({ pending }: { pending: number }) {
+export function AdminNav({ pending, superAdmin }: { pending: number; superAdmin: boolean }) {
   // Works whether the browser shows "/sheets" (admin subdomain) or "/admin/sheets" (local dev)
   const current = usePathname().replace(/^\/admin(?=\/|$)/, "") || "/";
   return (
     <nav aria-label="เมนูผู้ดูแล" className="-mb-px flex w-full gap-1 overflow-x-auto sm:w-auto">
-      {TABS.map((t) => {
+      {(superAdmin ? [...TABS, { path: "/admins", label: "ผู้ดูแล" }] : TABS).map((t) => {
         const active = t.path === "/" ? current === "/" : current.startsWith(t.path);
         return (
           <Link

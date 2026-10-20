@@ -35,11 +35,13 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#203cc7",
+  // Light design only, whatever the device is set to
+  colorScheme: "only light",
 };
 
 // Opening screen once per browser session (skipped with reduced motion). Runs before the first paint;
 // the class is removed again once the hero has finished animating in.
-const INTRO_SCRIPT = `try{var d=document.documentElement;if(!sessionStorage.getItem("cl-intro")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){sessionStorage.setItem("cl-intro","1");d.classList.add("intro");setTimeout(function(){d.classList.remove("intro")},2600)}}catch(e){}`;
+const INTRO_SCRIPT = `try{var d=document.documentElement;if(!sessionStorage.getItem("cl-intro")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){sessionStorage.setItem("cl-intro","1");d.classList.add("intro");setTimeout(function(){d.classList.remove("intro")},5200)}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -48,7 +50,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-dvh flex-col">
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
         <div className="intro-screen" aria-hidden>
-          <img src={withBase("/img/logo-white-480.webp")} alt="" width={240} height={69} className="w-[min(260px,60vw)]" />
+          <div className="grid justify-items-center gap-4 text-center">
+            <img src={withBase("/img/logo-white-480.webp")} alt="" width={240} height={69} fetchPriority="high" className="w-[min(280px,64vw)]" />
+            <p className="text-lg font-medium text-white/85">Learn &amp; Share · อ่านชีท แชร์ชีท</p>
+            <div className="h-1 w-40 overflow-hidden rounded-full bg-white/20">
+              <span className="block h-full w-full rounded-full bg-accent" />
+            </div>
+          </div>
         </div>
         <a
           href="#main"

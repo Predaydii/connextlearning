@@ -93,7 +93,7 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
       </Group>
       <Group title="กลุ่มวิชา">
         {SUBJECTS.map((s) => (
-          <Check key={s.id} label={s.name} dot={s.color} count={facets.subject[s.id]} checked={current.subject.includes(s.id)} onChange={() => toggle("subject", s.id)} />
+          <Check key={s.id} label={s.name} count={facets.subject[s.id]} checked={current.subject.includes(s.id)} onChange={() => toggle("subject", s.id)} />
         ))}
       </Group>
       <Group title="ภาคเรียน">
@@ -175,12 +175,11 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Check({ label, dot, count, checked, onChange }: { label: string; dot?: string; count?: number; checked: boolean; onChange: () => void }) {
+function Check({ label, count, checked, onChange }: { label: string; count?: number; checked: boolean; onChange: () => void }) {
   return (
     <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-primary-50">
       <input type="checkbox" checked={checked} onChange={onChange} className="size-[18px] cursor-pointer rounded accent-primary" />
       <span className={`flex flex-1 items-center gap-2 text-[0.95rem] ${checked ? "font-medium text-primary" : "text-ink"}`}>
-        {dot && <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: dot }} />}
         {label}
       </span>
       <span className="text-xs text-body/70">({count ?? 0})</span>
