@@ -10,7 +10,6 @@ import { getRelatedSheets, getSheetCommunity, getSheetDetail } from "@/lib/queri
 import { CommentForm, DeleteCommentButton, RateSheet, Stars } from "@/components/community";
 import { SheetCardCompact } from "@/components/sheet-card";
 import { getCurrentUser, loginUrl } from "@/lib/session";
-import { db } from "@/lib/db";
 import Link from "next/link";
 import { adminHref, withBase } from "@/lib/urls";
 import { SubjectBadge } from "@/components/subject-badge";
