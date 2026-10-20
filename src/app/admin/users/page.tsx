@@ -89,7 +89,7 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
         <a href={`${adminHref("/users/export")}?${query({})}`} className="btn-outline btn-sm">ดาวน์โหลด CSV ({formatNumber(total)})</a>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="card relative min-w-0 overflow-x-auto">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-line bg-primary-50/60 text-xs text-body">
             <tr>

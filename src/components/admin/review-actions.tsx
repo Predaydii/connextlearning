@@ -1,10 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { approveSheet, deleteSheet, hideSheet, rejectSheet, updateCover, updateSheetDetails, type ActionState } from "@/app/actions/admin";
 import { ACADEMIC_YEARS, GRADES, SEMESTERS, SUBJECTS, DESCRIPTION_MAX, TITLE_MAX } from "@/lib/constants";
-import { adminHref } from "@/lib/urls";
 
 function Notice({ state }: { state: ActionState }) {
   if (!state) return null;
@@ -17,7 +16,9 @@ function Notice({ state }: { state: ActionState }) {
 
 const Spinner = () => <span className="size-4 animate-spin rounded-full border-2 border-current/30 border-t-current" aria-hidden />;
 
-export function ApproveButton({ id, label = "อนุมัติและเผยแพร่" }: { id: string; label?: string }) {
+/** `nextHref`: where to go once it worked (the next sheet waiting for review, or the queue). */
+export function ApproveButton({ id, label = "อนุมัติและเผยแพร่", nextHref }: { id: string; label?: string; nextHref?: string }) {
+  const router = useRouter();
   const [state, setState] = useState<ActionState>(null);
   const [pending, start] = useTransition();
   return (
@@ -25,7 +26,13 @@ export function ApproveButton({ id, label = "อนุมัติและเ�
       <button
         type="button"
         disabled={pending}
-        onClick={() => start(async () => setState(await approveSheet(id)))}
+        onClick={() =>
+          start(async () => {
+            const res = await approveSheet(id);
+            setState(res);
+            if (res?.ok && nextHref) router.push(nextHref);
+          })
+        }
         className="btn w-full border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
       >
         {pending && <Spinner />}
@@ -114,8 +121,12 @@ export function SheetDetailsForm({ sheet }: { sheet: SheetDetails }) {
   );
 }
 
-export function RejectForm({ id, defaultReason }: { id: string; defaultReason?: string | null }) {
+export function RejectForm({ id, defaultReason, nextHref }: { id: string; defaultReason?: string | null; nextHref?: string }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(rejectSheet, null);
+  useEffect(() => {
+    if (state?.ok && nextHref) router.push(nextHref);
+  }, [state, nextHref, router]);
   return (
     <form action={action} className="grid gap-2">
       <input type="hidden" name="id" value={id} />
@@ -131,7 +142,6 @@ export function RejectForm({ id, defaultReason }: { id: string; defaultReason?: 
 }
 
 export function DeleteButton({ id }: { id: string }) {
-  const router = useRouter();
   const [state, setState] = useState<ActionState>(null);
   const [pending, start] = useTransition();
   return (
@@ -141,11 +151,8 @@ export function DeleteButton({ id }: { id: string }) {
         disabled={pending}
         onClick={() => {
           if (!confirm("ลบชีทนี้ถาวร? ไฟล์ PDF และข้อมูลทั้งหมดจะถูกลบ")) return;
-          start(async () => {
-            const res = await deleteSheet(id);
-            setState(res);
-            if (res?.ok) router.push(adminHref("/sheets"));
-          });
+          // On success the action redirects to the list; only errors come back
+          start(async () => setState(await deleteSheet(id)));
         }}
         className="w-full cursor-pointer rounded-full py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
       >

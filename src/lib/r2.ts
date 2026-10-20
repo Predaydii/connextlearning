@@ -84,7 +84,10 @@ export async function putObject(key: string, body: Uint8Array | Buffer, contentT
 export async function deleteObjects(keys: string[]) {
   if (!keys.length) return;
   // Single deletes: R2's DeleteObjects is picky about checksum headers across SDK versions.
-  await Promise.allSettled(keys.map((Key) => r2().send(new DeleteObjectCommand({ Bucket: bucket(), Key }))));
+  // Best effort, never throws: a leftover file must not turn a finished delete into an error.
+  const results = await Promise.allSettled(keys.map(async (Key) => r2().send(new DeleteObjectCommand({ Bucket: bucket(), Key }))));
+  const failed = results.filter((r) => r.status === "rejected");
+  if (failed.length) console.error("[r2] could not delete", failed.length, "object(s)", (failed[0] as PromiseRejectedResult).reason);
 }
 
 /** GET link for a public site video; the browser streams it from R2 with range requests. */

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminNav, AdminPageTitle } from "@/components/admin/admin-nav";
 import { requireAdminPage } from "@/lib/session";
 import { db } from "@/lib/db";
 import { withBase } from "@/lib/urls";
@@ -16,22 +16,28 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const pending = await db.sheet.count({ where: { status: "PENDING" } });
   return (
     <>
-      {/* Compact admin bar (instead of the site header): logo, sections, back to the site */}
+      {/* Compact admin bar (instead of the site header) */}
       <header className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur">
-        <div className="container-page flex flex-wrap items-center gap-x-6 pt-3 lg:flex-nowrap lg:pt-0">
-          <Link href="/admin" className="flex shrink-0 items-center gap-3 py-1 lg:py-3" aria-label="แดชบอร์ดผู้ดูแล">
+        <div className="container-page flex h-16 items-center gap-4">
+          <Link href="/admin" className="flex shrink-0 items-center gap-3" aria-label="แดชบอร์ดผู้ดูแล">
             <img src={withBase("/img/logo-240.webp")} srcSet={`${withBase("/img/logo-240.webp")} 1x, ${withBase("/img/logo-480.webp")} 2x`} alt="" width={120} height={35} className="h-8 w-auto" />
             <span className="border-l border-line pl-3 text-base font-bold text-ink">ผู้ดูแลระบบ</span>
           </Link>
-          <Link href="/" className="ml-auto shrink-0 text-sm font-medium text-primary hover:underline lg:order-last">กลับหน้าเว็บ ↗</Link>
-          <div className="order-last w-full min-w-0 lg:order-none lg:w-auto lg:flex-1">
-            <AdminNav pending={pending} superAdmin={admin.isSuperAdmin} />
-          </div>
+          <span className="ml-auto hidden truncate text-sm sm:block">{admin.name}{admin.isSuperAdmin ? " · ผู้ดูแลระบบหลัก" : ""}</span>
+          <Link href="/" className="ml-auto shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-primary ring-1 ring-line transition hover:bg-primary-50 sm:ml-0">กลับหน้าเว็บ ↗</Link>
         </div>
       </header>
-      <main id="main" className="min-h-[70vh] flex-1 bg-primary-50/50">
-        <h1 className="sr-only">ผู้ดูแลระบบ</h1>
-        <div className="container-page py-8">{children}</div>
+      <main id="main" className="site-main min-h-[70vh] flex-1 bg-primary-50/50">
+        <div className="container-page grid grid-cols-[minmax(0,1fr)] gap-6 py-6 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-10 lg:py-8">
+          {/* phones: tabs that stick under the bar · wide screens: sticky sidebar */}
+          <aside className="sticky top-16 z-40 -mx-4 min-w-0 bg-primary-50/95 px-4 py-2 backdrop-blur lg:top-24 lg:mx-0 lg:self-start lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+            <AdminNav pending={pending} superAdmin={admin.isSuperAdmin} />
+          </aside>
+          <div className="min-w-0">
+            <AdminPageTitle />
+            {children}
+          </div>
+        </div>
       </main>
       <SiteFooter cta={false} />
     </>

@@ -257,7 +257,10 @@ export async function getSheetCommunity(sheetId: string, userId: string | null) 
 
 /** Public profile: name, photo and published sheets only (never the email). Deduplicated per request. */
 export const getAuthorProfile = cache(async (userId: string) => {
-  const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, name: true, image: true, createdAt: true } });
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, image: true, createdAt: true, memberType: true, grade: true, room: true, department: true, gradYear: true, contacts: true },
+  });
   if (!user) return null;
   const published = { authorId: userId, status: "APPROVED" as const };
   const [rows, views, agg, settings] = await Promise.all([
@@ -291,7 +294,7 @@ export const getSiteStats = unstable_cache(
 /** `classLabel`: "ม.5/1" for students, "ครู · กลุ่มสาระ" for teachers, "ศิษย์เก่า" for alumni (from registration). */
 export type Contributor = { id: string; name: string; image: string | null; sheets: number; classLabel: string | null };
 
-function classLabel(u: { memberType: string | null; grade: Grade | null; room: number | null; department: string | null }) {
+export function classLabel(u: { memberType: string | null; grade: Grade | null; room: number | null; department: string | null }) {
   if (u.memberType === "STUDENT" && u.grade) return `${gradeLabel(u.grade)}${u.room ? `/${u.room}` : ""}`;
   if (u.memberType === "TEACHER") return u.department ? `ครู · ${u.department}` : "ครู";
   if (u.memberType === "ALUMNI") return "ศิษย์เก่า";

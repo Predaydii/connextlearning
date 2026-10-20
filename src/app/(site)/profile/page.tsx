@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BackButton } from "@/components/back-button";
 import { ProfileForm, type ProfileValues } from "@/components/profile-form";
 import { db } from "@/lib/db";
+import { readContacts } from "@/lib/contacts";
 import { requireUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "แก้ไขโปรไฟล์", robots: { index: false } };
@@ -13,7 +14,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
     where: { id: user.id },
     select: {
       prefix: true, firstName: true, lastName: true, memberType: true,
-      grade: true, room: true, studentNo: true, birthDate: true, gradYear: true, department: true, teachGrades: true,
+      grade: true, room: true, studentNo: true, birthDate: true, gradYear: true, department: true, teachGrades: true, contacts: true,
     },
   });
 
@@ -32,6 +33,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
     gradYear: u.gradYear ?? undefined,
     department: u.department ?? undefined,
     teachGrades: u.teachGrades,
+    contacts: readContacts(u.contacts),
   };
 
   return (

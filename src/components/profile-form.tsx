@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { register } from "@/app/actions/register";
+import { CONTACTS, type Contacts } from "@/lib/contacts";
 import { currentBuddhistYear, DEPARTMENTS, GRADES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
 
 const range = (from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => (from <= to ? from + i : from - i));
@@ -21,6 +22,7 @@ export type ProfileValues = {
   gradYear?: number;
   department?: string;
   teachGrades?: string[];
+  contacts?: Contacts;
 };
 
 const str = (v: string | number | undefined) => (v === undefined ? "" : String(v));
@@ -156,6 +158,31 @@ export function ProfileForm({ next, email, initial, submitLabel }: { next: strin
           </label>
         </div>
       )}
+
+      <details open={!!initial.contacts && Object.keys(initial.contacts).length > 0} className="group rounded-2xl border border-line p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-ink [&::-webkit-details-marker]:hidden">
+          <span>
+            ช่องทางติดต่อ <span className="text-sm font-normal text-body">(ไม่บังคับ · แสดงบนหน้าโปรไฟล์)</span>
+          </span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 transition group-open:rotate-180" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
+        </summary>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {CONTACTS.map((c) => (
+            <label key={c.key} className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+              <svg viewBox="0 0 24 24" className="size-5 shrink-0 fill-current text-primary" aria-hidden><path d={c.icon} fillRule="evenodd" /></svg>
+              <span className="sr-only">{c.label}</span>
+              <input
+                name={`contact_${c.key}`}
+                defaultValue={initial.contacts?.[c.key] ?? ""}
+                placeholder={`${c.label} · ${c.placeholder}`}
+                maxLength={200}
+                inputMode={c.key === "email" ? "email" : c.key === "website" ? "url" : "text"}
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-ink outline-none placeholder:text-body/60"
+              />
+            </label>
+          ))}
+        </div>
+      </details>
 
       {state && (
         <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{state.message}</p>

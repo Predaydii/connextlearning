@@ -32,6 +32,8 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
   ]);
   if (!sheet) notFound();
   const cover = resolveCover(sheet, settings);
+  // After approving / rejecting: straight on to the next sheet waiting, or back to the queue
+  const nextHref = next ? adminHref(`/sheets/${next.id}`) : adminHref("/sheets");
 
   return (
     <div className="grid gap-6">
@@ -59,11 +61,12 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
             {sheet.status !== "APPROVED" && (
               <ApproveButton
                 id={sheet.id}
+                nextHref={sheet.status === "PENDING" ? nextHref : undefined}
                 label={sheet.status === "REJECTED" ? "อนุมัติ (เปลี่ยนเป็นเผยแพร่)" : sheet.status === "HIDDEN" ? "แสดงสาธารณะอีกครั้ง" : undefined}
               />
             )}
             {sheet.status === "APPROVED" && <HideButton id={sheet.id} />}
-            <RejectForm id={sheet.id} defaultReason={sheet.rejectReason} />
+            <RejectForm id={sheet.id} defaultReason={sheet.rejectReason} nextHref={sheet.status === "PENDING" ? nextHref : undefined} />
             {sheet.status === "APPROVED" && (
               <p className="text-xs">“ไม่แสดงสาธารณะ” ซ่อนชีทไว้โดยไม่แจ้งเหตุผล · “ไม่อนุมัติ” ซ่อนพร้อมแจ้งเหตุผลให้ผู้ส่ง</p>
             )}

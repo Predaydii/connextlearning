@@ -176,8 +176,18 @@ html.intro .intro-screen span {
 }
 
 /* Footer top edge: a wave cut out of the footer, which slides up under the section above */
-.ft-wave {
+:root {
   --wave-h: clamp(36px, 6vw, 90px);
+}
+/* Room above the footer so its wave never covers content; the landing page ends
+   on a coloured section whose own padding takes the wave instead. */
+.site-main {
+  padding-bottom: calc(var(--wave-h) + 32px);
+}
+.site-main:has(> #classroom:last-child) {
+  padding-bottom: 0;
+}
+.ft-wave {
   margin-top: calc(-1 * var(--wave-h));
   -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%201440%2090'%20preserveAspectRatio%3D'none'%3E%3Cpath%20d%3D'M0%2060C90%2048%20200%2033%20330%2030c190-4%20350%2022%20590%2042%20190%2016%20360%208%20520-14V90H0z'%2F%3E%3C%2Fsvg%3E") top / 100% var(--wave-h) no-repeat,
     linear-gradient(#000 0 0) 0 var(--wave-h) / 100% 100% no-repeat;
@@ -360,4 +370,19 @@ html.intro .intro-screen span {
   .legal ul + p {
     @apply mt-3;
   }
+}
+
+/* Leaderboard XP bars fill as they scroll into view (static where unsupported) */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .xp-bar {
+      transform-origin: left;
+      animation: xp-fill linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+  }
+}
+@keyframes xp-fill {
+  from { transform: scaleX(0); }
 }

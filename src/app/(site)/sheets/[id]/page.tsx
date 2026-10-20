@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { CalendarIcon, EyeIcon } from "@/components/sheet-card";
 import { BackButton } from "@/components/back-button";
+import { ShareButton } from "@/components/share-button";
 import { StatusBadge } from "@/components/status-badge";
 import { gradeLabel } from "@/lib/constants";
 import { formatNumber, formatThaiDate, formatThaiDateTime } from "@/lib/format";
@@ -123,6 +124,14 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
               <a href={withBase(`/api/sheets/${sheet.id}/pdf`)} target="_blank" rel="noopener" className="btn-outline flex-1 sm:flex-none">
                 ดูไฟล์ PDF (ส่วนตัว)
               </a>
+            )}
+            {published && (
+              <ShareButton
+                path={`/sheets/${sheet.id}`}
+                title={sheet.title}
+                text={`ชีทสรุป ${sheet.subject.name} ${gradeLabel(sheet.grade)} บน Connext Learning`}
+                className="btn-outline"
+              />
             )}
           </div>
         </div>

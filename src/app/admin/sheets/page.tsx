@@ -66,6 +66,9 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
 
   return (
     <div className="grid gap-5">
+      {sp.deleted === "1" && (
+        <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">ลบชีทถาวรแล้ว</p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="สถานะ" className="flex flex-wrap gap-1 rounded-full bg-white p-1 shadow-card ring-1 ring-line">
           {TABS.map((t) => (
@@ -86,7 +89,7 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
         </Form>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="card relative min-w-0 overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="border-b border-line bg-primary-50/60 text-xs text-body">
             <tr>

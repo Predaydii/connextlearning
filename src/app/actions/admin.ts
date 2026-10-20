@@ -2,6 +2,8 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath, updateTag } from "next/cache";
+import { redirect } from "next/navigation";
+import { adminHref } from "@/lib/urls";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { deleteObjects, headObject, presignPut, putObject } from "@/lib/r2";
@@ -143,6 +145,10 @@ export async function updateSheetDetails(_prev: ActionState, formData: FormData)
   }
 }
 
+/**
+ * Deletes and then redirects to the list on the server: re-rendering the page the
+ * admin is on (this sheet's review page) would otherwise turn into a 404 first.
+ */
 export async function deleteSheet(id: string): Promise<ActionState> {
   try {
     await assertAdmin();
@@ -151,10 +157,10 @@ export async function deleteSheet(id: string): Promise<ActionState> {
     await db.sheet.delete({ where: { id: sheet.id } });
     await deleteObjects([sheet.pdfKey, ...(sheet.coverKey ? coverFiles(sheet.coverKey) : [])]);
     refreshSheets(sheet.id);
-    return { ok: true, message: "ลบชีทแล้ว" };
   } catch (err) {
     return fail(err);
   }
+  redirect(adminHref("/sheets?status=ALL&deleted=1")); // outside try: redirect() throws by design
 }
 
 // ---------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { currentBuddhistYear, DEPARTMENTS, GRADE_VALUES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES } from "@/lib/constants";
 import { TAG_SHEETS } from "@/lib/queries";
+import { CONTACTS, type Contacts } from "@/lib/contacts";
 import { assertSignedIn, AuthError } from "@/lib/session";
 
 export type RegisterState = { ok: false; message: string } | null;
@@ -65,6 +66,16 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
     next = safeNext(formData.get("next"));
     const thisYear = currentBuddhistYear();
 
+    // Optional contact links: blank = not shown; anything else must be valid
+    const contacts: Contacts = {};
+    for (const c of CONTACTS) {
+      const raw = String(formData.get(`contact_${c.key}`) ?? "").trim().slice(0, 200);
+      if (!raw) continue;
+      const v = c.clean(raw);
+      if (!v) throw new AuthError(`${c.label} ไม่ถูกต้อง`);
+      contacts[c.key] = v;
+    }
+
     const none = { grade: null, room: null, studentNo: null, birthDate: null, gradYear: null, department: null, teachGrades: [] };
     let details;
     if (data.memberType === "TEACHER") {
@@ -89,6 +100,7 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
         name: `${data.firstName} ${data.lastName}`,
         memberType: data.memberType,
         ...details,
+        contacts,
         // Kept from the first registration when editing the profile
         ...(user.registered ? {} : { registeredAt: new Date() }),
       },

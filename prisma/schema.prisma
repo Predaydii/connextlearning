@@ -44,6 +44,8 @@ model User {
   gradYear      Int? // alumni: academic year of graduation (พ.ศ.)
   department    String? // teachers: กลุ่มสาระการเรียนรู้ (see DEPARTMENTS)
   teachGrades   Grade[] // teachers: levels they teach
+  // Optional public contact links shown on the profile ({ instagram: "name", … }, see src/lib/contacts.ts)
+  contacts      Json?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

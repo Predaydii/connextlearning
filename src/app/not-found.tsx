@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <>
       <SiteHeader />
-      <main id="main" className="flex-1">
+      <main id="main" className="site-main flex-1">
         <div className="container-page grid place-items-center py-24 text-center">
           <p className="text-6xl font-bold text-primary">404</p>
           <h1 className="mt-3 text-2xl font-bold">ไม่พบหน้าที่คุณต้องการ</h1>

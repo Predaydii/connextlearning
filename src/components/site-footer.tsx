@@ -119,7 +119,7 @@ export async function SiteFooter({ base = "", cta = true }: { base?: string; cta
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-white/55">จัดทำและดูแลโดยสภานักเรียนโรงเรียนตราษตระการคุณ</p>
+          <p className="mt-3 text-xs text-white/55">พัฒนาโดย คณะกรรมการสภานักเรียนโรงเรียนตราษตระการคุณ</p>
         </div>
       </div>
 
@@ -130,8 +130,7 @@ export async function SiteFooter({ base = "", cta = true }: { base?: string; cta
         <span className="text-white/70">© โรงเรียนตราษตระการคุณ สงวนลิขสิทธิ์</span>
         {visits && (
           <span className="flex items-center gap-4 text-white/70" aria-label="สถิติการเข้าชม">
-            <span className="flex items-center gap-1.5">
-              <span aria-hidden className="size-2 rounded-full bg-emerald-400" />
+            <span>
               ผู้เข้าชมวันนี้ <strong className="font-semibold text-white tabular-nums">{formatNumber(visits.today)}</strong>
             </span>
             <span aria-hidden className="h-3 w-px bg-white/25" />
