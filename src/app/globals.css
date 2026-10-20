@@ -285,7 +285,7 @@ html.intro .intro-screen span {
   @media (prefers-reduced-motion: no-preference) {
     .hv {
       /* the scroll distance the pinned scene plays over */
-      height: 260vh;
+      height: 190vh;
       background: #fff;
       view-timeline: --hv block;
     }
@@ -304,9 +304,16 @@ html.intro .intro-screen span {
       translate: 0 -24svh;
       font-size: clamp(2.4rem, 8vw, 6.5rem);
     }
+    /* ends filling the whole pinned screen: no empty dark band around it */
     .hv-frame {
       max-width: none;
+      height: 100svh;
+      outline: 0;
       transform-origin: 50% 50%;
+    }
+    .hv-video {
+      height: 100%;
+      aspect-ratio: auto;
     }
     .hv-dark,
     .hv-title,
@@ -318,7 +325,7 @@ html.intro .intro-screen span {
     }
     .hv-dark { animation-name: hv-dark; animation-range: contain 0% contain 30%; }
     .hv-title { animation-name: hv-title; animation-range: contain 0% contain 55%; }
-    .hv-frame { animation-name: hv-frame; animation-range: contain 0% contain 72%; }
+    .hv-frame { animation-name: hv-frame; animation-range: contain 0% contain 85%; }
     .hv-glow-a { animation-name: hv-burst-a; animation-range: contain 0% contain 80%; }
     .hv-glow-b { animation-name: hv-burst-b; animation-range: contain 0% contain 80%; }
     .hv-glow-c { animation-name: hv-burst-c; animation-range: contain 0% contain 80%; }
@@ -372,17 +379,3 @@ html.intro .intro-screen span {
   }
 }
 
-/* Leaderboard XP bars fill as they scroll into view (static where unsupported) */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .xp-bar {
-      transform-origin: left;
-      animation: xp-fill linear both;
-      animation-timeline: view();
-      animation-range: entry 10% cover 40%;
-    }
-  }
-}
-@keyframes xp-fill {
-  from { transform: scaleX(0); }
-}

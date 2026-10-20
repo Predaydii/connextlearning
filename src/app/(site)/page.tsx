@@ -5,7 +5,7 @@ import { Avatar } from "@/components/avatar";
 import { EyeIcon } from "@/components/sheet-card";
 import { getContributors, getHomeMedia, getLeaderboards, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
 import { GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
-import { GRADES } from "@/lib/constants";
+import { GRADES, gradeLabel } from "@/lib/constants";
 import { classroomsOf } from "@/lib/classrooms";
 import { formatNumber } from "@/lib/format";
 import { CountUp } from "@/components/count-up";
@@ -151,8 +151,8 @@ function Contributors({ people }: { people: Contributor[] }) {
         <h2 id="people-title" className="mt-2 text-[clamp(1.75rem,4.6vw,3rem)] leading-tight font-bold text-ink">
           <span className="text-primary">‘อ่านชีท แชร์ชีท’</span> ทุกที่ทุกเวลา
         </h2>
-        <p className="mt-3 text-[clamp(1.05rem,2.2vw,1.5rem)] font-medium text-ink">
-          ร่วมแชร์ชีทเพื่อ<span className="text-primary">ขึ้นหน้าเว็บไซต์</span>
+        <p className="mt-3 text-[clamp(1.05rem,2.2vw,1.5rem)] font-medium text-primary-800">
+          ร่วมแชร์ชีทเพื่อขึ้นหน้าเว็บไซต์
         </p>
       </div>
       <div className="group space-y-4 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
@@ -209,30 +209,23 @@ function Leaderboards({ topRated, mostRead }: { topRated: RankedSheet[]; mostRea
       <div className="container-page">
         <SectionHead id="board-title" title="ชีทยอดนิยม" href="/sheets?sort=popular" linkLabel="ดูทั้งหมด" />
         <div className="grid gap-6 lg:grid-cols-2">
-          <Board
-            title="ดาวเด่น"
-            caption="ได้ดาวมากที่สุด"
+          <Chart
+            title="ได้ดาวมากที่สุด"
             items={topRated}
-            value={(s) => s.score ?? 0}
-            empty="ยังไม่มีใครให้ดาว อ่านแล้วกดให้ดาวชีทที่ชอบ ชีทนั้นจะได้ขึ้นโพเดียม"
+            empty="ยังไม่มีใครให้ดาว อ่านแล้วกดให้ดาวชีทที่ชอบได้เลย"
             metric={(s) => (
               <>
-                <span className="text-accent">★</span>
-                {s.score?.toFixed(1)}
-                <span className="text-[11px] font-normal opacity-70">({s.ratings})</span>
+                <span className="text-accent">★</span> {s.score?.toFixed(1)} <span className="font-normal text-body">({s.ratings})</span>
               </>
             )}
           />
-          <Board
-            title="ขวัญใจนักอ่าน"
-            caption="มีคนอ่านมากที่สุด"
+          <Chart
+            title="มีคนอ่านมากที่สุด"
             items={mostRead}
-            value={(s) => s.viewCount}
-            empty="ยังไม่มีชีทที่เผยแพร่ แชร์ชีทแรกแล้วขึ้นโพเดียมเป็นคนแรกเลย"
+            empty="ยังไม่มีชีทที่เผยแพร่"
             metric={(s) => (
               <>
-                <EyeIcon className="size-3.5" />
-                {formatNumber(s.viewCount)}
+                <EyeIcon className="size-4 text-primary" /> {formatNumber(s.viewCount)}
               </>
             )}
           />
@@ -242,90 +235,42 @@ function Leaderboards({ topRated, mostRead }: { topRated: RankedSheet[]; mostRea
   );
 }
 
-// Gold, silver, bronze: medal fill, stand gradient
-const MEDALS = [
-  { medal: "bg-[linear-gradient(145deg,#ffe27a,#f5b700)] text-ink", stand: "h-24 bg-[linear-gradient(180deg,#ffd447,#f5b700)]" },
-  { medal: "bg-[linear-gradient(145deg,#eef2ff,#aab6d3)] text-ink", stand: "h-16 bg-[linear-gradient(180deg,#d9e0f0,#aab6d3)]" },
-  { medal: "bg-[linear-gradient(145deg,#f2b98a,#c97a3f)] text-white", stand: "h-11 bg-[linear-gradient(180deg,#e0a473,#c97a3f)]" },
-];
-// Podium order on screen: 2nd, 1st, 3rd
-const PODIUM = [1, 0, 2];
+// Rank numerals: gold, silver, bronze, then quiet
+const RANK_COLOR = ["text-[#e0a100]", "text-[#8a96b3]", "text-[#b8723c]"];
 
-function Board({
-  title,
-  caption,
-  items,
-  value,
-  metric,
-  empty,
-}: {
-  title: string;
-  caption: string;
-  items: RankedSheet[];
-  value: (s: RankedSheet) => number;
-  metric: (s: RankedSheet) => React.ReactNode;
-  empty: string;
-}) {
-  const top = value(items[0] ?? ({} as RankedSheet)) || 1;
+/** Top-charts list: the leader as a cover card, the rest as rows with big rank numbers. */
+function Chart({ title, items, metric, empty }: { title: string; items: RankedSheet[]; metric: (s: RankedSheet) => React.ReactNode; empty: string }) {
+  const [first, ...rest] = items;
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center gap-3 bg-[linear-gradient(120deg,#13237a,#203cc7)] px-5 py-4 text-white">
-        <span className="grid size-10 place-items-center rounded-xl bg-white/15">
-          <TrophyIcon />
-        </span>
-        <div>
-          <p className="text-[11px] font-semibold tracking-[0.2em] text-white/70">LEADERBOARD</p>
-          <h3 className="text-lg font-bold text-white">{title} <span className="text-sm font-normal text-white/75">· {caption}</span></h3>
-        </div>
-      </div>
-
-      {items.length === 0 ? (
-        <div className="grid place-items-center gap-2 px-6 py-12 text-center">
-          <span className="grid size-14 place-items-center rounded-full bg-primary-50 text-primary"><TrophyIcon /></span>
-          <p className="max-w-xs text-sm">{empty}</p>
-        </div>
+    <div className="card p-5 sm:p-6">
+      <h3 className="mb-4 text-lg font-semibold">{title}</h3>
+      {!first ? (
+        <p className="rounded-xl bg-primary-50/60 px-4 py-10 text-center text-sm">{empty}</p>
       ) : (
         <>
-          {/* podium */}
-          <ol className="grid grid-cols-3 items-end gap-2 px-4 pt-6 sm:gap-3 sm:px-6">
-            {PODIUM.map((rank) => {
-              const s = items[rank];
-              if (!s) return <li key={rank} aria-hidden />;
-              const m = MEDALS[rank];
-              return (
-                <li key={s.id} className="motion-safe:animate-rise" style={{ animationDelay: `${[150, 0, 300][rank]}ms` }}>
-                  <Link href={`/sheets/${s.id}`} className="group flex flex-col items-center text-center">
-                    {rank === 0 && <CrownIcon />}
-                    <span className={`relative z-[1] -mb-4 grid size-9 place-items-center rounded-full text-sm font-extrabold shadow-[0_4px_12px_rgb(0_0_0/0.18)] ring-2 ring-white ${m.medal}`}>
-                      {rank + 1}
-                    </span>
-                    <img src={s.cover.small} alt="" width={640} height={360} loading="lazy" className={`aspect-video w-full rounded-xl object-cover ring-1 ring-line transition group-hover:-translate-y-1 ${rank === 0 ? "shadow-brand-lg" : ""}`} />
-                    <span className="mt-2 line-clamp-2 min-h-[2.6em] text-xs leading-tight font-semibold text-ink group-hover:text-primary sm:text-sm">{s.title}</span>
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-bold text-primary">{metric(s)}</span>
-                    <span aria-hidden className={`mt-2 w-full rounded-t-xl ${m.stand}`} />
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-
-          {/* the chasers: XP bar against the leader */}
-          {items.length > 3 && (
-            <ol start={4} className="divide-y divide-line border-t border-line">
-              {items.slice(3).map((s, i) => (
+          <Link href={`/sheets/${first.id}`} className="group grid gap-4 sm:grid-cols-[1.1fr_1fr] sm:items-center">
+            <span className="relative block overflow-hidden rounded-2xl">
+              <img src={first.cover.small} srcSet={`${first.cover.small} 640w, ${first.cover.large} 1280w`} sizes="(min-width: 1024px) 300px, 90vw" alt="" width={640} height={360} loading="lazy" className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+              <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-0.5 text-xs font-bold text-ink shadow-sm">อันดับ 1</span>
+            </span>
+            <span className="min-w-0">
+              <span className="line-clamp-2 text-lg leading-snug font-semibold text-ink group-hover:text-primary">{first.title}</span>
+              <span className="mt-1 block text-sm">{first.subjectName} · {gradeLabel(first.grade)}</span>
+              <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-ink">{metric(first)}</span>
+            </span>
+          </Link>
+          {rest.length > 0 && (
+            <ol start={2} className="mt-5 divide-y divide-line border-t border-line">
+              {rest.map((s, i) => (
                 <li key={s.id}>
-                  <Link href={`/sheets/${s.id}`} className="group flex items-center gap-3 px-5 py-3 transition hover:bg-primary-50/50">
-                    <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary-50 text-sm font-bold text-primary">{i + 4}</span>
+                  <Link href={`/sheets/${s.id}`} className="group flex items-center gap-4 py-3">
+                    <span className={`w-8 shrink-0 text-center text-3xl leading-none font-extrabold tabular-nums ${RANK_COLOR[i + 1] ?? "text-primary/25"}`}>{i + 2}</span>
+                    <img src={s.cover.small} alt="" width={640} height={360} loading="lazy" className="aspect-video w-20 shrink-0 rounded-lg object-cover" />
                     <span className="min-w-0 flex-1">
-                      <span className="line-clamp-1 text-sm font-semibold text-ink group-hover:text-primary">{s.title}</span>
-                      <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-primary-50">
-                        <span
-                          className="xp-bar block h-full rounded-full bg-[linear-gradient(90deg,#03a0db,#203cc7)]"
-                          style={{ width: `${Math.max(6, Math.round((value(s) / top) * 100))}%` }}
-                        />
-                      </span>
+                      <span className="line-clamp-1 font-semibold text-ink group-hover:text-primary">{s.title}</span>
+                      <span className="block text-xs">{s.subjectName} · {gradeLabel(s.grade)}</span>
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-ink">{metric(s)}</span>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-ink">{metric(s)}</span>
                   </Link>
                 </li>
               ))}
@@ -334,22 +279,6 @@ function Board({
         </>
       )}
     </div>
-  );
-}
-
-function TrophyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5" aria-hidden>
-      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />
-    </svg>
-  );
-}
-
-function CrownIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="mb-0.5 size-7 fill-accent drop-shadow motion-safe:animate-float" aria-hidden>
-      <path d="m3 8 4.5 3.5L12 5l4.5 6.5L21 8l-2 10H5z" />
-    </svg>
   );
 }
 
@@ -439,7 +368,7 @@ function HomeVideo({ src }: { src: string }) {
           รู้จัก <span className="text-accent">Connext</span> Learning
         </h2>
         <div className="hv-frame">
-          <AutoVideo src={src} className="block aspect-video w-full bg-ink object-cover" />
+          <AutoVideo src={src} className="hv-video block aspect-video w-full bg-ink object-cover" />
         </div>
       </div>
     </section>
