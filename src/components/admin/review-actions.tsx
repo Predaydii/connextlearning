@@ -77,19 +77,21 @@ export function DeleteButton({ id }: { id: string }) {
   );
 }
 
-/** Upload a 16:9 cover for a target ("uniform", a subject id, or "sheet:<id>"), or reset it. */
+/** Upload a 16:9 cover for a target ("uniform", a subject id, "sheet:<id>"), or a 4:5 landing tile ("grade:<n>"), or reset it. */
 export function CoverUploader({
   target,
   src,
   title,
   isCustom,
   compact = false,
+  portrait = false,
 }: {
   target: string;
   src: string;
   title: string;
   isCustom: boolean;
   compact?: boolean;
+  portrait?: boolean;
 }) {
   const [state, action, pending] = useActionState(updateCover, null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export function CoverUploader({
     <form action={action} className="grid gap-3" onSubmit={() => setPreview(null)}>
       <input type="hidden" name="target" value={target} />
       <div className="relative overflow-hidden rounded-xl bg-primary-50 ring-1 ring-line">
-        <img src={preview ?? src} alt={`ภาพปก ${title}`} width={640} height={360} className="aspect-video w-full object-cover" />
+        <img src={preview ?? src} alt={`ภาพ ${title}`} width={640} height={portrait ? 800 : 360} className={`${portrait ? "aspect-[4/5]" : "aspect-video"} w-full object-cover`} />
         <span className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-semibold ${isCustom ? "bg-primary text-white" : "bg-white/90 text-ink"}`}>
           {preview ? "ตัวอย่าง (ยังไม่บันทึก)" : isCustom ? "ภาพที่ตั้งค่าไว้" : "ภาพเริ่มต้น"}
         </span>

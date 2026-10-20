@@ -1,98 +1,92 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { GRADES } from "@/lib/constants";
 import { classroomsOf } from "@/lib/classrooms";
 import type { Grade } from "@/generated/prisma/enums";
 
-/** Grade buttons (ม.1–ม.6); each opens a dialog listing that grade's Google Meet rooms. */
+const STORAGE_KEY = "classroom-grade";
+
+const noSubscribe = () => () => {};
+function readSaved(): Grade | null {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    return GRADES.find((g) => g.value === v)?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Grade tabs (ม.1–ม.6) with that grade's Google Meet rooms right below; the last grade is remembered. */
 export function ClassroomPicker() {
-  const [grade, setGrade] = useState<Grade | null>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const saved = useSyncExternalStore(noSubscribe, readSaved, () => null);
+  const [picked, setPicked] = useState<Grade | null>(null);
+  const grade = picked ?? saved ?? "M1";
 
-  useEffect(() => {
-    const d = dialogRef.current;
-    if (!d) return;
-    if (grade && !d.open) d.showModal();
-    if (!grade && d.open) d.close();
-  }, [grade]);
+  function pick(g: Grade) {
+    setPicked(g);
+    try {
+      localStorage.setItem(STORAGE_KEY, g);
+    } catch {}
+  }
 
-  const info = GRADES.find((g) => g.value === grade);
+  const info = GRADES.find((g) => g.value === grade)!;
 
   return (
-    <>
-      <ul className="grid grid-cols-2 gap-[clamp(14px,2vw,22px)] min-[561px]:grid-cols-3 lg:grid-cols-6">
-        {GRADES.map((g, i) => (
-          <li key={g.value}>
-            <button
-              type="button"
-              onClick={() => setGrade(g.value)}
-              aria-haspopup="dialog"
-              className={`group relative isolate flex min-h-[150px] w-full cursor-pointer flex-col items-start overflow-hidden rounded-[20px] p-4 text-left text-white shadow-brand transition duration-300 hover:-translate-y-1.5 hover:shadow-brand-lg min-[561px]:min-h-[180px] min-[561px]:px-5 min-[561px]:py-[22px] ${
-                i < 3
-                  ? "bg-[linear-gradient(150deg,#3a57e0_0%,#203cc7_55%,#13237a_100%)]"
-                  : "bg-[linear-gradient(150deg,#1bb3ea_0%,#0a86c9_50%,#203cc7_100%)]"
-              }`}
-            >
-              <span className="absolute -top-[50px] -right-[50px] -z-10 size-[140px] rounded-full bg-white/12 transition duration-500 group-hover:scale-[1.35]" />
-              <span className="text-[clamp(2.2rem,3.4vw,2.8rem)] leading-[1.1] font-bold">{g.label}</span>
-              <span className="mt-1 text-sm opacity-90">{g.full}</span>
-              <span className="mt-auto inline-flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1 text-sm font-semibold text-ink">
-                เข้าเรียน <span aria-hidden className="transition group-hover:translate-x-1">→</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <dialog
-        ref={dialogRef}
-        onClose={() => setGrade(null)}
-        onClick={(e) => e.target === e.currentTarget && setGrade(null)} // click on the backdrop
-        aria-labelledby="classroom-dialog-title"
-        className="m-auto w-[min(560px,calc(100vw-32px))] max-h-[calc(100dvh-32px)] overflow-y-auto rounded-3xl bg-white p-0 shadow-2xl backdrop:bg-ink/50 backdrop:backdrop-blur-sm"
-      >
-        {info && (
-          <div className="p-6 sm:p-8">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <h3 id="classroom-dialog-title" className="text-2xl font-bold">{info.full}</h3>
-              </div>
+    <div className="card overflow-hidden">
+      <div className="border-b border-line bg-primary-50/40 p-2 sm:p-3">
+        <div role="group" aria-label="เลือกระดับชั้น" className="grid grid-cols-6 gap-1 sm:gap-2">
+          {GRADES.map((g) => {
+            const active = g.value === grade;
+            return (
               <button
+                key={g.value}
                 type="button"
-                onClick={() => setGrade(null)}
-                aria-label="ปิด"
-                className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-primary-50 text-primary transition hover:bg-primary hover:text-white"
+                onClick={() => pick(g.value)}
+                aria-pressed={active}
+                className={`cursor-pointer rounded-xl py-2.5 text-[15px] font-semibold transition sm:py-3 sm:text-lg ${
+                  active ? "bg-primary text-white shadow-brand" : "text-ink hover:bg-white hover:text-primary"
+                }`}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5" aria-hidden><path d="M6 6l12 12M18 6 6 18" /></svg>
+                {g.label}
               </button>
-            </div>
+            );
+          })}
+        </div>
+      </div>
 
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {classroomsOf(info.value).map((c) => (
-                <li key={c.room}>
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 rounded-2xl p-3 ring-1 ring-line transition hover:-translate-y-0.5 hover:bg-primary-50 hover:ring-primary/40"
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-white">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5" aria-hidden>
-                        <rect x="2.5" y="6" width="13" height="12" rx="2.5" /><path d="m15.5 10.5 6-3.5v10l-6-3.5z" />
-                      </svg>
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block font-semibold text-ink">ห้อง {info.label}/{c.room.split("/")[1]}</span>
-                      <span className="block text-xs text-body/80 group-hover:text-primary">เข้าห้องเรียน ↗</span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </dialog>
-    </>
+      <div className="p-4 sm:p-6">
+        <p className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <span className="text-lg font-semibold text-ink">{info.full}</span>
+          <span className="text-sm">กดห้องของคุณเพื่อเข้า Google Meet</span>
+        </p>
+        <ul key={grade} className="grid grid-cols-3 gap-2.5 sm:gap-3 md:grid-cols-5 lg:grid-cols-9">
+          {classroomsOf(grade).map((c, i) => (
+            <li key={c.room} className="motion-safe:animate-rise" style={{ animationDelay: `${i * 30}ms` }}>
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col items-center gap-1 rounded-xl border border-line bg-white px-2 py-3 text-center transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary-50 sm:py-4"
+              >
+                <span className="text-lg leading-none font-bold text-ink group-hover:text-primary sm:text-xl">{info.label}/{c.room.split("/")[1]}</span>
+                <span className="flex items-center gap-1 text-xs text-body/80 group-hover:text-primary">
+                  <MeetIcon /> เข้าห้อง
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function MeetIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5" aria-hidden>
+      <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
+      <path d="m15.5 10.5 6-3.5v10l-6-3.5z" />
+    </svg>
   );
 }

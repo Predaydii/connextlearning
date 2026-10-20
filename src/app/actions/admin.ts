@@ -4,11 +4,11 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { deleteObjects, putObject } from "@/lib/r2";
+import { deleteObjects, headObject, presignPut, putObject } from "@/lib/r2";
 import { makeCoverImages, UserFacingError } from "@/lib/pdf";
 import { assertAdmin, AuthError } from "@/lib/session";
 import { TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
-import { SUBJECT_IDS } from "@/lib/constants";
+import { MAX_VIDEO_BYTES, SUBJECT_IDS, VIDEO_TYPES } from "@/lib/constants";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -110,10 +110,10 @@ function coverFiles(key: string) {
   return [`${key}-1280.webp`, `${key}-640.webp`];
 }
 
-async function storeCover(file: FormDataEntryValue | null) {
+async function storeCover(file: FormDataEntryValue | null, ratio?: number) {
   if (!(file instanceof File) || file.size === 0) throw new UserFacingError("กรุณาเลือกไฟล์รูปภาพ");
   if (file.size > MAX_COVER_BYTES) throw new UserFacingError("รูปภาพต้องมีขนาดไม่เกิน 5 MB");
-  const { large, small } = await makeCoverImages(new Uint8Array(await file.arrayBuffer()));
+  const { large, small } = await makeCoverImages(new Uint8Array(await file.arrayBuffer()), ratio);
   const key = `covers/${randomUUID()}`;
   const immutable = "public, max-age=31536000, immutable";
   await Promise.all([
@@ -127,16 +127,23 @@ const coverTarget = z.union([
   z.literal("uniform"),
   z.enum(SUBJECT_IDS).transform((id) => ({ subject: id })),
   z.string().regex(/^sheet:.+$/).transform((v) => ({ sheet: v.slice(6) })),
+  // Landing-page "sheets by grade" tile (4:5)
+  z.string().regex(/^grade:[1-8]$/).transform((v) => ({ grade: Number(v.slice(6)) })),
 ]);
 
 async function currentCoverKey(target: z.output<typeof coverTarget>) {
-  if (target === "uniform") return (await db.siteSetting.findUnique({ where: { id: 1 } }))?.uniformCoverKey ?? null;
+  if (target === "uniform") return (await db.siteSetting.findUnique({ where: { id: 1 }, select: { uniformCoverKey: true } }))?.uniformCoverKey ?? null;
   if ("subject" in target) return (await db.subject.findUnique({ where: { id: target.subject } }))?.coverKey ?? null;
+  if ("grade" in target) return (await db.homeImage.findUnique({ where: { slot: target.grade } }))?.imageKey ?? null;
   return (await db.sheet.findUnique({ where: { id: target.sheet } }))?.coverKey ?? null;
 }
 
 async function saveCoverKey(target: z.output<typeof coverTarget>, key: string | null) {
-  if (target === "uniform") {
+  if (target !== "uniform" && "grade" in target) {
+    const slot = target.grade;
+    if (key) await db.homeImage.upsert({ where: { slot }, create: { slot, imageKey: key }, update: { imageKey: key } });
+    else await db.homeImage.deleteMany({ where: { slot } });
+  } else if (target === "uniform") {
     await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, uniformCoverKey: key }, update: { uniformCoverKey: key } });
   } else if ("subject" in target) {
     await db.subject.update({ where: { id: target.subject }, data: { coverKey: key } });
@@ -152,7 +159,7 @@ export async function updateCover(_prev: ActionState, formData: FormData): Promi
     const target = coverTarget.parse(formData.get("target"));
     const old = await currentCoverKey(target);
     const reset = formData.get("reset") === "1";
-    const key = reset ? null : await storeCover(formData.get("file"));
+    const key = reset ? null : await storeCover(formData.get("file"), typeof target === "object" && "grade" in target ? 5 / 4 : undefined);
     await saveCoverKey(target, key);
     if (old) await deleteObjects(coverFiles(old));
 
@@ -186,41 +193,6 @@ export async function setCoverMode(_prev: ActionState, formData: FormData): Prom
 function refreshNews() {
   updateTag(TAG_NEWS);
   revalidatePath("/admin", "layout");
-}
-
-const YT_ID = /^[\w-]{11}$/;
-
-/** Accepts youtu.be/…, youtube.com/watch?v=…, /shorts/…, /embed/…, /live/… or a bare id. */
-function youtubeId(input: string): string | null {
-  if (YT_ID.test(input)) return input;
-  try {
-    const url = new URL(input);
-    const host = url.hostname.replace(/^(www|m)\./, "");
-    const id =
-      host === "youtu.be"
-        ? url.pathname.slice(1)
-        : host === "youtube.com" || host === "youtube-nocookie.com"
-          ? (url.searchParams.get("v") ?? url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1])
-          : null;
-    return id && YT_ID.test(id) ? id : null;
-  } catch {
-    return null;
-  }
-}
-
-/** formData: url (empty = remove the video). */
-export async function setNewsVideo(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  try {
-    await assertAdmin();
-    const raw = z.string().trim().max(300).parse(formData.get("url") ?? "");
-    const id = raw ? youtubeId(raw) : null;
-    if (raw && !id) throw new UserFacingError("ลิงก์ YouTube ไม่ถูกต้อง");
-    await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, newsVideoId: id }, update: { newsVideoId: id } });
-    refreshNews();
-    return { ok: true, message: id ? "บันทึกวิดีโอแล้ว" : "นำวิดีโอออกแล้ว" };
-  } catch (err) {
-    return fail(err);
-  }
 }
 
 const newsInput = z.object({
@@ -279,6 +251,57 @@ export async function deleteNewsPost(id: string): Promise<ActionState> {
     if (post.imageKey) await deleteObjects(coverFiles(post.imageKey));
     refreshNews();
     return { ok: true, message: "ลบข่าวแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Site videos (news page top, landing page above the footer)
+// The browser uploads straight to R2 with a presigned PUT, then we save the key.
+// ---------------------------------------------------------------------------
+
+const videoSlot = z.enum(["news", "home"]);
+const VIDEO_FIELD = { news: "newsVideoKey", home: "homeVideoKey" } as const;
+const VIDEO_KEY_RE = /^videos\/[0-9a-f-]{36}\.(mp4|webm)$/;
+
+const videoUploadInput = z.object({
+  slot: videoSlot,
+  type: z.enum(Object.keys(VIDEO_TYPES) as [keyof typeof VIDEO_TYPES], { message: "รองรับเฉพาะไฟล์ MP4 หรือ WebM" }),
+  size: z.number().int().positive().max(MAX_VIDEO_BYTES, `วิดีโอต้องมีขนาดไม่เกิน ${MAX_VIDEO_BYTES / 1024 / 1024} MB`),
+});
+
+export async function requestVideoUpload(
+  input: z.input<typeof videoUploadInput>,
+): Promise<{ ok: true; key: string; url: string } | { ok: false; message: string }> {
+  try {
+    await assertAdmin();
+    const { type, size } = videoUploadInput.parse(input);
+    const key = `videos/${randomUUID()}.${VIDEO_TYPES[type]}`;
+    return { ok: true, key, url: await presignPut(key, type, size) };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Point a slot at an uploaded video (key) or remove it (key = null); the old file is deleted. */
+export async function saveVideo(slotInput: string, keyInput: string | null): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const slot = videoSlot.parse(slotInput);
+    const key = keyInput === null ? null : z.string().regex(VIDEO_KEY_RE, "ไฟล์ไม่ถูกต้อง").parse(keyInput);
+    if (key) {
+      const head = await headObject(key);
+      if (!head || head.size > MAX_VIDEO_BYTES) throw new UserFacingError("อัปโหลดวิดีโอไม่สำเร็จ กรุณาลองใหม่");
+    }
+    const field = VIDEO_FIELD[slot];
+    const old = (await db.siteSetting.findUnique({ where: { id: 1 }, select: { [field]: true } }))?.[field] ?? null;
+    await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, [field]: key }, update: { [field]: key } });
+    if (old && old !== key) await deleteObjects([old]);
+
+    updateTag(slot === "news" ? TAG_NEWS : TAG_SETTINGS);
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: key ? "บันทึกวิดีโอแล้ว" : "นำวิดีโอออกแล้ว" };
   } catch (err) {
     return fail(err);
   }

@@ -133,9 +133,16 @@ model SiteSetting {
   // Instagram long-lived token for the news page (auto-refreshed; seeded from INSTAGRAM_ACCESS_TOKEN)
   igAccessToken    String?
   igTokenExpiresAt DateTime?
-  // YouTube video id of the featured video on the news page
-  newsVideoId      String?
+  // Admin-uploaded videos in R2 ("videos/<uuid>.mp4|webm", served by /media)
+  newsVideoKey     String? // top of the news page
+  homeVideoKey     String? // landing page, above the footer
   updatedAt       DateTime  @updatedAt
+}
+
+// Admin-chosen artwork (4:5) of a "sheets by grade" tile on the landing page; no row = built-in image
+model HomeImage {
+  slot     Int    @id // 1–8, see GRADE_ART
+  imageKey String // R2 key prefix "covers/<uuid>"
 }
 
 // Admin-managed news cards on the news page

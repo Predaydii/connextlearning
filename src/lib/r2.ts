@@ -86,3 +86,12 @@ export async function deleteObjects(keys: string[]) {
   // Single deletes: R2's DeleteObjects is picky about checksum headers across SDK versions.
   await Promise.allSettled(keys.map((Key) => r2().send(new DeleteObjectCommand({ Bucket: bucket(), Key }))));
 }
+
+/** GET link for a public site video; the browser streams it from R2 with range requests. */
+export function presignVideoGet(key: string, expiresIn = 12 * 60 * 60) {
+  return getSignedUrl(
+    r2(),
+    new GetObjectCommand({ Bucket: bucket(), Key: key, ResponseContentType: key.endsWith(".webm") ? "video/webm" : "video/mp4" }),
+    { expiresIn },
+  );
+}

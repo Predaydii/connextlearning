@@ -1,6 +1,7 @@
-import { NewsPostForm, NewsPostRow, NewsVideoForm } from "@/components/admin/news-forms";
+import { NewsPostForm, NewsPostRow } from "@/components/admin/news-forms";
+import { VideoUploader } from "@/components/admin/video-uploader";
 import { db } from "@/lib/db";
-import { customCover } from "@/lib/covers";
+import { customCover, videoUrl } from "@/lib/covers";
 import { formatThaiDate } from "@/lib/format";
 import { requireAdminPage } from "@/lib/session";
 
@@ -9,7 +10,7 @@ export const metadata = { title: "ข่าวสาร" };
 export default async function AdminNewsPage() {
   await requireAdminPage("/news");
   const [setting, posts] = await Promise.all([
-    db.siteSetting.findUnique({ where: { id: 1 }, select: { newsVideoId: true } }),
+    db.siteSetting.findUnique({ where: { id: 1 }, select: { newsVideoKey: true } }),
     db.newsPost.findMany({ orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }] }),
   ]);
 
@@ -18,7 +19,7 @@ export default async function AdminNewsPage() {
       <section className="card p-6">
         <h2 className="text-lg font-semibold">วิดีโอเด่น</h2>
         <p className="mb-5 text-sm">แสดงขนาด 16:9 ที่ด้านบนของหน้าข่าวสาร</p>
-        <NewsVideoForm videoId={setting?.newsVideoId ?? null} />
+        <VideoUploader slot="news" src={setting?.newsVideoKey ? videoUrl(setting.newsVideoKey) : null} />
       </section>
 
       <section className="card p-6">

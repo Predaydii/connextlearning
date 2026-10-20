@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { deleteNewsPost, saveNewsPost, setNewsVideo, type ActionState } from "@/app/actions/admin";
+import { deleteNewsPost, saveNewsPost, type ActionState } from "@/app/actions/admin";
 
 function Notice({ state }: { state: ActionState }) {
   if (!state) return null;
@@ -12,30 +12,6 @@ function Notice({ state }: { state: ActionState }) {
   );
 }
 
-
-export function NewsVideoForm({ videoId }: { videoId: string | null }) {
-  const [state, action, pending] = useActionState(setNewsVideo, null);
-  return (
-    <form action={action} className="grid gap-3">
-      <label className="grid gap-1 text-sm font-medium text-ink">
-        ลิงก์ YouTube
-        <input
-          name="url"
-          type="text"
-          inputMode="url"
-          defaultValue={videoId ? `https://www.youtube.com/watch?v=${videoId}` : ""}
-          placeholder="https://www.youtube.com/watch?v=..."
-          className="field"
-        />
-      </label>
-      <div className="flex flex-wrap items-center gap-3">
-        <button disabled={pending} className="btn-primary btn-sm">{pending ? "กำลังบันทึก…" : "บันทึกวิดีโอ"}</button>
-        <span className="text-xs">เว้นว่างแล้วบันทึกเพื่อนำวิดีโอออก</span>
-        <Notice state={state} />
-      </div>
-    </form>
-  );
-}
 
 export type NewsFormPost = {
   id: string;

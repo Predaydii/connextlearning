@@ -3,7 +3,8 @@ import { withBase } from "@/lib/urls";
 import { ClassroomPicker } from "@/components/classroom-picker";
 import { Avatar } from "@/components/avatar";
 import { EyeIcon } from "@/components/sheet-card";
-import { getContributors, getLeaderboards, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
+import { getContributors, getHomeMedia, getLeaderboards, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
+import { GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
 import { GRADES, gradeLabel } from "@/lib/constants";
 import { classroomsOf } from "@/lib/classrooms";
 import { formatNumber } from "@/lib/format";
@@ -11,22 +12,10 @@ import { formatNumber } from "@/lib/format";
 // Static page, refreshed every 2 minutes (all data comes from cached queries)
 export const revalidate = 120;
 
-// Grade artwork (4:5) in /public/img/sheets; each opens the sheets page filtered
-const BY_GRADE = [
-  { img: 1, alt: "ชีทสรุป ม.1", q: "grade=M1" },
-  { img: 2, alt: "ชีทสรุป ม.2", q: "grade=M2" },
-  { img: 3, alt: "ชีทสรุป ม.3", q: "grade=M3" },
-  { img: 4, alt: "ชีทสรุป ม.4", q: "grade=M4" },
-  { img: 5, alt: "ชีทสรุป ม.5", q: "grade=M5" },
-  { img: 6, alt: "ชีทสรุป ม.6", q: "grade=M6" },
-  { img: 7, alt: "ชีทสรุป วิชาอื่น ๆ ม.ต้น", q: "subject=other-lower" },
-  { img: 8, alt: "ชีทสรุป วิชาอื่น ๆ ม.ปลาย", q: "subject=other-upper" },
-];
-
 const ROOMS = GRADES.reduce((n, g) => n + classroomsOf(g.value).length, 0);
 
 export default async function HomePage() {
-  const [stats, contributors, boards] = await Promise.all([getSiteStats(), getContributors(30), getLeaderboards(5)]);
+  const [stats, contributors, boards, media] = await Promise.all([getSiteStats(), getContributors(30), getLeaderboards(5), getHomeMedia()]);
 
   return (
     <>
@@ -34,9 +23,10 @@ export default async function HomePage() {
       <Stats sheets={stats.sheets} views={stats.views} authors={stats.authors} />
       {contributors.length > 0 && <Contributors people={contributors} />}
       <Leaderboards topRated={boards.topRated} mostRead={boards.mostRead} />
-      <ByGrade />
+      <ByGrade art={media.gradeArt} />
       <ClassroomSection />
       <ShareBand />
+      {media.videoKey && <HomeVideo src={videoUrl(media.videoKey)} />}
     </>
   );
 }
@@ -47,14 +37,16 @@ export default async function HomePage() {
 
 function Hero() {
   const rise = "motion-safe:animate-rise";
+  // Waits for the opening animation on the first visit (--intro-delay, see globals.css)
+  const at = (ms: number) => ({ animationDelay: `calc(var(--intro-delay) + ${ms}ms)` });
   return (
     <section id="home" className="relative overflow-hidden bg-white">
       <div className="container-page grid items-center gap-3 pt-10 text-center md:pt-14 min-[901px]:grid-cols-[1.05fr_1fr] min-[901px]:gap-10 min-[901px]:text-left lg:pt-[72px]">
         <div className="pb-2 min-[901px]:pb-20">
-          <p className={`${rise} mb-3.5 inline-flex items-center gap-2 text-lg font-semibold text-primary-800 before:h-1 before:w-7 before:rounded before:bg-sky`}>
+          <p style={at(0)} className={`${rise} mb-3.5 inline-flex items-center gap-2 text-lg font-semibold text-primary-800 before:h-1 before:w-7 before:rounded before:bg-sky`}>
             โรงเรียนตราษตระการคุณ
           </p>
-          <h1 className={`${rise} isolate mb-5 text-[clamp(1.8rem,8.4vw,2.2rem)] font-bold tracking-tight text-primary-800 [animation-delay:80ms] sm:text-[clamp(2.1rem,4.6vw,3.6rem)]`}>
+          <h1 style={at(80)} className={`${rise} isolate mb-5 text-[clamp(1.8rem,8.4vw,2.2rem)] font-bold tracking-tight text-primary-800 sm:text-[clamp(2.1rem,4.6vw,3.6rem)]`}>
             CONNEXT LEARNING
             <br />
             FOR{" "}
@@ -62,11 +54,11 @@ function Hero() {
               ALL LEARNERS
             </span>
           </h1>
-          <p className={`${rise} mx-auto mb-8 max-w-[520px] text-[1.05rem] [animation-delay:160ms] min-[901px]:mx-0`}>
+          <p style={at(160)} className={`${rise} mx-auto mb-8 max-w-[520px] text-[1.05rem] min-[901px]:mx-0`}>
             <strong className="font-semibold text-ink">Learn &amp; Share</strong> แลกเปลี่ยนชีทสรุปทุกวิชา ม.1–ม.6
             หรือกดเข้าห้องเรียนออนไลน์ผ่าน Google Meet
           </p>
-          <div className={`${rise} flex flex-wrap justify-center gap-4 [animation-delay:240ms] min-[901px]:justify-start`}>
+          <div style={at(240)} className={`${rise} flex flex-wrap justify-center gap-4 min-[901px]:justify-start`}>
             <Link href="/sheets" className="btn-primary min-w-0 flex-[1_1_140px] sm:min-w-[180px] sm:flex-none">ดูชีทสรุป</Link>
             <a href="#classroom" className="btn-outline min-w-0 flex-[1_1_140px] sm:min-w-[180px] sm:flex-none">เข้าห้องเรียน</a>
           </div>
@@ -79,7 +71,7 @@ function Hero() {
 }
 
 function HeroVisual() {
-  const delay = (d: string) => ({ animationDelay: d });
+  const delay = (d: string) => ({ animationDelay: `calc(var(--intro-delay) + ${d})` });
   return (
     <div className="@container relative w-[min(420px,86%)] self-end justify-self-center min-[901px]:w-[min(460px,100%)]" aria-hidden>
       <span className="absolute right-[-6%] bottom-0 left-[20%] z-0 h-[72%] rounded-t-full bg-primary motion-safe:animate-rise" style={delay("0.05s")} />
@@ -288,20 +280,29 @@ function SectionHead({ id, title, sub, href, linkLabel }: { id: string; title: s
   );
 }
 
-function ByGrade() {
+function ByGrade({ art }: { art: Record<number, string> }) {
   return (
     <section id="sheets" aria-labelledby="grade-title" className="py-[clamp(56px,8vw,88px)]">
       <div className="container-page">
         <SectionHead id="grade-title" title="ชีทสรุปแยกตามชั้น" sub="กดที่ชั้นของคุณ แล้วกรองวิชาต่อได้" href="/sheets" linkLabel="ชีททั้งหมด" />
         {/* Phones: swipe sideways · tablets and computers: 4 per row, 2 rows */}
         <ul className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-[clamp(14px,2vw,24px)] sm:overflow-visible sm:px-0 sm:pb-0">
-          {BY_GRADE.map((f) => (
-            <li key={f.img} className="w-[68%] shrink-0 snap-center sm:w-auto">
+          {GRADE_ART.map((f) => (
+            <li key={f.slot} className="w-[68%] shrink-0 snap-center sm:w-auto">
               <Link
                 href={`/sheets?${f.q}`}
                 className="block aspect-[4/5] overflow-hidden rounded-2xl bg-primary-50 shadow-card ring-1 ring-line/60 transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg"
               >
-                <img src={withBase(`/img/sheets/sheet-${f.img}.webp`)} width={480} height={600} alt={f.alt} loading="lazy" decoding="async" className="size-full object-cover" />
+                <img
+                  {...gradeArt(f.slot, art[f.slot])}
+                  sizes="(min-width: 1264px) 300px, (min-width: 640px) 24vw, 68vw"
+                  width={480}
+                  height={600}
+                  alt={`ชีทสรุป ${f.label}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="size-full object-cover"
+                />
               </Link>
             </li>
           ))}
@@ -316,39 +317,109 @@ function ClassroomSection() {
     <section
       id="classroom"
       aria-labelledby="classroom-title"
-      className="bg-primary-50 bg-[radial-gradient(600px_300px_at_100%_0%,rgb(3_160_219/0.10),transparent_70%)] py-[clamp(56px,8vw,88px)]"
+      className="bg-primary-50 py-[clamp(56px,8vw,88px)]"
     >
       <div className="container-page">
-        <SectionHead id="classroom-title" title="ห้องเรียนออนไลน์" sub="เลือกชั้น แล้วกดห้องของคุณเพื่อเข้า Google Meet" />
+        <SectionHead id="classroom-title" title="ห้องเรียนออนไลน์" sub="เลือกชั้น แล้วกดห้องของคุณ ระบบจะเปิด Google Meet ให้ทันที" />
         <ClassroomPicker />
       </div>
     </section>
   );
 }
 
+// The three steps light up one after another (6 s loop) while the bar fills, so the flow reads at a glance.
+// Without motion every step simply shows in full.
+const SHARE_STEPS = [
+  { title: "อัปโหลด", desc: "ส่งไฟล์ PDF หรือรูปถ่ายชีทของคุณ", icon: <UploadArt /> },
+  { title: "สภานักเรียนตรวจ", desc: "ตรวจความถูกต้องก่อนเผยแพร่", icon: <ReviewArt /> },
+  { title: "ขึ้นเว็บพร้อมชื่อคุณ", desc: "เพื่อน ๆ อ่านและให้ดาวได้ทันที", icon: <PublishArt /> },
+];
+
 function ShareBand() {
-  const steps = ["อัปโหลด PDF หรือรูปถ่าย", "สภานักเรียนตรวจ", "ขึ้นเว็บพร้อมชื่อคุณ"];
   return (
     <section aria-labelledby="share-title" className="py-[clamp(56px,8vw,88px)]">
       <div className="container-page">
-        <div className="relative overflow-hidden rounded-3xl bg-accent px-6 py-10 sm:px-10 md:px-14 md:py-12">
-          <span aria-hidden className="absolute -top-16 -right-16 size-56 rounded-full border-[28px] border-white/25" />
-          <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 id="share-title" className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-primary-800">มีชีทดี ๆ อยากแบ่งปัน?</h2>
-              <ol className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 font-medium text-ink">
-                {steps.map((s, i) => (
-                  <li key={s} className="flex items-center gap-2">
-                    <span className="grid size-6 place-items-center rounded-full bg-primary-800 text-xs font-bold text-white">{i + 1}</span>
-                    {s}
-                    {i < steps.length - 1 && <span aria-hidden className="ml-1 hidden text-ink/40 sm:inline">→</span>}
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <Link href="/sheets/upload" className="btn-primary shrink-0">แชร์ชีทของคุณ</Link>
+        <div className="relative overflow-hidden rounded-3xl bg-primary-800 px-5 py-10 text-white sm:px-10 md:px-14 md:py-14">
+          <span aria-hidden className="absolute -top-24 -right-24 size-72 rounded-full border-[36px] border-white/5" />
+          <div className="relative text-center">
+            <h2 id="share-title" className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-white">มีชีทดี ๆ อยากแบ่งปัน?</h2>
+            <p className="mt-2 text-white/75">แชร์ได้ใน 3 ขั้นตอน ชื่อของคุณจะอยู่บนชีทที่เพื่อน ๆ อ่าน</p>
+          </div>
+
+          <ol className="share-flow relative mt-10 grid gap-4 md:grid-cols-3 md:gap-6">
+            {/* track between the step centres (desktop) */}
+            <li aria-hidden className="absolute top-[52px] right-[16.66%] left-[16.66%] hidden h-1 rounded-full bg-white/15 md:block">
+              <span className="share-fill block h-full rounded-full bg-accent" />
+            </li>
+            {SHARE_STEPS.map((s, i) => (
+              <li key={s.title} className="share-step relative flex items-center gap-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 md:flex-col md:bg-transparent md:p-0 md:text-center md:ring-0">
+                <span className="share-icon relative z-[1] grid size-[72px] shrink-0 place-items-center rounded-2xl bg-white text-primary shadow-[0_10px_30px_rgb(0_0_0/0.25)] md:size-[104px] md:rounded-3xl">
+                  {s.icon}
+                  <span className="absolute -top-2 -left-2 grid size-7 place-items-center rounded-full bg-accent text-sm font-bold text-ink">{i + 1}</span>
+                </span>
+                <span>
+                  <span className="block text-lg font-semibold text-white">{s.title}</span>
+                  <span className="block text-sm text-white/70">{s.desc}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <div className="relative mt-10 text-center">
+            <Link href="/sheets/upload" className="btn border-accent bg-accent text-ink hover:brightness-105">
+              แชร์ชีทของคุณ
+            </Link>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function UploadArt() {
+  return (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="size-10 md:size-14" aria-hidden>
+      <path d="M12 30v8a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2v-8" />
+      <g className="share-upload">
+        <path d="M24 30V10" />
+        <path d="m16 17 8-8 8 8" />
+      </g>
+    </svg>
+  );
+}
+
+function ReviewArt() {
+  return (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="size-10 md:size-14" aria-hidden>
+      <path d="M30 6H14a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V12z" />
+      <path d="M30 6v6h6" />
+      <path className="share-check text-sky" d="m18 26 5 5 9-10" pathLength={1} />
+    </svg>
+  );
+}
+
+function PublishArt() {
+  return (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="size-10 md:size-14" aria-hidden>
+      <rect x="6" y="10" width="36" height="28" rx="3" />
+      <circle cx="15" cy="20" r="3.5" />
+      <path d="M22 18h13M22 23h9M12 31h24" />
+      <path className="share-star fill-accent stroke-accent" d="m38 4 1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" strokeWidth="1" />
+    </svg>
+  );
+}
+
+function HomeVideo({ src }: { src: string }) {
+  return (
+    <section aria-label="วิดีโอแนะนำ" className="pb-[clamp(56px,8vw,88px)]">
+      <div className="container-page">
+        <video
+          src={src}
+          controls
+          playsInline
+          preload="metadata"
+          className="mx-auto aspect-video w-full max-w-5xl rounded-3xl bg-ink shadow-brand ring-1 ring-line/60"
+        />
       </div>
     </section>
   );

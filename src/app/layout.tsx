@@ -37,10 +37,19 @@ export const viewport: Viewport = {
   themeColor: "#203cc7",
 };
 
+// Opening screen once per browser session (skipped with reduced motion). Runs before the first paint;
+// the class is removed again once the hero has finished animating in.
+const INTRO_SCRIPT = `try{var d=document.documentElement;if(!sessionStorage.getItem("cl-intro")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){sessionStorage.setItem("cl-intro","1");d.classList.add("intro");setTimeout(function(){d.classList.remove("intro")},2600)}}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="th" className={prompt.variable}>
+    // html.intro is added by INTRO_SCRIPT before hydration
+    <html lang="th" className={prompt.variable} suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col">
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
+        <div className="intro-screen" aria-hidden>
+          <img src={withBase("/img/logo-white-480.webp")} alt="" width={240} height={69} className="w-[min(260px,60vw)]" />
+        </div>
         <a
           href="#main"
           className="absolute -top-16 left-3 z-[100] rounded-xl bg-primary px-4 py-2.5 text-white transition-[top] focus:top-3"

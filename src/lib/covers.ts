@@ -38,3 +38,27 @@ export function resolveCover(
 }
 
 export const COVER_KEY_RE = /^covers\/[a-f0-9-]{36}$/;
+
+/** Landing-page "sheets by grade" tiles (4:5); each opens the sheets page filtered. Built-in art in /public/img/sheets. */
+export const GRADE_ART = [
+  { slot: 1, label: "ม.1", q: "grade=M1" },
+  { slot: 2, label: "ม.2", q: "grade=M2" },
+  { slot: 3, label: "ม.3", q: "grade=M3" },
+  { slot: 4, label: "ม.4", q: "grade=M4" },
+  { slot: 5, label: "ม.5", q: "grade=M5" },
+  { slot: 6, label: "ม.6", q: "grade=M6" },
+  { slot: 7, label: "วิชาอื่น ๆ ม.ต้น", q: "subject=other-lower" },
+  { slot: 8, label: "วิชาอื่น ๆ ม.ปลาย", q: "subject=other-upper" },
+] as const;
+
+/** Custom tile (R2) or the built-in one. */
+export function gradeArt(slot: number, key: string | undefined): { src: string; srcSet?: string } {
+  if (!key) return { src: withBase(`/img/sheets/sheet-${slot}.webp`) };
+  const c = customCover(key);
+  return { src: c.small, srcSet: `${c.small} 640w, ${c.large} 1280w` };
+}
+
+/** Public URL of an admin-uploaded video (redirects to R2). */
+export function videoUrl(key: string) {
+  return withBase(`/media/${key}`);
+}

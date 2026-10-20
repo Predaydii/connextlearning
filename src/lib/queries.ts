@@ -15,7 +15,7 @@ export const TAG_SETTINGS = "settings";
 
 export const getCoverSettings = unstable_cache(
   async (): Promise<CoverSettings> => {
-    const s = await db.siteSetting.findUnique({ where: { id: 1 } });
+    const s = await db.siteSetting.findUnique({ where: { id: 1 }, select: { coverMode: true, uniformCoverKey: true } });
     return { coverMode: s?.coverMode ?? "SUBJECT", uniformCoverKey: s?.uniformCoverKey ?? null };
   },
   ["cover-settings"],
@@ -358,12 +358,28 @@ export const TAG_NEWS = "news";
 export const getNews = unstable_cache(
   async () => {
     const [setting, posts] = await Promise.all([
-      db.siteSetting.findUnique({ where: { id: 1 }, select: { newsVideoId: true } }),
+      db.siteSetting.findUnique({ where: { id: 1 }, select: { newsVideoKey: true } }),
       db.newsPost.findMany({ orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }] }),
     ]);
     // ISO strings: unstable_cache stores JSON, so Dates would come back as strings anyway
-    return { videoId: setting?.newsVideoId ?? null, posts: posts.map((p) => ({ ...p, publishedAt: p.publishedAt.toISOString() })) };
+    return { videoKey: setting?.newsVideoKey ?? null, posts: posts.map((p) => ({ ...p, publishedAt: p.publishedAt.toISOString() })) };
   },
-  ["news"],
+  ["news-v2"],
   { tags: [TAG_NEWS], revalidate: 600 },
+);
+
+/** Landing page media: custom grade tiles (slot → R2 key) and the video above the footer. */
+export const getHomeMedia = unstable_cache(
+  async () => {
+    const [setting, images] = await Promise.all([
+      db.siteSetting.findUnique({ where: { id: 1 }, select: { homeVideoKey: true } }),
+      db.homeImage.findMany(),
+    ]);
+    return {
+      videoKey: setting?.homeVideoKey ?? null,
+      gradeArt: Object.fromEntries(images.map((i) => [i.slot, i.imageKey])) as Record<number, string>,
+    };
+  },
+  ["home-media"],
+  { tags: [TAG_SETTINGS], revalidate: 300 },
 );

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getInstagramPosts, INSTAGRAM_PROFILE_URL, INSTAGRAM_USERNAME } from "@/lib/instagram";
-import { customCover } from "@/lib/covers";
+import { customCover, videoUrl } from "@/lib/covers";
 import { formatThaiDate } from "@/lib/format";
 import { getNews } from "@/lib/queries";
 
@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const [{ videoId, posts }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
-  const empty = !videoId && posts.length === 0 && !igPosts?.length;
+  const [{ videoKey, posts }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
+  const empty = !videoKey && posts.length === 0 && !igPosts?.length;
 
   return (
     <div className="container-page py-10 md:py-14">
@@ -27,17 +27,14 @@ export default async function NewsPage() {
         </div>
       )}
 
-      {videoId && (
-        <div className="mx-auto mb-10 aspect-video max-w-5xl overflow-hidden rounded-2xl bg-ink shadow-card ring-1 ring-line/60">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
-            title="วิดีโอข่าวสาร"
-            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
-            className="size-full"
-          />
-        </div>
+      {videoKey && (
+        <video
+          src={videoUrl(videoKey)}
+          controls
+          playsInline
+          preload="metadata"
+          className="mx-auto mb-10 aspect-video w-full max-w-5xl rounded-2xl bg-ink shadow-card ring-1 ring-line/60"
+        />
       )}
 
       {posts.length > 0 && (
