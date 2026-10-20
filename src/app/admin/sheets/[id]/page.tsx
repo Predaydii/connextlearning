@@ -13,9 +13,6 @@ import { adminHref, withBase } from "@/lib/urls";
 
 export const metadata = { title: "ตรวจสอบชีท" };
 
-// Approval may upload the PDF to Google Drive
-export const maxDuration = 60;
-
 export default async function AdminSheetReviewPage(props: PageProps<"/admin/sheets/[id]">) {
   const { id } = await props.params;
   await requireAdminPage(`/sheets/${id}`);
@@ -66,12 +63,6 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
               <dt>ภาคเรียน</dt><dd className="text-ink">{sheet.semester}/{sheet.academicYear}</dd>
               <dt>ส่งเมื่อ</dt><dd className="text-ink">{formatThaiDateTime(sheet.createdAt)}</dd>
               <dt>ผู้เข้าชม</dt><dd className="text-ink">{formatNumber(sheet.viewCount)}</dd>
-              <dt>Google Drive</dt>
-              <dd className="text-ink">
-                {sheet.driveUrl ? (
-                  <a href={sheet.driveUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">เปิดลิงก์ ↗</a>
-                ) : sheet.driveFileId ? "อัปโหลดแล้ว (ยังไม่เผยแพร่)" : "ยังไม่ได้อัปโหลด – จะอัปโหลดเมื่ออนุมัติ"}
-              </dd>
               {sheet.reviewedBy && (
                 <>
                   <dt>ตรวจโดย</dt>
@@ -98,7 +89,7 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
             )}
             <RejectForm id={sheet.id} defaultReason={sheet.rejectReason} />
             {sheet.status === "APPROVED" && (
-              <p className="text-xs">การไม่อนุมัติชีทที่เผยแพร่แล้วจะนำไฟล์ออกจาก Google Drive และซ่อนจากหน้าสาธารณะ</p>
+              <p className="text-xs">การไม่อนุมัติชีทที่เผยแพร่แล้วจะซ่อนจากหน้าสาธารณะทันที และไม่มีใครเปิดอ่านได้อีก</p>
             )}
           </section>
 

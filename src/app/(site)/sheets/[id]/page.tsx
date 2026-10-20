@@ -35,11 +35,10 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
 
   // Prototype sheets (npm run db:demo) have no real file
   const isDemo = sheet.pdfKey.startsWith("demo/");
-  const published = sheet.status === "APPROVED" && (!!sheet.driveFileId || isDemo);
-  const isPublic = sheet.status === "APPROVED";
+  const published = sheet.status === "APPROVED";
   const [related, community] = await Promise.all([
     getRelatedSheets(sheet),
-    isPublic ? getSheetCommunity(sheet.id, user?.id ?? null) : null,
+    published ? getSheetCommunity(sheet.id, user?.id ?? null) : null,
   ]);
 
   return (

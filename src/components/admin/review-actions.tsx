@@ -61,7 +61,7 @@ export function DeleteButton({ id }: { id: string }) {
         type="button"
         disabled={pending}
         onClick={() => {
-          if (!confirm("ลบชีทนี้ถาวร? ไฟล์ใน Google Drive และข้อมูลทั้งหมดจะถูกลบ")) return;
+          if (!confirm("ลบชีทนี้ถาวร? ไฟล์ PDF และข้อมูลทั้งหมดจะถูกลบ")) return;
           start(async () => {
             const res = await deleteSheet(id);
             setState(res);

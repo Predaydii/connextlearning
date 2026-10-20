@@ -36,6 +36,20 @@ export function presignPut(key: string, contentType: string, contentLength: numb
   );
 }
 
+/** Short-lived GET link that opens a PDF inline in the browser (R2 egress is free). */
+export function presignPdfGet(key: string, fileName: string, expiresIn = 5 * 60) {
+  return getSignedUrl(
+    r2(),
+    new GetObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      ResponseContentType: "application/pdf",
+      ResponseContentDisposition: `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+    }),
+    { expiresIn },
+  );
+}
+
 export async function headObject(key: string) {
   try {
     const res = await r2().send(new HeadObjectCommand({ Bucket: bucket(), Key: key }));

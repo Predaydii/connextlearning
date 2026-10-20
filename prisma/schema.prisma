@@ -152,13 +152,10 @@ model Sheet {
   // Admin-chosen cover for this sheet only (overrides subject / uniform cover)
   coverKey     String?
 
-  // Merged PDF kept privately in R2 (admin preview + Drive re-upload)
+  // Merged PDF kept privately in R2; readers get a short-lived signed link
   pdfKey       String
   pdfBytes     Int
   pageCount    Int
-
-  driveFileId  String?
-  driveUrl     String?
 
   viewCount    Int         @default(0)
 

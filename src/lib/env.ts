@@ -14,15 +14,6 @@ const schema = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
   R2_BUCKET: z.string().min(1),
-
-  // Google Drive – either a service account (recommended, needs a Shared Drive)
-  // or an OAuth refresh token of a regular account.
-  GOOGLE_DRIVE_FOLDER_ID: z.string().min(1),
-  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().optional(),
-  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: z.string().optional(),
-  GOOGLE_DRIVE_REFRESH_TOKEN: z.string().optional(),
-  // "anyone" = anyone with the link, "domain" = only @tkschool.ac.th accounts
-  GOOGLE_DRIVE_SHARE_MODE: z.enum(["anyone", "domain"]).default("anyone"),
 });
 
 export type Env = z.infer<typeof schema>;

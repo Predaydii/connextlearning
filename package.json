@@ -23,7 +23,6 @@
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "better-auth": "^1.7.6",
-    "google-auth-library": "^11.1.0",
     "next": "^16.3.6",
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.0",

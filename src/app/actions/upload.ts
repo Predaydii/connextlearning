@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { deleteObjects, getObjectBytes, headObject, presignPut, putObject } from "@/lib/r2";
-import { uploadPdfToDrive } from "@/lib/drive";
 import { mergeToPdf, sniffKind, UserFacingError, type FileKind } from "@/lib/pdf";
 import { assertUser, AuthError } from "@/lib/session";
 import {
@@ -81,7 +80,7 @@ export async function requestUploadUrls(
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 – merge into one PDF, store, push to Google Drive, queue for review
+// Step 2 – merge into one PDF, store it privately in R2, queue for review
 // ---------------------------------------------------------------------------
 
 const submitInput = z.object({
@@ -146,16 +145,6 @@ export async function submitSheet(input: SubmitSheetInput): Promise<Result<{ id:
     const pdfKey = `sheets/${randomUUID()}.pdf`;
     await putObject(pdfKey, bytes, "application/pdf");
 
-    // Upload to Drive now (kept private until an admin approves). If Drive is
-    // unavailable the sheet is still queued; approval retries the upload.
-    let driveFileId: string | null = null;
-    try {
-      const name = `[${subject.name}] ${gradeLabel(data.grade)} เทอม ${data.semester}-${data.academicYear} - ${data.title}.pdf`;
-      driveFileId = await uploadPdfToDrive(name, bytes, data.description);
-    } catch (err) {
-      console.error("[upload] Google Drive upload failed, will retry on approval", err);
-    }
-
     const sheet = await db.sheet.create({
       data: {
         title: data.title,
@@ -167,7 +156,6 @@ export async function submitSheet(input: SubmitSheetInput): Promise<Result<{ id:
         pdfKey,
         pdfBytes: bytes.byteLength,
         pageCount,
-        driveFileId,
         authorId: user.id,
       },
       select: { id: true },

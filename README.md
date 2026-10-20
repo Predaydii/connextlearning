@@ -2,7 +2,7 @@
 
 พื้นที่เรียนออนไลน์และระบบแชร์ชีทสรุปของโรงเรียนตราษตระการคุณ
 
-**Stack:** Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS 4 · Prisma 7 + Neon (Postgres) · Better Auth (Google) · Cloudflare R2 · Google Drive API
+**Stack:** Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS 4 · Prisma 7 + Neon (Postgres) · Better Auth (Google) · Cloudflare R2
 
 ## ฟีเจอร์
 
@@ -10,13 +10,13 @@
 | --- | --- | --- |
 | `/` | ทุกคน | Landing page (static, cache ที่ CDN) |
 | `/sheets` | ทุกคน | รวมชีทที่อนุมัติแล้ว · ตัวกรองระดับชั้น / วิชา / ภาคเรียน / ปีการศึกษา · ค้นหา · เรียงล่าสุด/ยอดนิยม |
-| `/sheets/[id]` | ล็อกอิน | รายละเอียด + ปุ่มเปิดอ่านบน Google Drive + ตัวอย่างไฟล์ · นับผู้เข้าชม 1 ครั้งต่อคน |
-| `/sheets/upload` | ล็อกอิน | อัปโหลด PDF/PNG/JPG หลายไฟล์ จัดลำดับได้ → ระบบรวมเป็น PDF → เก็บใน R2 + Google Drive → รอตรวจ |
+| `/sheets/[id]` | ล็อกอิน | รายละเอียด + ปุ่มอ่านชีท (เปิด PDF จาก R2 ผ่านลิงก์ที่ใช้ได้ 5 นาที) · นับผู้เข้าชม 1 ครั้งต่อคน |
+| `/sheets/upload` | ล็อกอิน | อัปโหลด PDF/PNG/JPG หลายไฟล์ จัดลำดับได้ → ระบบรวมเป็น PDF → เก็บใน R2 (ส่วนตัว) → รอตรวจ |
 | `/sheets/[id]#community` | ทุกคนดู · ล็อกอินเพื่อร่วม | ให้ดาว 1–5 (ให้ชีทตัวเองไม่ได้) · คอมเมนต์ (≤1,000 ตัวอักษร, 10 ครั้ง/10 นาที) · ผู้เขียนหรือแอดมินลบคอมเมนต์ได้ |
 | `/u/[id]` | ทุกคน | โปรไฟล์ผู้จัดทำ: ชื่อ รูป ชีทที่เผยแพร่ ยอดเข้าชมรวม คะแนนเฉลี่ย (ไม่แสดงอีเมล · noindex) |
 | `/my-sheets` | ล็อกอิน | ชีทของฉัน สถานะ และเหตุผลกรณีไม่อนุมัติ |
 | `admin.…/` | แอดมิน | แดชบอร์ดสถิติ |
-| `admin.…/sheets` | แอดมิน | คิวตรวจสอบ · อนุมัติ (เผยแพร่ลิงก์ Drive) / ไม่อนุมัติ (ถอดไฟล์จาก Drive) / ลบ · เปลี่ยนภาพปกรายชีท |
+| `admin.…/sheets` | แอดมิน | คิวตรวจสอบ · อนุมัติ (เผยแพร่) / ไม่อนุมัติ (ซ่อนทันที) / ลบ · เปลี่ยนภาพปกรายชีท |
 | `admin.…/covers` | แอดมิน | ภาพปก 16:9 แบบ "เหมือนกันทั้งหมด" หรือ "แยกตามวิชา" |
 
 ### โดเมน
@@ -35,8 +35,8 @@
 
 1. เบราว์เซอร์ขอ presigned URL (server action ตรวจสิทธิ์ ชนิดไฟล์ ขนาด โควตา 20 ชีท/วัน)
 2. เบราว์เซอร์อัปโหลดไฟล์ตรงไป R2 (`uploads/<userId>/…`) ไม่ผ่านเซิร์ฟเวอร์ → ไม่ติดลิมิต body size
-3. เซิร์ฟเวอร์ตรวจ magic bytes จริงของไฟล์ · รวมเป็น PDF (รูปถูกย่อ/ลบ EXIF ด้วย sharp) · บันทึก `sheets/<uuid>.pdf` ใน R2 · อัปโหลดขึ้น Drive (ยังไม่แชร์) · ลบไฟล์ต้นฉบับ
-4. แอดมินอนุมัติ → ตั้งสิทธิ์ Drive เป็น "ทุกคนที่มีลิงก์" (หรือเฉพาะโดเมนโรงเรียน) → แสดงในหน้าสาธารณะ
+3. เซิร์ฟเวอร์ตรวจ magic bytes จริงของไฟล์ · รวมเป็น PDF (รูปถูกย่อ/ลบ EXIF ด้วย sharp) · บันทึก `sheets/<uuid>.pdf` ใน R2 · ลบไฟล์ต้นฉบับ
+4. แอดมินอนุมัติ → แสดงในหน้าสาธารณะ · ปุ่ม "อ่านชีท" ต้องล็อกอิน แล้ว redirect ไปลิงก์ R2 แบบ signed อายุ 5 นาที (bucket ไม่เปิดสาธารณะ)
 
 ## ตั้งค่าครั้งแรก
 
@@ -55,20 +55,9 @@ npm run dev
 Google Cloud Console → APIs & Services → Credentials → OAuth client ID (Web application)
 - Authorized JavaScript origins: `https://tratcouncil.com`, `http://localhost:3000`
 - Authorized redirect URIs: `https://tratcouncil.com/connextlearning/api/auth/callback/google` และ `http://localhost:3000/connextlearning/api/auth/callback/google`
-- OAuth consent screen: ตั้งเป็น **Internal** (จำกัดเฉพาะองค์กร tkschool.ac.th) ถ้าโปรเจกต์อยู่ใต้ Workspace ของโรงเรียน
+- OAuth consent screen: ตั้งเป็น **Internal** ถ้าโปรเจกต์อยู่ใต้ Workspace ของโรงเรียน ไม่อย่างนั้นต้อง **Publish app** (สถานะ In production) ไม่เช่นนั้นล็อกอินได้เฉพาะ Test users
 
-### 3. Google Drive
-**แบบ A – Service account (แนะนำ)**
-1. เปิดใช้ Google Drive API · สร้าง Service account → Keys → JSON
-2. สร้าง **Shared Drive** (service account ไม่มีพื้นที่เก็บของตัวเอง) → เพิ่มอีเมล service account เป็น *Content manager*
-3. สร้างโฟลเดอร์ใน Shared Drive → คัดลอก ID จาก URL ใส่ `GOOGLE_DRIVE_FOLDER_ID`
-4. ใส่ `client_email` และ `private_key` ลง `GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
-
-**แบบ B – บัญชีปกติ:** ขอ refresh token (scope `https://www.googleapis.com/auth/drive`) ด้วย OAuth client เดียวกัน แล้วใส่ `GOOGLE_DRIVE_REFRESH_TOKEN`
-
-> ถ้าผู้ดูแล Workspace ปิดการแชร์ลิงก์ออกนอกองค์กร ให้ตั้ง `GOOGLE_DRIVE_SHARE_MODE="domain"`
-
-### 4. Cloudflare R2
+### 3. Cloudflare R2
 1. สร้าง bucket (ไม่ต้องเปิด public access) → R2 API token สิทธิ์ Object Read & Write เฉพาะ bucket นี้
 2. **CORS** ของ bucket (ให้เบราว์เซอร์อัปโหลดตรงได้):
    ```json
@@ -100,8 +89,8 @@ Google Cloud Console → APIs & Services → Credentials → OAuth client ID (We
 - Security headers (CSP, HSTS, X-Frame-Options, nosniff, Permissions-Policy) ตั้งใน `next.config.ts`
 - ทุก server action / route ตรวจสิทธิ์ซ้ำฝั่งเซิร์ฟเวอร์ · ตรวจ input ด้วย zod · Prisma ใช้ parameterized query
 - Server Actions มีการตรวจ Origin (กัน CSRF) · Better Auth มี rate limit (เก็บใน DB)
-- ลิงก์ Drive ถูกส่งให้เฉพาะผู้ที่ล็อกอิน · PDF ส่วนตัว (ก่อนอนุมัติ) ดูได้เฉพาะแอดมินและเจ้าของ
-- รองรับ ~2,500 คนพร้อมกัน: หน้าแรกเป็น static · รายการชีท/ตัวกรอง cache 60 วินาที (ล้างทันทีเมื่อแอดมินอนุมัติ) · session อ่านจาก cookie cache ส่วนใหญ่ไม่แตะ DB · ไฟล์ไปตรง R2/Drive ไม่ผ่านเซิร์ฟเวอร์ · Neon ใช้ pooled connection
+- ลิงก์ PDF ออกให้เฉพาะผู้ที่ล็อกอิน และหมดอายุใน 5 นาที · PDF ส่วนตัว (ก่อนอนุมัติ) ดูได้เฉพาะแอดมินและเจ้าของ
+- รองรับ ~2,500 คนพร้อมกัน: หน้าแรกเป็น static · รายการชีท/ตัวกรอง cache 60 วินาที (ล้างทันทีเมื่อแอดมินอนุมัติ) · session อ่านจาก cookie cache ส่วนใหญ่ไม่แตะ DB · ไฟล์อัปโหลด/อ่านตรงกับ R2 ไม่ผ่านเซิร์ฟเวอร์ (R2 ไม่คิดค่า egress) · Neon ใช้ pooled connection
 
 ## คำสั่ง
 

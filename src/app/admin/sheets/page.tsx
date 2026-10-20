@@ -46,7 +46,7 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
       take: PER_PAGE,
       select: {
         id: true, title: true, status: true, grade: true, semester: true, academicYear: true, createdAt: true,
-        viewCount: true, pageCount: true, driveFileId: true,
+        viewCount: true, pageCount: true,
         subject: { select: { name: true } },
         author: { select: { name: true, email: true, image: true } },
       },
@@ -106,9 +106,7 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
                 <td className="max-w-[320px] px-4 py-3">
                   <Link href={adminHref(`/sheets/${s.id}`)} className="line-clamp-1 font-medium text-ink hover:text-primary">{s.title}</Link>
                   <p className="text-xs">
-                    {s.subject.name} · {gradeLabel(s.grade)} · เทอม {s.semester}/{s.academicYear} · {s.pageCount} หน้า
-                    {!s.driveFileId && s.status !== "REJECTED" && <span className="ml-1 text-amber-700">· ยังไม่อยู่ใน Drive</span>}
-                  </p>
+                    {s.subject.name} · {gradeLabel(s.grade)} · เทอม {s.semester}/{s.academicYear} · {s.pageCount} หน้า                  </p>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">

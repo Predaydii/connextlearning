@@ -4,12 +4,11 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { deleteDriveFile, publishDriveFile, uploadPdfToDrive } from "@/lib/drive";
-import { deleteObjects, getObjectBytes, putObject } from "@/lib/r2";
+import { deleteObjects, putObject } from "@/lib/r2";
 import { makeCoverImages, UserFacingError } from "@/lib/pdf";
 import { assertAdmin, AuthError } from "@/lib/session";
 import { TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
-import { gradeLabel, SUBJECT_IDS } from "@/lib/constants";
+import { SUBJECT_IDS } from "@/lib/constants";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -35,25 +34,16 @@ function refreshSheets(id?: string) {
 export async function approveSheet(id: string): Promise<ActionState> {
   try {
     const admin = await assertAdmin();
-    const sheet = await db.sheet.findUnique({ where: { id: sheetId.parse(id) }, include: { subject: true } });
+    const sheet = await db.sheet.findUnique({ where: { id: sheetId.parse(id) } });
     if (!sheet) throw new UserFacingError("ไม่พบชีทนี้");
     if (sheet.status === "APPROVED") return { ok: true, message: "ชีทนี้เผยแพร่อยู่แล้ว" };
 
-    let driveFileId = sheet.driveFileId;
-    if (!driveFileId) {
-      const bytes = await getObjectBytes(sheet.pdfKey);
-      const name = `[${sheet.subject.name}] ${gradeLabel(sheet.grade)} เทอม ${sheet.semester}-${sheet.academicYear} - ${sheet.title}.pdf`;
-      driveFileId = await uploadPdfToDrive(name, bytes, sheet.description);
-    }
-    const driveUrl = await publishDriveFile(driveFileId);
-
+    // The PDF already sits in R2; readers get a short-lived link to it (see /sheets/[id]/read)
     await db.sheet.update({
       where: { id: sheet.id },
       data: {
         status: "APPROVED",
         rejectReason: null,
-        driveFileId,
-        driveUrl,
         reviewedById: admin.id,
         reviewedAt: new Date(),
         publishedAt: sheet.publishedAt ?? new Date(),
@@ -75,20 +65,16 @@ export async function rejectSheet(_prev: ActionState, formData: FormData): Promi
   try {
     const admin = await assertAdmin();
     const { id, reason } = rejectInput.parse({ id: formData.get("id"), reason: formData.get("reason") });
-    const sheet = await db.sheet.findUnique({ where: { id } });
+    const sheet = await db.sheet.findUnique({ where: { id }, select: { id: true } });
     if (!sheet) throw new UserFacingError("ไม่พบชีทนี้");
 
-    // Pull the file off Drive so an old link stops working; the PDF stays in R2
-    // so the sheet can still be re-approved later.
-    if (sheet.driveFileId) await deleteDriveFile(sheet.driveFileId);
-
+    // Hidden from readers at once (/read only serves APPROVED sheets); the PDF
+    // stays in R2 so the sheet can still be re-approved later.
     await db.sheet.update({
       where: { id },
       data: {
         status: "REJECTED",
         rejectReason: reason,
-        driveFileId: null,
-        driveUrl: null,
         reviewedById: admin.id,
         reviewedAt: new Date(),
       },
@@ -105,7 +91,6 @@ export async function deleteSheet(id: string): Promise<ActionState> {
     await assertAdmin();
     const sheet = await db.sheet.findUnique({ where: { id: sheetId.parse(id) } });
     if (!sheet) throw new UserFacingError("ไม่พบชีทนี้");
-    if (sheet.driveFileId) await deleteDriveFile(sheet.driveFileId);
     await db.sheet.delete({ where: { id: sheet.id } });
     await deleteObjects([sheet.pdfKey, ...(sheet.coverKey ? coverFiles(sheet.coverKey) : [])]);
     refreshSheets(sheet.id);
