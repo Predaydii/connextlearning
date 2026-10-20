@@ -19,7 +19,7 @@ export default async function AdminHomePage() {
       <section className="card p-6">
         <h2 className="text-lg font-semibold">ภาพชีทสรุปแยกตามชั้น</h2>
         <p className="mb-5 text-sm">ภาพแนวตั้ง 4:5 (แนะนำ 1280×1600) ระบบครอปให้อัตโนมัติ · กดภาพบนหน้าแรกแล้วจะไปยังชีทของชั้นนั้น</p>
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
           {GRADE_ART.map((g) => (
             <CoverUploader
               key={g.slot}

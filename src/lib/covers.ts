@@ -47,11 +47,10 @@ export const GRADE_ART = [
   { slot: 4, label: "ม.4", q: "grade=M4" },
   { slot: 5, label: "ม.5", q: "grade=M5" },
   { slot: 6, label: "ม.6", q: "grade=M6" },
-  { slot: 7, label: "วิชาอื่น ๆ ม.ต้น", q: "subject=other-lower" },
-  { slot: 8, label: "วิชาอื่น ๆ ม.ปลาย", q: "subject=other-upper" },
 ] as const;
 
 /** Custom tile (R2) or the built-in one. */
+// ponytail: slots 7–8 (วิชาเสริม) were dropped from the landing page; their HomeImage rows, if any, are just unused
 export function gradeArt(slot: number, key: string | undefined): { src: string; srcSet?: string } {
   if (!key) return { src: withBase(`/img/sheets/sheet-${slot}.webp`) };
   const c = customCover(key);

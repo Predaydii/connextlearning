@@ -292,8 +292,8 @@ function ByGrade({ art }: { art: Record<number, string> }) {
     <section id="sheets" aria-labelledby="grade-title" className="py-[clamp(56px,8vw,88px)]">
       <div className="container-page">
         <SectionHead id="grade-title" title="ชีทสรุปแยกตามชั้น" sub="กดที่ชั้นของคุณ แล้วกรองวิชาต่อได้" href="/sheets" linkLabel="ชีททั้งหมด" />
-        {/* Phones: swipe sideways · tablets and computers: 4 per row, 2 rows */}
-        <ul className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-[clamp(14px,2vw,24px)] sm:overflow-visible sm:px-0 sm:pb-0">
+        {/* Phones: swipe sideways · tablets and computers: 3 per row, 2 rows */}
+        <ul className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-[clamp(14px,2vw,24px)] sm:overflow-visible sm:px-0 sm:pb-0">
           {GRADE_ART.map((f) => (
             <li key={f.slot} className="w-[68%] shrink-0 snap-center sm:w-auto">
               <Link
@@ -302,7 +302,7 @@ function ByGrade({ art }: { art: Record<number, string> }) {
               >
                 <img
                   {...gradeArt(f.slot, art[f.slot])}
-                  sizes="(min-width: 1264px) 300px, (min-width: 640px) 24vw, 68vw"
+                  sizes="(min-width: 1264px) 400px, (min-width: 640px) 32vw, 68vw"
                   width={480}
                   height={600}
                   alt={`ชีทสรุป ${f.label}`}

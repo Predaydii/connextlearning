@@ -25,7 +25,7 @@ export default async function AdminDashboard() {
 
 async function loadDashboard() {
   const since = new Date(Date.now() - DAYS * 86_400_000);
-  const [byStatus, users, views, daily, bySubject, topViewed, pending, contributors] = await Promise.all([
+  const [byStatus, users, views, daily, bySubject, topViewed, pending, contributors, visits, signups] = await Promise.all([
     db.sheet.groupBy({ by: ["status"], _count: { _all: true } }),
     db.user.count(),
     db.sheet.aggregate({ _sum: { viewCount: true } }),
@@ -53,24 +53,35 @@ async function loadDashboard() {
       orderBy: { _count: { authorId: "desc" } },
       take: 5,
     }),
+    // Footer visit counter (one row per Bangkok day)
+    db.$queryRaw<{ d: string; c: number }[]>`
+      SELECT to_char("day", 'YYYY-MM-DD') AS d, "count" AS c FROM "SiteVisit" WHERE "day" >= ${lastDays(DAYS)[0]}::date`,
+    db.$queryRaw<{ d: string; c: number }[]>`
+      SELECT to_char(("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date, 'YYYY-MM-DD') AS d, count(*)::int AS c
+      FROM "user" WHERE "createdAt" >= ${since} GROUP BY 1`,
   ]);
 
   const authors = await db.user.findMany({
     where: { id: { in: contributors.map((c) => c.authorId) } },
     select: { id: true, name: true, image: true },
   });
-  return { byStatus, users, views, daily, bySubject, topViewed, pending, contributors, authors, days: lastDays(DAYS) };
+  return { byStatus, users, views, daily, bySubject, topViewed, pending, contributors, authors, visits, signups, days: lastDays(DAYS) };
 }
 
 function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }) {
-  const { byStatus, users, views, daily, bySubject, topViewed, pending, contributors } = data;
+  const { byStatus, users, views, daily, bySubject, topViewed, pending, contributors, visits, signups } = data;
   const status = Object.fromEntries(byStatus.map((s) => [s.status, s._count._all])) as Record<string, number>;
-  const dailyMap = new Map(daily.map((r) => [r.d, r.c]));
-  const days = data.days.map((d) => ({
-    key: d,
-    label: new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" }).format(new Date(`${d}T00:00:00`)),
-    value: dailyMap.get(d) ?? 0,
-  }));
+  const series = (rows: { d: string; c: number }[]) => {
+    const m = new Map(rows.map((r) => [r.d, Number(r.c)]));
+    return data.days.map((d) => ({
+      key: d,
+      label: new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" }).format(new Date(`${d}T00:00:00`)),
+      value: m.get(d) ?? 0,
+    }));
+  };
+  const days = series(daily);
+  const visitDays = series(visits);
+  const signupDays = series(signups);
   const subjectCounts = new Map(bySubject.map((r) => [r.subjectId, r._count._all]));
   const subjectRows = SUBJECTS.map((s) => ({ key: s.id, label: s.name, value: subjectCounts.get(s.id) ?? 0 })).sort(
     (a, b) => b.value - a.value,
@@ -80,8 +91,9 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
   const tiles = [
     { label: "ชีทที่เผยแพร่", value: status.APPROVED ?? 0, href: adminHref("/sheets?status=APPROVED") },
     { label: "รอตรวจสอบ", value: status.PENDING ?? 0, href: adminHref("/sheets"), highlight: (status.PENDING ?? 0) > 0 },
-    { label: "ผู้ใช้งาน", value: users },
-    { label: "ยอดผู้เข้าชมรวม", value: views._sum.viewCount ?? 0 },
+    { label: "ผู้ใช้งาน", value: users, href: adminHref("/users") },
+    { label: "ผู้เข้าชมเว็บวันนี้", value: visitDays.at(-1)?.value ?? 0 },
+    { label: "ยอดเปิดอ่านชีทรวม", value: views._sum.viewCount ?? 0 },
   ];
 
   return (
@@ -92,7 +104,7 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
           <Link href={adminHref(`/sheets/${pending[0].id}`)} className="btn-primary btn-sm">เริ่มตรวจจากชีทที่รอนานสุด →</Link>
         </div>
       )}
-      <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {tiles.map((t) => {
           const body = (
             <>
@@ -139,6 +151,24 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
           <h2 className="text-lg font-semibold">ชีทที่ส่งเข้ามา</h2>
           <p className="mb-5 text-sm">ต่อวัน ย้อนหลัง {DAYS} วัน</p>
           <ColumnChart data={days} unit="ชีท" />
+        </section>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="card p-6">
+          <h2 className="text-lg font-semibold">ผู้เข้าชมเว็บ</h2>
+          <p className="mb-5 text-sm">ต่อวัน ย้อนหลัง {DAYS} วัน · นับเบราว์เซอร์ละครั้งต่อวัน</p>
+          <ColumnChart data={visitDays} unit="คน" />
+        </section>
+        <section className="card p-6">
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">ผู้ใช้ใหม่</h2>
+              <p className="text-sm">ต่อวัน ย้อนหลัง {DAYS} วัน</p>
+            </div>
+            <Link href={adminHref("/users")} className="text-sm font-medium text-primary hover:underline">ดูผู้ใช้ทั้งหมด</Link>
+          </div>
+          <ColumnChart data={signupDays} unit="คน" />
         </section>
       </div>
 

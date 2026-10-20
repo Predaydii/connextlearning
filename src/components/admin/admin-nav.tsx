@@ -7,6 +7,7 @@ import { adminHref } from "@/lib/urls";
 const TABS = [
   { path: "/", label: "แดชบอร์ด" },
   { path: "/sheets", label: "ตรวจสอบชีท" },
+  { path: "/users", label: "ผู้ใช้งาน" },
   { path: "/home", label: "หน้าแรก" },
   { path: "/covers", label: "ภาพปก" },
   { path: "/news", label: "ข่าวสาร" },

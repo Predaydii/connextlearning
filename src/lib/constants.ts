@@ -32,8 +32,8 @@ export const SUBJECTS: { id: string; name: string; color: string; text: string; 
   { id: "science", name: "วิทยาศาสตร์", color: "#16a34a", text: "#ffffff" }, // เขียว
   { id: "english", name: "ภาษาอังกฤษ", color: "#7c3aed", text: "#ffffff" }, // ม่วง
   { id: "thai", name: "ภาษาไทย", color: "#db2777", text: "#ffffff" }, // ชมพู
-  { id: "other-lower", name: "วิชาอื่น ๆ ม.ต้น", color: "#1e40af", text: "#ffffff", levels: LOWER_GRADES }, // น้ำเงิน
-  { id: "other-upper", name: "วิชาอื่น ๆ ม.ปลาย", color: "#1e40af", text: "#ffffff", levels: UPPER_GRADES }, // น้ำเงิน
+  { id: "other-lower", name: "วิชาเสริม ม.ต้น", color: "#1e40af", text: "#ffffff", levels: LOWER_GRADES }, // น้ำเงิน
+  { id: "other-upper", name: "วิชาเสริม ม.ปลาย", color: "#1e40af", text: "#ffffff", levels: UPPER_GRADES }, // น้ำเงิน
 ];
 export const SUBJECT_IDS = SUBJECTS.map((s) => s.id) as [string, ...string[]];
 

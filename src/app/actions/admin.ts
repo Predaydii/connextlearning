@@ -185,7 +185,7 @@ const coverTarget = z.union([
   z.enum(SUBJECT_IDS).transform((id) => ({ subject: id })),
   z.string().regex(/^sheet:.+$/).transform((v) => ({ sheet: v.slice(6) })),
   // Landing-page "sheets by grade" tile (4:5)
-  z.string().regex(/^grade:[1-8]$/).transform((v) => ({ grade: Number(v.slice(6)) })),
+  z.string().regex(/^grade:[1-6]$/).transform((v) => ({ grade: Number(v.slice(6)) })),
 ]);
 
 async function currentCoverKey(target: z.output<typeof coverTarget>) {
