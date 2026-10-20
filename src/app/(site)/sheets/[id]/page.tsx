@@ -17,7 +17,7 @@ import { SubjectBadge } from "@/components/subject-badge";
 
 export async function generateMetadata(props: PageProps<"/sheets/[id]">): Promise<Metadata> {
   const { id } = await props.params;
-  const sheet = await db.sheet.findUnique({ where: { id }, select: { title: true, status: true } });
+  const sheet = await getSheetDetail(id);
   const published = sheet?.status === "APPROVED";
   return { title: published ? sheet.title : "ชีทสรุป", robots: { index: published } };
 }

@@ -18,10 +18,7 @@ export default async function AdminCoversPage() {
     <div className="grid gap-6">
       <section className="card p-6">
         <h2 className="text-lg font-semibold">รูปแบบภาพปกเริ่มต้น</h2>
-        <p className="mb-5 text-sm">
-          ภาพปกใช้อัตราส่วน 16:9 (แนะนำ 1280×720 px) · ภาพที่อัปโหลดจะถูกครอปและย่อให้อัตโนมัติ ·
-          ผู้ดูแลยังเลือกภาพปกเฉพาะให้แต่ละชีทได้ในหน้าตรวจสอบชีท
-        </p>
+        <p className="mb-5 text-sm">ภาพ 16:9 (แนะนำ 1280×720) ระบบครอปให้อัตโนมัติ · ตั้งภาพเฉพาะชีทได้ในหน้าตรวจสอบชีท</p>
         <CoverModeForm mode={settings.coverMode} />
       </section>
 

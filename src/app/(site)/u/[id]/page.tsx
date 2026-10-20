@@ -26,7 +26,6 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
       <section className="card flex flex-col items-center gap-5 p-6 text-center sm:flex-row sm:text-left md:p-8">
         <Avatar name={user.name} image={user.image} size={96} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-sky">ผู้จัดทำชีทสรุป</p>
           <h1 className="text-[clamp(1.5rem,3vw,2.1rem)] font-bold break-words">{user.name}</h1>
           <p className="mt-1 text-sm">เป็นสมาชิกตั้งแต่ {formatThaiDate(user.createdAt)}</p>
         </div>

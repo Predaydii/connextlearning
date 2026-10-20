@@ -39,6 +39,12 @@
     60% { opacity: 1; scale: 1.08; }
     100% { opacity: 1; scale: 1; }
   }
+  /* endless rows: the list is rendered twice, so sliding by half loops seamlessly */
+  --animate-marquee: marquee 45s linear infinite;
+  --animate-marquee-reverse: marquee 45s linear infinite reverse;
+  @keyframes marquee {
+    to { translate: -50% 0; }
+  }
   @keyframes highlight {
     from { transform: scaleX(0); }
     to { transform: scaleX(1); }

@@ -17,7 +17,7 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
   const { id } = await props.params;
   await requireAdminPage(`/sheets/${id}`);
 
-  const [sheet, settings] = await Promise.all([
+  const [sheet, settings, next] = await Promise.all([
     db.sheet.findUnique({
       where: { id },
       include: {
@@ -27,13 +27,18 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
       },
     }),
     getCoverSettings(),
+    // The next sheet in the review queue (oldest pending first)
+    db.sheet.findFirst({ where: { status: "PENDING", id: { not: id } }, orderBy: { createdAt: "asc" }, select: { id: true } }),
   ]);
   if (!sheet) notFound();
   const cover = resolveCover(sheet, settings);
 
   return (
     <div className="grid gap-6">
-      <Link href={adminHref("/sheets")} className="text-sm font-medium text-primary hover:underline">← กลับไปรายการ</Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link href={adminHref("/sheets")} className="text-sm font-medium text-primary hover:underline">← กลับไปรายการ</Link>
+        {next && <Link href={adminHref(`/sheets/${next.id}`)} className="text-sm font-medium text-primary hover:underline">ชีทถัดไปที่รอตรวจ →</Link>}
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         {/* Preview */}
@@ -44,11 +49,22 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
               เปิดในแท็บใหม่ ↗
             </a>
           </div>
-          <iframe src={withBase(`/api/sheets/${sheet.id}/pdf`)} title="ตัวอย่างไฟล์ PDF" className="h-[75vh] min-h-[520px] w-full bg-primary-50" />
+          <iframe src={withBase(`/api/sheets/${sheet.id}/pdf`)} title="ตัวอย่างไฟล์ PDF" className="h-[55vh] min-h-[360px] w-full bg-primary-50 lg:h-[75vh] lg:min-h-[520px]" />
         </div>
 
         {/* Details & actions */}
         <div className="grid content-start gap-6">
+          <section className="card grid gap-4 p-6">
+            <h3 className="font-semibold">การตรวจสอบ</h3>
+            {sheet.status !== "APPROVED" && (
+              <ApproveButton id={sheet.id} label={sheet.status === "REJECTED" ? "อนุมัติ (เปลี่ยนเป็นเผยแพร่)" : undefined} />
+            )}
+            <RejectForm id={sheet.id} defaultReason={sheet.rejectReason} />
+            {sheet.status === "APPROVED" && (
+              <p className="text-xs">การไม่อนุมัติชีทที่เผยแพร่แล้วจะซ่อนจากหน้าสาธารณะทันที และไม่มีใครเปิดอ่านได้อีก</p>
+            )}
+          </section>
+
           <section className="card p-6">
             <div className="mb-3 flex items-center gap-2">
               <StatusBadge status={sheet.status} />
@@ -82,16 +98,6 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
             </div>
           </section>
 
-          <section className="card grid gap-4 p-6">
-            <h3 className="font-semibold">การตรวจสอบ</h3>
-            {sheet.status !== "APPROVED" && (
-              <ApproveButton id={sheet.id} label={sheet.status === "REJECTED" ? "อนุมัติ (เปลี่ยนเป็นเผยแพร่)" : undefined} />
-            )}
-            <RejectForm id={sheet.id} defaultReason={sheet.rejectReason} />
-            {sheet.status === "APPROVED" && (
-              <p className="text-xs">การไม่อนุมัติชีทที่เผยแพร่แล้วจะซ่อนจากหน้าสาธารณะทันที และไม่มีใครเปิดอ่านได้อีก</p>
-            )}
-          </section>
 
           <section className="card grid gap-3 p-6">
             <h3 className="font-semibold">ภาพปกของชีทนี้ (16:9)</h3>

@@ -42,7 +42,7 @@ async function loadDashboard() {
     db.sheet.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
-      take: 5,
+      take: 6,
       select: { id: true, title: true, createdAt: true, grade: true, subject: { select: { name: true } }, author: { select: { name: true, image: true } } },
     }),
     db.sheet.groupBy({
@@ -86,6 +86,12 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
 
   return (
     <div className="grid gap-6">
+      {pending.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-accent/20 px-5 py-4 ring-1 ring-accent/60">
+          <p className="font-medium text-ink">มี {formatNumber(status.PENDING ?? 0)} ชีทรอตรวจสอบ</p>
+          <Link href={adminHref(`/sheets/${pending[0].id}`)} className="btn-primary btn-sm">เริ่มตรวจจากชีทที่รอนานสุด →</Link>
+        </div>
+      )}
       <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {tiles.map((t) => {
           const body = (
@@ -103,28 +109,14 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
         })}
       </dl>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section className="card p-6">
-          <h2 className="text-lg font-semibold">ชีทที่ส่งเข้ามา</h2>
-          <p className="mb-5 text-sm">จำนวนชีทที่อัปโหลดต่อวัน ย้อนหลัง {DAYS} วัน</p>
-          <ColumnChart data={days} unit="ชีท" />
-        </section>
-
-        <section className="card p-6">
-          <h2 className="text-lg font-semibold">ชีทที่เผยแพร่ตามวิชา</h2>
-          <p className="mb-5 text-sm">ทั้งหมด {formatNumber(status.APPROVED ?? 0)} ชีท</p>
-          <BarList data={subjectRows} unit="ชีท" />
-        </section>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <section className="card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">รอตรวจสอบ</h2>
-            <Link href={adminHref("/sheets")} className="text-sm font-medium text-primary hover:underline">ดูทั้งหมด</Link>
+            <h2 className="text-lg font-semibold">คิวรอตรวจสอบ</h2>
+            {pending.length > 0 && <Link href={adminHref("/sheets")} className="text-sm font-medium text-primary hover:underline">ดูทั้งหมด</Link>}
           </div>
           {pending.length === 0 ? (
-            <p className="py-6 text-center text-sm">ไม่มีชีทรอตรวจสอบ 🎉</p>
+            <p className="rounded-xl bg-primary-50/60 py-8 text-center text-sm">ตรวจครบแล้ว ไม่มีชีทค้าง</p>
           ) : (
             <ul className="divide-y divide-line">
               {pending.map((s) => (
@@ -133,7 +125,7 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
                     <Avatar name={s.author.name} image={s.author.image} size={32} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-ink">{s.title}</p>
-                      <p className="truncate text-xs">{s.subject.name} · {gradeLabel(s.grade)} · {formatThaiDate(s.createdAt)}</p>
+                      <p className="truncate text-xs">{s.subject.name} · {gradeLabel(s.grade)} · ส่งเมื่อ {formatThaiDate(s.createdAt)}</p>
                     </div>
                     <span aria-hidden className="text-primary">→</span>
                   </Link>
@@ -141,6 +133,20 @@ function Dashboard({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }
               ))}
             </ul>
           )}
+        </section>
+
+        <section className="card p-6">
+          <h2 className="text-lg font-semibold">ชีทที่ส่งเข้ามา</h2>
+          <p className="mb-5 text-sm">ต่อวัน ย้อนหลัง {DAYS} วัน</p>
+          <ColumnChart data={days} unit="ชีท" />
+        </section>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <section className="card p-6">
+          <h2 className="text-lg font-semibold">ชีทที่เผยแพร่ตามวิชา</h2>
+          <p className="mb-5 text-sm">ทั้งหมด {formatNumber(status.APPROVED ?? 0)} ชีท</p>
+          <BarList data={subjectRows} unit="ชีท" />
         </section>
 
         <section className="card p-6">

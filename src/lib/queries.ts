@@ -183,7 +183,8 @@ export const getLatestSheets = unstable_cache(
 // Single sheet
 // ---------------------------------------------------------------------------
 
-export async function getSheetDetail(id: string) {
+/** Deduplicated per request (the page and its metadata both use it). */
+export const getSheetDetail = cache(async (id: string) => {
   const sheet = await db.sheet.findUnique({
     where: { id },
     include: {
@@ -194,7 +195,7 @@ export async function getSheetDetail(id: string) {
   if (!sheet) return null;
   const settings = await getCoverSettings();
   return { ...sheet, cover: resolveCover(sheet, settings) };
-}
+});
 
 /** Count each signed-in reader once per sheet. */
 export async function recordView(sheetId: string, userId: string) {
@@ -285,4 +286,65 @@ export const getSiteStats = unstable_cache(
   },
   ["site-stats"],
   { tags: [TAG_SHEETS], revalidate: 300 },
+);
+
+export type Contributor = { id: string; name: string; image: string | null; sheets: number; lastSubject: string | null };
+
+/** Students with published sheets, most prolific first (landing page marquee). */
+export const getContributors = unstable_cache(
+  async (take: number): Promise<Contributor[]> => {
+    const published = { status: "APPROVED" as const };
+    const rows = await db.user.findMany({
+      where: { sheets: { some: published } },
+      orderBy: { sheets: { _count: "desc" } },
+      take,
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        _count: { select: { sheets: { where: published } } },
+        sheets: { where: published, orderBy: { publishedAt: "desc" }, take: 1, select: { subject: { select: { name: true } } } },
+      },
+    });
+    return rows.map((u) => ({
+      id: u.id,
+      name: u.name,
+      image: u.image,
+      sheets: u._count.sheets,
+      lastSubject: u.sheets[0]?.subject.name ?? null,
+    }));
+  },
+  ["contributors"],
+  { tags: [TAG_SHEETS], revalidate: 300 },
+);
+
+export type RankedSheet = SheetCardData & { score?: number; ratings?: number };
+
+/** Top published sheets by star rating and by readers (landing page leaderboards). */
+export const getLeaderboards = unstable_cache(
+  async (take: number) => {
+    const settings = await getCoverSettings();
+    const [byViews, rated] = await Promise.all([
+      db.sheet.findMany({ where: { status: "APPROVED" }, orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }], select: cardSelect, take }),
+      db.rating.groupBy({
+        by: ["sheetId"],
+        where: { sheet: { status: "APPROVED" } },
+        _avg: { score: true },
+        _count: { _all: true },
+        orderBy: [{ _avg: { score: "desc" } }, { _count: { sheetId: "desc" } }],
+        take,
+      }),
+    ]);
+    const ratedRows = rated.length
+      ? await db.sheet.findMany({ where: { id: { in: rated.map((r) => r.sheetId) } }, select: cardSelect })
+      : [];
+    const byId = new Map(ratedRows.map((r) => [r.id, r]));
+    const topRated: RankedSheet[] = rated.flatMap((r) => {
+      const row = byId.get(r.sheetId);
+      return row ? [{ ...toCard(row, settings), score: r._avg.score ?? 0, ratings: r._count._all }] : [];
+    });
+    return { topRated, mostRead: byViews.map((r) => toCard(r, settings)) };
+  },
+  ["leaderboards"],
+  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 120 },
 );
