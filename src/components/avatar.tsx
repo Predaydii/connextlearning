@@ -1,4 +1,4 @@
-const PALETTE = ["#203cc7", "#03a0db", "#7c3aed", "#0f9d58", "#f97316", "#db2777"];
+const PALETTE = ["#254ce9", "#03a0db", "#7c3aed", "#0f9d58", "#f97316", "#db2777"];
 
 /** Google profile photo, or a coloured initial when there is none. */
 export function Avatar({ name, image, size = 32 }: { name: string; image?: string | null; size?: number }) {

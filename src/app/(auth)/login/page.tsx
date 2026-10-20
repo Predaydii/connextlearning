@@ -28,7 +28,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const error = errorCode ? (ERRORS[errorCode] ?? `เข้าสู่ระบบไม่สำเร็จ (ใช้ได้เฉพาะบัญชี @${SCHOOL_DOMAIN})`) : null;
 
   return (
-    <section className="relative isolate flex flex-1 items-center justify-center overflow-hidden bg-[linear-gradient(150deg,#3a57e0_0%,#203cc7_45%,#13237a_100%)] px-4 py-14 sm:py-20">
+    <section className="relative isolate flex flex-1 items-center justify-center overflow-hidden bg-[linear-gradient(150deg,#3a57e0_0%,#254ce9_45%,#13237a_100%)] px-4 py-14 sm:py-20">
       {/* moving blue backdrop: sliding light bands, panning dots and drifting glows (still with reduced motion) */}
       <span aria-hidden className="absolute -top-1/4 left-[8%] -z-10 h-[150%] w-40 rotate-[25deg] bg-white/5 motion-safe:animate-band" />
       <span aria-hidden className="absolute -top-1/4 left-[40%] -z-10 h-[150%] w-24 rotate-[25deg] bg-white/5 motion-safe:animate-band [animation-delay:-3s] [animation-direction:alternate-reverse]" />

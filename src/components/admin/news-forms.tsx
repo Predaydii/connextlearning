@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { deleteNewsPost, saveNewsPost, type ActionState } from "@/app/actions/admin";
+import { shrinkInForm } from "@/lib/shrink-image";
 
 function Notice({ state }: { state: ActionState }) {
   if (!state) return null;
@@ -24,6 +25,9 @@ export type NewsFormPost = {
 
 export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: () => void }) {
   const [state, action, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
+    // Shrink big photos in the browser first (Vercel refuses bodies over 4.5 MB)
+    const err = await shrinkInForm(fd);
+    if (err) return { ok: false, message: err };
     const res = await saveNewsPost(prev, fd);
     if (res?.ok) onDone?.();
     return res;

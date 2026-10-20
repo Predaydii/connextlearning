@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { approveSheet, deleteSheet, hideSheet, rejectSheet, updateCover, updateSheetDetails, type ActionState } from "@/app/actions/admin";
+import { shrinkInForm } from "@/lib/shrink-image";
 import { ACADEMIC_YEARS, GRADES, SEMESTERS, SUBJECTS, DESCRIPTION_MAX, TITLE_MAX } from "@/lib/constants";
 
 function Notice({ state }: { state: ActionState }) {
@@ -179,7 +180,11 @@ export function CoverUploader({
   compact?: boolean;
   portrait?: boolean;
 }) {
-  const [state, action, pending] = useActionState(updateCover, null);
+  // Shrink big photos in the browser first (Vercel refuses bodies over 4.5 MB)
+  const [state, action, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
+    const err = await shrinkInForm(fd);
+    return err ? { ok: false, message: err } : updateCover(prev, fd);
+  }, null);
   const [preview, setPreview] = useState<string | null>(null);
 
   return (

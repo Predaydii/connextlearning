@@ -43,7 +43,7 @@ export function subjectName(id: string) {
 
 export function subjectColor(id: string) {
   const s = SUBJECTS.find((x) => x.id === id);
-  return { background: s?.color ?? "#203cc7", color: s?.text ?? "#ffffff" };
+  return { background: s?.color ?? "#254ce9", color: s?.text ?? "#ffffff" };
 }
 
 export const SEMESTERS = [1, 2] as const;

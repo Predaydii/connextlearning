@@ -94,9 +94,12 @@ function HeroVisual() {
   const delay = (d: string) => ({ animationDelay: `calc(var(--intro-delay) + ${d})` });
   return (
     <div className="@container relative w-[min(420px,86%)] self-end justify-self-center min-[901px]:w-[min(460px,100%)]" aria-hidden>
-      <span className="absolute right-[-6%] bottom-0 left-[20%] z-0 h-[72%] rounded-t-full bg-primary motion-safe:animate-rise" style={delay("0.05s")} />
+      {/* arch behind the student: sky-to-blue gradient with a slow sweep of light (.hero-sheen) */}
+      <span className="absolute right-[-6%] bottom-0 left-[20%] z-0 h-[72%] overflow-hidden rounded-t-full bg-[linear-gradient(165deg,#9fd8ff_0%,#4f9bf7_38%,#254ce9_78%,#1d3dc4_100%)] motion-safe:animate-rise" style={delay("0.05s")}>
+        <span className="hero-sheen" />
+      </span>
       <span className="absolute right-[-14%] bottom-0 left-[12%] z-0 h-[80%] rounded-t-full border-2 border-primary/15" />
-      <span className="absolute top-[20%] left-[6%] z-[1] size-[13cqw] rounded-full bg-accent motion-safe:animate-pop-in" style={delay("0.4s")} />
+      <span className="absolute top-[20%] left-[6%] z-[1] size-[13cqw] rounded-full bg-[#7cc8ff] motion-safe:animate-pop-in" style={delay("0.4s")} />
       <span className="absolute right-[-2%] top-[16%] z-[1] size-[5cqw] rounded-full bg-sky motion-safe:animate-pop-in" style={delay("0.5s")} />
       <img
         className="relative z-[2] w-full motion-safe:animate-rise"
@@ -204,15 +207,17 @@ function PersonCard({ person, hidden }: { person: Contributor; hidden: boolean }
     <Link
       href={`/u/${person.id}`}
       tabIndex={hidden ? -1 : undefined}
-      className="flex h-[112px] w-[290px] items-center gap-4 rounded-2xl bg-[linear-gradient(120deg,#203cc7_0%,#2f55e4_55%,#4f7cf0_100%)] px-5 text-white shadow-card transition hover:brightness-110"
+      // Vivid blue fading to airy light blue, with a soft glow in the corner
+      className="relative isolate flex h-[140px] w-[320px] items-center gap-5 overflow-hidden rounded-2xl bg-[linear-gradient(100deg,#254ce9_0%,#3a68f0_45%,#8db8f8_100%)] px-6 text-white shadow-card transition hover:brightness-105 sm:h-[160px] sm:w-[360px]"
     >
-      <span className="shrink-0 rounded-full bg-white p-1">
-        <Avatar name={person.name} image={person.image} size={64} />
+      <span aria-hidden className="absolute -right-10 -bottom-16 -z-10 size-44 rounded-full bg-white/35 blur-2xl" />
+      <span className="shrink-0 rounded-full bg-white p-1 shadow-[0_6px_20px_rgb(16_26_77/0.25)]">
+        <Avatar name={person.name} image={person.image} size={84} />
       </span>
       <span className="min-w-0">
-        <span className="inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold">แชร์ {person.sheets} ชีท</span>
-        <span className="mt-1 block truncate text-lg font-bold">{shortName(person.name)}</span>
-        {person.classLabel && <span className="block truncate text-sm text-white/80">{person.classLabel}</span>}
+        <span className="inline-block rounded-full bg-white/20 px-3 py-0.5 text-xs font-semibold backdrop-blur-sm">แชร์ {person.sheets} ชีท</span>
+        <span className="mt-1.5 block truncate text-xl font-bold">{shortName(person.name)}</span>
+        {person.classLabel && <span className="block truncate text-sm text-white/90">{person.classLabel}</span>}
       </span>
     </Link>
   );
@@ -234,7 +239,7 @@ function Leaderboards({ topRated, mostRead }: { topRated: RankedSheet[]; mostRea
             empty="ยังไม่มีใครให้ดาว อ่านแล้วกดให้ดาวชีทที่ชอบได้เลย"
             metric={(s) => (
               <>
-                <span className="text-accent">★</span> {s.score?.toFixed(1)} <span className="font-normal text-body">({s.ratings})</span>
+                <span className="text-sky">★</span> {s.score?.toFixed(1)} <span className="font-normal text-body">({s.ratings})</span>
               </>
             )}
           />
@@ -254,8 +259,8 @@ function Leaderboards({ topRated, mostRead }: { topRated: RankedSheet[]; mostRea
   );
 }
 
-// Rank numerals: gold, silver, bronze, then quiet
-const RANK_COLOR = ["text-[#e0a100]", "text-[#8a96b3]", "text-[#b8723c]"];
+// Rank numerals: the theme blues for the top three, then quiet
+const RANK_COLOR = ["text-primary", "text-sky", "text-[#6aa8ff]"];
 
 /** Top-charts list: the leader as a cover card, the rest as rows with big rank numbers. */
 function Chart({ title, items, metric, empty }: { title: string; items: RankedSheet[]; metric: (s: RankedSheet) => React.ReactNode; empty: string }) {
@@ -388,7 +393,7 @@ function HomeVideo({ sources }: { sources: { src: string; media?: string }[] }) 
         <span aria-hidden className="hv-glow hv-glow-b" />
         <span aria-hidden className="hv-glow hv-glow-c" />
         <h2 id="video-title" className="hv-title">
-          รู้จัก <span className="text-accent">Connext</span> Learning
+          รู้จัก <span className="text-[#7cc8ff]">Connext</span> Learning
         </h2>
         <div className="hv-frame">
           <AutoVideo src={sources} className="hv-video block aspect-video w-full bg-ink object-cover" />

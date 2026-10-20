@@ -75,7 +75,7 @@ export async function SiteFooter({ base = "", cta = true }: { base?: string; cta
             <span className="font-semibold text-white">Connext Learning for All Learners.</span>
           </p>
           <div className="mx-auto mt-8 flex max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-            <Link href={`${base}/sheets/upload`} className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-accent">
+            <Link href={`${base}/sheets/upload`} className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-sky hover:text-white">
               แชร์ชีทของคุณ
             </Link>
             <Link href={`${base}/sheets`} className="inline-flex min-h-12 items-center justify-center rounded-full px-7 font-semibold text-white ring-1 ring-white/40 transition hover:-translate-y-0.5 hover:bg-white/10">

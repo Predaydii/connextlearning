@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { addBanner, deleteBanner, moveBanner, type ActionState } from "@/app/actions/admin";
+import { MAX_UPLOAD_BYTES, shrinkImage } from "@/lib/shrink-image";
 
 type Banner = { id: string; src: string; linkUrl: string | null };
 
@@ -10,10 +11,43 @@ function Notice({ state }: { state: ActionState }) {
   return <p role="status" className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>;
 }
 
-/** Landing banners: add (image + optional link), reorder, delete. */
+/** Landing banners: add one or many at once (optional link for all of them), reorder, delete. */
 export function BannerManager({ banners }: { banners: Banner[] }) {
-  const [state, action, pending] = useActionState(addBanner, null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [state, setState] = useState<ActionState>(null);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  // Each file is shrunk in the browser (Vercel refuses bodies over 4.5 MB) and sent on its own
+  function upload(form: HTMLFormElement) {
+    const files = (form.elements.namedItem("file") as HTMLInputElement).files;
+    const linkUrl = (form.elements.namedItem("linkUrl") as HTMLInputElement).value;
+    if (!files?.length) return setState({ ok: false, message: "กรุณาเลือกไฟล์รูปภาพ" });
+    const list = Array.from(files);
+    start(async () => {
+      let done = 0;
+      for (const [i, file] of list.entries()) {
+        setProgress(`กำลังอัปโหลด ${i + 1}/${list.length}`);
+        const small = await shrinkImage(file, 2400);
+        if (small.size > MAX_UPLOAD_BYTES) {
+          setState({ ok: false, message: `${file.name}: รูปภาพใหญ่เกินไป` });
+          continue;
+        }
+        const fd = new FormData();
+        fd.set("file", small);
+        fd.set("linkUrl", linkUrl);
+        const res = await addBanner(null, fd);
+        if (res?.ok) done++;
+        else setState(res);
+      }
+      setProgress(null);
+      if (done) {
+        setState({ ok: true, message: `เพิ่มแบนเนอร์แล้ว ${done} รูป` });
+        form.reset();
+        setPreviews([]);
+      }
+    });
+  }
 
   return (
     <div className="grid gap-6">
@@ -25,25 +59,33 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
         </ol>
       )}
 
-      <form action={action} onSubmit={() => setPreview(null)} className="grid gap-3 rounded-2xl border border-dashed border-line p-4">
-        <p className="font-semibold text-ink">เพิ่มแบนเนอร์</p>
-        <div className="grid aspect-[10/3] max-w-2xl place-items-center overflow-hidden rounded-xl bg-primary-50 text-xs ring-1 ring-line">
-          {preview ? <img src={preview} alt="" className="size-full object-cover" /> : "ตัวอย่างภาพ 2000×600"}
-        </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          upload(e.currentTarget);
+        }}
+        className="grid gap-3 rounded-2xl border border-dashed border-line p-4"
+      >
+        <p className="font-semibold text-ink">เพิ่มแบนเนอร์ <span className="text-sm font-normal text-body">(เลือกได้หลายรูปพร้อมกัน)</span></p>
+        {previews.length > 0 ? (
+          <div className="grid max-w-2xl gap-2 sm:grid-cols-2">
+            {previews.map((p) => <img key={p} src={p} alt="" className="aspect-[10/3] w-full rounded-xl object-cover ring-1 ring-line" />)}
+          </div>
+        ) : (
+          <div className="grid aspect-[10/3] max-w-2xl place-items-center rounded-xl bg-primary-50 text-xs ring-1 ring-line">ตัวอย่างภาพ 2000×600</div>
+        )}
         <input
           type="file"
           name="file"
+          multiple
           required
           accept="image/png,image/jpeg,image/webp"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            setPreview(f ? URL.createObjectURL(f) : null);
-          }}
+          onChange={(e) => setPreviews(Array.from(e.target.files ?? [], (f) => URL.createObjectURL(f)))}
           className="block w-full max-w-2xl cursor-pointer text-xs file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary hover:file:text-white"
         />
         <input name="linkUrl" type="url" maxLength={500} placeholder="ลิงก์เมื่อกดแบนเนอร์ (ไม่บังคับ) https://" className="field max-w-2xl text-sm" />
         <div className="flex flex-wrap items-center gap-3">
-          <button disabled={pending} className="btn-primary btn-sm">{pending ? "กำลังอัปโหลด…" : "เพิ่มแบนเนอร์"}</button>
+          <button disabled={pending} className="btn-primary btn-sm">{pending ? (progress ?? "กำลังอัปโหลด…") : "เพิ่มแบนเนอร์"}</button>
           <Notice state={state} />
         </div>
       </form>

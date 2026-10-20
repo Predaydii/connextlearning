@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#203cc7",
+  themeColor: "#254ce9",
   // Light design only, whatever the device is set to
   colorScheme: "only light",
 };
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <img src={withBase("/img/logo-white-480.webp")} alt="" width={240} height={69} fetchPriority="high" className="w-[min(280px,64vw)]" />
             <p className="text-lg font-medium text-white/85">Learn &amp; Share · อ่านชีท แชร์ชีท</p>
             <div className="h-1 w-40 overflow-hidden rounded-full bg-white/20">
-              <span className="block h-full w-full rounded-full bg-accent" />
+              <span className="block h-full w-full rounded-full bg-[#7cc8ff]" />
             </div>
           </div>
         </div>
