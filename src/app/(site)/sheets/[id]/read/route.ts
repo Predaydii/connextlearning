@@ -12,10 +12,12 @@ import { withBase } from "@/lib/urls";
 export async function GET(req: Request, ctx: RouteContext<"/sheets/[id]/read">) {
   const { id } = await ctx.params;
   const here = `/sheets/${id}/read`;
-  const detail = new URL(withBase(`/sheets/${id}`), req.url);
+  // Behind the tratcouncil.com rewrite req.url carries our *.vercel.app host; stay on the public one
+  const origin = process.env.BETTER_AUTH_URL ?? req.url;
+  const detail = new URL(withBase(`/sheets/${id}`), origin);
 
   const user = await getCurrentUser();
-  if (!user) return NextResponse.redirect(new URL(withBase(loginUrl(here)), req.url));
+  if (!user) return NextResponse.redirect(new URL(withBase(loginUrl(here)), origin));
 
   const sheet = await db.sheet.findUnique({ where: { id }, select: { status: true, title: true, pdfKey: true } });
   if (!sheet || sheet.status !== "APPROVED") return NextResponse.redirect(detail);
