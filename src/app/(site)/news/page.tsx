@@ -1,74 +1,140 @@
 import type { Metadata } from "next";
 import { getInstagramPosts, INSTAGRAM_PROFILE_URL, INSTAGRAM_USERNAME } from "@/lib/instagram";
+import { customCover } from "@/lib/covers";
 import { formatThaiDate } from "@/lib/format";
+import { getNews } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "ข่าวสารการศึกษา",
-  description: `ข่าวสารการศึกษาล่าสุดจาก Instagram @${INSTAGRAM_USERNAME}`,
+  description: "ข่าวสารและกิจกรรมการศึกษาล่าสุดจาก Connext Learning",
 };
 
-// Rendered per request (no DB access at build time); posts are cached for 30 minutes in getInstagramPosts
+// Rendered per request (no DB access at build time); data is cached in getNews / getInstagramPosts
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const posts = await getInstagramPosts();
+  const [{ videoId, posts }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
+  const empty = !videoId && posts.length === 0 && !igPosts?.length;
 
   return (
     <div className="container-page py-10 md:py-14">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold">ข่าวสารการศึกษา</h1>
-        <a
-          href={INSTAGRAM_PROFILE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-card ring-1 ring-line transition hover:-translate-y-0.5 hover:shadow-brand"
-        >
-          <InstagramIcon className="size-5 text-[#d6249f]" />@{INSTAGRAM_USERNAME}
-        </a>
-      </div>
+      <h1 className="mb-8 text-[clamp(1.6rem,3vw,2.2rem)] font-bold">ข่าวสารการศึกษา</h1>
 
-      {!posts || posts.length === 0 ? (
+      {empty && (
         <div className="card grid place-items-center px-6 py-20 text-center">
-          <InstagramIcon className="mb-4 size-14 text-primary/40" />
-          <p className="text-lg font-semibold text-ink">ยังไม่สามารถแสดงข่าวสารได้ในขณะนี้</p>
-          <p className="mt-1 text-sm">ติดตามข่าวสารการศึกษาล่าสุดได้ที่ Instagram @{INSTAGRAM_USERNAME}</p>
-          <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="btn-primary btn-sm mt-6">
-            เปิด Instagram
-          </a>
+          <p className="text-lg font-semibold text-ink">ยังไม่มีข่าวสารในขณะนี้</p>
+          <p className="mt-1 text-sm">โปรดกลับมาติดตามอีกครั้งเร็ว ๆ นี้</p>
         </div>
-      ) : (
-        <ul className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3">
-          {posts.map((p, i) => (
-            <li key={p.id}>
-              <a
-                href={p.permalink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-line/70 transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg"
-              >
-                <div className="relative aspect-square overflow-hidden bg-primary-50">
-                  <img
-                    src={p.image}
-                    alt={p.caption.slice(0, 120) || `โพสต์จาก @${INSTAGRAM_USERNAME}`}
-                    loading={i < 3 ? "eager" : "lazy"}
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  {(p.isVideo || p.isAlbum) && (
-                    <span className="absolute top-3 right-3 rounded-full bg-ink/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur">
-                      {p.isVideo ? "วิดีโอ" : "หลายภาพ"}
-                    </span>
-                  )}
+      )}
+
+      {videoId && (
+        <div className="mx-auto mb-10 aspect-video max-w-5xl overflow-hidden rounded-2xl bg-ink shadow-card ring-1 ring-line/60">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+            title="วิดีโอข่าวสาร"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+            className="size-full"
+          />
+        </div>
+      )}
+
+      {posts.length > 0 && (
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((p, i) => {
+            const body = (
+              <>
+                {p.imageKey && (
+                  <div className="aspect-video overflow-hidden bg-primary-50">
+                    <img
+                      src={customCover(p.imageKey).small}
+                      srcSet={`${customCover(p.imageKey).small} 640w, ${customCover(p.imageKey).large} 1280w`}
+                      sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+                      alt=""
+                      width={640}
+                      height={360}
+                      loading={i < 3 ? "eager" : "lazy"}
+                      decoding="async"
+                      className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-1 flex-col p-5">
+                  <time dateTime={p.publishedAt} className="text-xs text-body/80">{formatThaiDate(p.publishedAt)}</time>
+                  <h2 className="mt-1 text-lg font-semibold text-ink group-hover:text-primary">{p.title}</h2>
+                  <p className="mt-2 line-clamp-4 text-sm whitespace-pre-line">{p.summary}</p>
+                  {p.linkUrl && <span className="mt-auto pt-4 text-sm font-semibold text-primary">อ่านต่อ</span>}
                 </div>
-                <div className="flex flex-1 flex-col p-4 sm:p-5">
-                  <p className="line-clamp-3 text-sm whitespace-pre-line text-ink">{p.caption}</p>
-                  <time dateTime={p.timestamp} className="mt-auto pt-3 text-xs text-body/80">{formatThaiDate(p.timestamp)}</time>
-                </div>
-              </a>
-            </li>
-          ))}
+              </>
+            );
+            const cls = "group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-line/70";
+            return (
+              <li key={p.id}>
+                {p.linkUrl ? (
+                  <a
+                    href={p.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${cls} transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg`}
+                  >
+                    {body}
+                  </a>
+                ) : (
+                  <article className={cls}>{body}</article>
+                )}
+              </li>
+            );
+          })}
         </ul>
+      )}
+
+      {igPosts && igPosts.length > 0 && (
+        <section className="mt-14">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <h2 className="text-xl font-bold">จาก Instagram</h2>
+            <a
+              href={INSTAGRAM_PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-card ring-1 ring-line transition hover:-translate-y-0.5 hover:shadow-brand"
+            >
+              <InstagramIcon className="size-5 text-[#d6249f]" />@{INSTAGRAM_USERNAME}
+            </a>
+          </div>
+          <ul className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3">
+            {igPosts.map((p) => (
+              <li key={p.id}>
+                <a
+                  href={p.permalink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-line/70 transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg"
+                >
+                  <div className="relative aspect-square overflow-hidden bg-primary-50">
+                    <img
+                      src={p.image}
+                      alt={p.caption.slice(0, 120) || `โพสต์จาก @${INSTAGRAM_USERNAME}`}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                    {(p.isVideo || p.isAlbum) && (
+                      <span className="absolute top-3 right-3 rounded-full bg-ink/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur">
+                        {p.isVideo ? "วิดีโอ" : "หลายภาพ"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-4 sm:p-5">
+                    <p className="line-clamp-3 text-sm whitespace-pre-line text-ink">{p.caption}</p>
+                    <time dateTime={p.timestamp} className="mt-auto pt-3 text-xs text-body/80">{formatThaiDate(p.timestamp)}</time>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

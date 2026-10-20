@@ -348,3 +348,22 @@ export const getLeaderboards = unstable_cache(
   ["leaderboards"],
   { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 120 },
 );
+
+// ---------------------------------------------------------------------------
+// News page
+// ---------------------------------------------------------------------------
+
+export const TAG_NEWS = "news";
+
+export const getNews = unstable_cache(
+  async () => {
+    const [setting, posts] = await Promise.all([
+      db.siteSetting.findUnique({ where: { id: 1 }, select: { newsVideoId: true } }),
+      db.newsPost.findMany({ orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }] }),
+    ]);
+    // ISO strings: unstable_cache stores JSON, so Dates would come back as strings anyway
+    return { videoId: setting?.newsVideoId ?? null, posts: posts.map((p) => ({ ...p, publishedAt: p.publishedAt.toISOString() })) };
+  },
+  ["news"],
+  { tags: [TAG_NEWS], revalidate: 600 },
+);

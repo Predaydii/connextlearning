@@ -13,7 +13,8 @@ const csp = [
   "font-src 'self'",
   // Browser uploads go straight to R2 via presigned URLs
   "connect-src 'self' https://*.r2.cloudflarestorage.com",
-  "frame-src 'self'",
+  // Featured video on the news page
+  "frame-src 'self' https://www.youtube-nocookie.com",
   "frame-ancestors 'self'",
   "object-src 'none'",
   "base-uri 'self'",

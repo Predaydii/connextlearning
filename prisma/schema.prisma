@@ -133,7 +133,24 @@ model SiteSetting {
   // Instagram long-lived token for the news page (auto-refreshed; seeded from INSTAGRAM_ACCESS_TOKEN)
   igAccessToken    String?
   igTokenExpiresAt DateTime?
+  // YouTube video id of the featured video on the news page
+  newsVideoId      String?
   updatedAt       DateTime  @updatedAt
+}
+
+// Admin-managed news cards on the news page
+model NewsPost {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String
+  linkUrl     String?
+  // R2 key prefix ("covers/<uuid>", 16:9, served by /media); null = no image
+  imageKey    String?
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([publishedAt(sort: Desc)])
 }
 
 model Sheet {

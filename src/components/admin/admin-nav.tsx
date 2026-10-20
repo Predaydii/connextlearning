@@ -8,6 +8,7 @@ const TABS = [
   { path: "/", label: "แดชบอร์ด" },
   { path: "/sheets", label: "ตรวจสอบชีท" },
   { path: "/covers", label: "ภาพปก" },
+  { path: "/news", label: "ข่าวสาร" },
 ];
 
 export function AdminNav({ pending }: { pending: number }) {

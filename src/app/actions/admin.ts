@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { deleteObjects, putObject } from "@/lib/r2";
 import { makeCoverImages, UserFacingError } from "@/lib/pdf";
 import { assertAdmin, AuthError } from "@/lib/session";
-import { TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
+import { TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
 import { SUBJECT_IDS } from "@/lib/constants";
 
 export type ActionState = { ok: boolean; message: string } | null;
@@ -174,6 +174,111 @@ export async function setCoverMode(_prev: ActionState, formData: FormData): Prom
     updateTag(TAG_SHEETS);
     revalidatePath("/admin", "layout");
     return { ok: true, message: mode === "UNIFORM" ? "ใช้ภาพปกเดียวกันทุกชีทแล้ว" : "ใช้ภาพปกแยกตามวิชาแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// News page
+// ---------------------------------------------------------------------------
+
+function refreshNews() {
+  updateTag(TAG_NEWS);
+  revalidatePath("/admin", "layout");
+}
+
+const YT_ID = /^[\w-]{11}$/;
+
+/** Accepts youtu.be/…, youtube.com/watch?v=…, /shorts/…, /embed/…, /live/… or a bare id. */
+function youtubeId(input: string): string | null {
+  if (YT_ID.test(input)) return input;
+  try {
+    const url = new URL(input);
+    const host = url.hostname.replace(/^(www|m)\./, "");
+    const id =
+      host === "youtu.be"
+        ? url.pathname.slice(1)
+        : host === "youtube.com" || host === "youtube-nocookie.com"
+          ? (url.searchParams.get("v") ?? url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1])
+          : null;
+    return id && YT_ID.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/** formData: url (empty = remove the video). */
+export async function setNewsVideo(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const raw = z.string().trim().max(300).parse(formData.get("url") ?? "");
+    const id = raw ? youtubeId(raw) : null;
+    if (raw && !id) throw new UserFacingError("ลิงก์ YouTube ไม่ถูกต้อง");
+    await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, newsVideoId: id }, update: { newsVideoId: id } });
+    refreshNews();
+    return { ok: true, message: id ? "บันทึกวิดีโอแล้ว" : "นำวิดีโอออกแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+const newsInput = z.object({
+  id: z.string().max(40).optional(),
+  title: z.string().trim().min(1, "กรุณากรอกหัวข้อข่าว").max(150, "หัวข้อข่าวยาวเกิน 150 ตัวอักษร"),
+  summary: z.string().trim().min(1, "กรุณากรอกรายละเอียด").max(1000, "รายละเอียดยาวเกิน 1000 ตัวอักษร"),
+  linkUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((v) => !v || /^https?:\/\//i.test(v), "ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://")
+    .transform((v) => v || null),
+  publishedAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ไม่ถูกต้อง")
+    .transform((v) => new Date(`${v}T12:00:00+07:00`)),
+});
+
+/** Create (no id) or update a news card. formData: id?, title, summary, linkUrl, publishedAt, file?, removeImage? */
+export async function saveNewsPost(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const input = newsInput.parse({
+      id: formData.get("id") || undefined,
+      title: formData.get("title"),
+      summary: formData.get("summary"),
+      linkUrl: formData.get("linkUrl") ?? "",
+      publishedAt: formData.get("publishedAt"),
+    });
+    const existing = input.id ? await db.newsPost.findUnique({ where: { id: input.id } }) : null;
+    if (input.id && !existing) throw new UserFacingError("ไม่พบข่าวนี้");
+
+    const file = formData.get("file");
+    const hasFile = file instanceof File && file.size > 0;
+    const removeImage = formData.get("removeImage") === "1";
+    const imageKey = hasFile ? await storeCover(file) : removeImage ? null : (existing?.imageKey ?? null);
+
+    const data = { title: input.title, summary: input.summary, linkUrl: input.linkUrl, publishedAt: input.publishedAt, imageKey };
+    if (existing) await db.newsPost.update({ where: { id: existing.id }, data });
+    else await db.newsPost.create({ data });
+    if (existing?.imageKey && existing.imageKey !== imageKey) await deleteObjects(coverFiles(existing.imageKey));
+
+    refreshNews();
+    return { ok: true, message: existing ? "บันทึกการแก้ไขแล้ว" : "เพิ่มข่าวแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function deleteNewsPost(id: string): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const post = await db.newsPost.findUnique({ where: { id: z.string().min(1).max(40).parse(id) } });
+    if (!post) throw new UserFacingError("ไม่พบข่าวนี้");
+    await db.newsPost.delete({ where: { id: post.id } });
+    if (post.imageKey) await deleteObjects(coverFiles(post.imageKey));
+    refreshNews();
+    return { ok: true, message: "ลบข่าวแล้ว" };
   } catch (err) {
     return fail(err);
   }
