@@ -12,7 +12,7 @@ import { withBase } from "@/lib/urls";
 export async function GET(req: Request, ctx: RouteContext<"/sheets/[id]/read">) {
   const { id } = await ctx.params;
   const here = `/sheets/${id}/read`;
-  // Behind the tratcouncil.com rewrite req.url carries our *.vercel.app host; stay on the public one
+  // Redirect on the public origin (req.url may carry a *.vercel.app host)
   const origin = process.env.BETTER_AUTH_URL ?? req.url;
   const detail = new URL(withBase(`/sheets/${id}`), origin);
 

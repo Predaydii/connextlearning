@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
-import { BASE_PATH } from "./src/lib/urls";
+import { BASE_PATH, LEGACY_PATH } from "./src/lib/urls";
+
+// Public origin (BETTER_AUTH_URL), e.g. https://connextlearning.tratcouncil.com
+const SITE_URL = process.env.BETTER_AUTH_URL ? new URL(process.env.BETTER_AUTH_URL).origin : "";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -34,16 +37,21 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Served at tratcouncil.com/connextlearning through a Vercel rewrite on that domain
   basePath: BASE_PATH,
   poweredByHeader: false,
   experimental: {
     serverActions: {
       // Cover images are posted to a server action; sheet files go directly to R2.
       bodySizeLimit: "6mb",
-      // Requests arrive via the tratcouncil.com rewrite, so their Origin differs from our host
-      allowedOrigins: ["tratcouncil.com", "www.tratcouncil.com"],
     },
+  },
+  // Old links (tratcouncil.com/connextlearning/…, still proxied here by that site's rewrite)
+  // go to the same page on our own domain. Absolute, so they leave the proxying host.
+  async redirects() {
+    return [
+      { source: LEGACY_PATH, destination: `${SITE_URL}/`, permanent: true },
+      { source: `${LEGACY_PATH}/:path*`, destination: `${SITE_URL}/:path*`, permanent: true },
+    ];
   },
   async headers() {
     return [

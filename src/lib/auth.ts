@@ -14,7 +14,7 @@ function isSchoolEmail(email: string | undefined | null) {
 
 export const auth = betterAuth({
   appName: "Connext Learning",
-  // Origin only (https://tratcouncil.com); the app's sub-path goes in basePath.
+  // Origin only (https://connextlearning.tratcouncil.com); a sub-path, if any, goes in basePath.
   baseURL: process.env.BETTER_AUTH_URL ? new URL(process.env.BETTER_AUTH_URL).origin : undefined,
   basePath: withBase("/api/auth"),
   secret: process.env.BETTER_AUTH_SECRET,

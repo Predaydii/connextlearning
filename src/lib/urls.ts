@@ -1,10 +1,14 @@
 /**
- * The app is served under a sub-path of tratcouncil.com (Next.js `basePath`).
- * `next/link`, `useRouter` and `redirect()` add the prefix themselves; plain
- * `<a>`, `<img>`, `<iframe>`, route-handler redirects and Better Auth callback
- * URLs do not, so wrap those in `withBase()`.
+ * The app has its own domain (connextlearning.tratcouncil.com) and is served from
+ * the root. If it ever moves under a sub-path again, set it here (Next.js
+ * `basePath`): `next/link`, `useRouter` and `redirect()` add it themselves;
+ * plain `<a>`, `<img>`, `<iframe>`, route-handler redirects and Better Auth
+ * callback URLs go through `withBase()`.
  */
-export const BASE_PATH = "/connextlearning";
+export const BASE_PATH = "";
+
+/** Where the app used to live (tratcouncil.com/connextlearning); old links are redirected. */
+export const LEGACY_PATH = "/connextlearning";
 
 export function withBase(path: string) {
   return `${BASE_PATH}${path}`;

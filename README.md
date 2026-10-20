@@ -23,11 +23,11 @@
 
 | | URL |
 | --- | --- |
-| เว็บไซต์หลัก | `https://tratcouncil.com/connextlearning` |
-| ผู้ดูแลระบบ | `https://tratcouncil.com/connextlearning/admin` |
+| เว็บไซต์หลัก | `https://connextlearning.tratcouncil.com` |
+| ผู้ดูแลระบบ | `https://connextlearning.tratcouncil.com/admin` |
 
-แอปตั้ง `basePath` เป็น `/connextlearning` (ค่าอยู่ที่ `BASE_PATH` ใน `src/lib/urls.ts`) · ตอน dev เปิดที่ `http://localhost:3000/connextlearning`
-`<Link>`, `router.push` และ `redirect()` เติม base path ให้เอง แต่ `<a>`, `<img>`, `<iframe>` และ callback ของ Better Auth ต้องครอบด้วย `withBase()`
+แอปมีโดเมนของตัวเองและเสิร์ฟที่ root (`BASE_PATH = ""` ใน `src/lib/urls.ts`) · ตอน dev เปิดที่ `http://localhost:3000`
+ลิงก์เก่า `tratcouncil.com/connextlearning/…` ถูก redirect (308) ไปหน้าเดียวกันบนโดเมนใหม่ (`redirects()` ใน `next.config.ts`) ตราบที่เว็บ tratcouncil.com ยังส่งต่อ path นี้มา
 
 ล็อกอินได้เฉพาะบัญชี Google `@tkschool.ac.th` (ตรวจทั้ง `hd` claim ของ Google และโดเมนอีเมลฝั่งเซิร์ฟเวอร์) · แอดมินกำหนดด้วย `ADMIN_EMAILS`
 
@@ -53,15 +53,15 @@ npm run dev
 
 ### 2. Google OAuth (ล็อกอิน)
 Google Cloud Console → APIs & Services → Credentials → OAuth client ID (Web application)
-- Authorized JavaScript origins: `https://tratcouncil.com`, `http://localhost:3000`
-- Authorized redirect URIs: `https://tratcouncil.com/connextlearning/api/auth/callback/google` และ `http://localhost:3000/connextlearning/api/auth/callback/google`
+- Authorized JavaScript origins: `https://connextlearning.tratcouncil.com`, `http://localhost:3000`
+- Authorized redirect URIs: `https://connextlearning.tratcouncil.com/api/auth/callback/google` และ `http://localhost:3000/api/auth/callback/google`
 - OAuth consent screen: ตั้งเป็น **Internal** ถ้าโปรเจกต์อยู่ใต้ Workspace ของโรงเรียน ไม่อย่างนั้นต้อง **Publish app** (สถานะ In production) ไม่เช่นนั้นล็อกอินได้เฉพาะ Test users
 
 ### 3. Cloudflare R2
 1. สร้าง bucket (ไม่ต้องเปิด public access) → R2 API token สิทธิ์ Object Read & Write เฉพาะ bucket นี้
 2. **CORS** ของ bucket (ให้เบราว์เซอร์อัปโหลดตรงได้):
    ```json
-   [{ "AllowedOrigins": ["https://tratcouncil.com", "http://localhost:3000"], "AllowedMethods": ["PUT"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+   [{ "AllowedOrigins": ["https://connextlearning.tratcouncil.com", "http://localhost:3000"], "AllowedMethods": ["PUT", "GET", "HEAD"], "AllowedHeaders": ["content-type"], "ExposeHeaders": ["ETag"], "MaxAgeSeconds": 3600 }]
    ```
 3. **Lifecycle rule:** ลบ object prefix `uploads/` อายุเกิน 1 วัน (กันไฟล์ค้างกรณีอัปโหลดไม่จบ)
 
@@ -71,15 +71,8 @@ Google Cloud Console → APIs & Services → Credentials → OAuth client ID (We
 
 1. Import โปรเจกต์ → ใส่ environment variables ทั้งหมดจาก `.env.example`
    (ตัวแปร `NEXT_PUBLIC_*` ถูกฝังตอน build ต้องตั้งก่อน deploy)
-2. ไม่ต้องผูกโดเมนกับโปรเจกต์นี้ ให้โปรเจกต์ของ tratcouncil.com ส่งต่อ path มาแทน โดยเพิ่มใน `vercel.json` ของโปรเจกต์นั้น
-   (แทน `<connext>` ด้วยโดเมน `.vercel.app` ของโปรเจกต์นี้):
-   ```json
-   { "rewrites": [
-     { "source": "/connextlearning", "destination": "https://<connext>.vercel.app/connextlearning" },
-     { "source": "/connextlearning/:path*", "destination": "https://<connext>.vercel.app/connextlearning/:path*" }
-   ] }
-   ```
-   Server Actions รับ Origin `tratcouncil.com` ได้แล้ว (`allowedOrigins` ใน `next.config.ts`)
+2. Domains → เพิ่ม `connextlearning.tratcouncil.com` แล้วตั้ง DNS: `CNAME connextlearning → cname.vercel-dns.com`
+   ตั้ง `BETTER_AUTH_URL=https://connextlearning.tratcouncil.com`
 3. Build command ค่าเริ่มต้น (`npm run build` จะ `prisma generate` ให้)
 4. ครั้งแรกและทุกครั้งที่ schema เปลี่ยน: `npm run db:deploy`
 5. ตรวจว่าโดเมนจริงอยู่ใน Google OAuth, R2 CORS และ `BETTER_AUTH_URL` แล้ว
