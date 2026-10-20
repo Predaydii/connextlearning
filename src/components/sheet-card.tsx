@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { gradeLabel } from "@/lib/constants";
-import { formatThaiDate, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import type { SheetCardData } from "@/lib/queries";
 import { SubjectBadge } from "@/components/subject-badge";
 
@@ -39,10 +39,6 @@ export function SheetCard({ sheet, priority = false }: { sheet: SheetCardData; p
           <SubjectBadge id={sheet.subjectId} name={sheet.subjectName} />
         </div>
         <p className="mt-3 line-clamp-2 text-sm">{sheet.excerpt}</p>
-        <p className="mt-auto flex items-center gap-1.5 pt-3 text-xs text-body/80">
-          <CalendarIcon />
-          <time dateTime={sheet.createdAt}>{formatThaiDate(sheet.createdAt)}</time>
-        </p>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3.5">

@@ -12,12 +12,8 @@ export default async function UploadPage() {
   return (
     <div className="bg-primary-50/60 py-10 md:py-14">
       <div className="container-page max-w-4xl">
-        <p className="text-sm font-medium text-sky">แชร์ชีทสรุป</p>
-        <h1 className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold">อัปโหลดชีทสรุป</h1>
-        <p className="mt-2 max-w-2xl">
-          อัปโหลดไฟล์ PDF หรือรูปภาพ (PNG / JPG) ได้หลายไฟล์ ระบบจะรวมเป็น PDF ไฟล์เดียวตามลำดับที่คุณจัดไว้
-          และจะเผยแพร่หลังผู้ดูแลตรวจสอบแล้ว
-        </p>
+        <h1 className="text-[clamp(1.6rem,3vw,2.2rem)] font-bold">แชร์ชีทสรุป</h1>
+        <p className="mt-2 max-w-2xl">ชีทจะขึ้นหน้าเว็บหลังผู้ดูแลตรวจ ใช้เวลาไม่นาน</p>
         <UploadForm userName={user.name} />
       </div>
     </div>

@@ -50,7 +50,6 @@ export function UploadForm({ userName }: { userName: string }) {
   const [subjectId, setSubjectId] = useState("");
   const [grade, setGrade] = useState("");
   const [descLen, setDescLen] = useState(0);
-  const [doneId, setDoneId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const uid = useId();
 
@@ -149,7 +148,6 @@ export function UploadForm({ userName }: { userName: string }) {
         academicYear: String(fd.get("academicYear") ?? ""),
       });
       if (!res.ok) throw new Error(res.error);
-      setDoneId(res.id);
       setPhase("done");
     } catch (err) {
       setItems((prev) => prev.map((x) => ({ ...x, progress: 0 })));
@@ -164,15 +162,12 @@ export function UploadForm({ userName }: { userName: string }) {
         <div className="mx-auto mb-5 grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-8" aria-hidden><path d="m5 12 5 5 9-10" /></svg>
         </div>
-        <h2 className="text-2xl font-bold">ส่งชีทเรียบร้อยแล้ว!</h2>
-        <p className="mx-auto mt-2 max-w-md">
-          ขอบคุณ {userName} ที่แบ่งปันความรู้ ชีทของคุณจะแสดงในหน้าชีทสรุปหลังผู้ดูแลตรวจสอบและอนุมัติ
-        </p>
+        <h2 className="text-2xl font-bold">ส่งชีทแล้ว ขอบคุณ {userName}!</h2>
+        <p className="mx-auto mt-2 max-w-md">ชีทจะขึ้นหน้าเว็บหลังผู้ดูแลตรวจ ติดตามสถานะได้ที่ “ชีทของฉัน”</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/my-sheets" className="btn-primary">ดูชีทของฉัน</Link>
-          {doneId && <Link href={`/sheets/${doneId}`} className="btn-outline">ดูรายละเอียดชีท</Link>}
-          <button type="button" className="btn-outline" onClick={() => { setItems([]); setDoneId(null); setDescLen(0); setPhase("idle"); }}>
-            อัปโหลดชีทใหม่
+          <button type="button" className="btn-outline" onClick={() => { setItems([]); setDescLen(0); setPhase("idle"); }}>
+            ส่งอีกชีท
           </button>
         </div>
       </div>
@@ -185,7 +180,7 @@ export function UploadForm({ userName }: { userName: string }) {
       <section className="card p-6 sm:p-8">
         <h2 className="mb-1 text-lg font-semibold">1. ไฟล์ชีทสรุป</h2>
         <p className="mb-5 text-sm">
-          PDF / PNG / JPG · ไม่เกิน {MAX_FILES} ไฟล์ · ไฟล์ละไม่เกิน {formatBytes(MAX_FILE_BYTES)} · รวมไม่เกิน {formatBytes(MAX_TOTAL_BYTES)}
+          PDF, PNG หรือ JPG สูงสุด {MAX_FILES} ไฟล์ รวมไม่เกิน {formatBytes(MAX_TOTAL_BYTES)}
         </p>
 
         <div
@@ -207,7 +202,7 @@ export function UploadForm({ userName }: { userName: string }) {
             </svg>
           </div>
           <p className="font-medium text-ink">ลากไฟล์มาวาง หรือ <span className="text-primary underline underline-offset-4">คลิกเพื่อเลือกไฟล์</span></p>
-          <p className="mt-1 text-xs">เลือกได้หลายไฟล์ครั้งเดียว</p>
+          <p className="mt-1 text-xs">เลือกได้หลายไฟล์ ระบบจะรวมเป็น PDF ไฟล์เดียว</p>
           <input
             ref={inputRef}
             type="file"
@@ -222,7 +217,7 @@ export function UploadForm({ userName }: { userName: string }) {
         {items.length > 0 && (
           <>
             <div className="mt-5 mb-2 flex items-center justify-between text-sm">
-              <p className="font-medium text-ink">ลำดับหน้าในไฟล์ PDF ({items.length} ไฟล์ · {formatBytes(totalBytes)})</p>
+              <p className="font-medium text-ink">ลำดับหน้า ({items.length} ไฟล์ · {formatBytes(totalBytes)})</p>
             </div>
             <ol className="space-y-2">
               {items.map((it, i) => (
@@ -257,12 +252,12 @@ export function UploadForm({ userName }: { userName: string }) {
         <h2 className="text-lg font-semibold sm:col-span-2">2. รายละเอียดชีท</h2>
 
         <div className="sm:col-span-2">
-          <label htmlFor={`${uid}-title`} className="field-label">ชื่อชีท <span className="text-red-500">*</span></label>
-          <input id={`${uid}-title`} name="title" required minLength={3} maxLength={TITLE_MAX} className="field" placeholder="เช่น สรุปเรื่องเซต ม.4 เทอม 1" disabled={busy} />
+          <label htmlFor={`${uid}-title`} className="field-label">ชื่อชีท</label>
+          <input id={`${uid}-title`} name="title" required minLength={3} maxLength={TITLE_MAX} className="field" placeholder="เช่น สรุปเรื่องเซตและตรรกศาสตร์" disabled={busy} />
         </div>
 
         <div>
-          <label htmlFor={`${uid}-subject`} className="field-label">วิชา <span className="text-red-500">*</span></label>
+          <label htmlFor={`${uid}-subject`} className="field-label">วิชา</label>
           <select
             id={`${uid}-subject`}
             name="subjectId"
@@ -282,7 +277,7 @@ export function UploadForm({ userName }: { userName: string }) {
         </div>
 
         <div>
-          <label htmlFor={`${uid}-grade`} className="field-label">ระดับชั้น <span className="text-red-500">*</span></label>
+          <label htmlFor={`${uid}-grade`} className="field-label">ระดับชั้น</label>
           <select id={`${uid}-grade`} name="grade" required className="field" value={grade} onChange={(e) => setGrade(e.target.value)} disabled={busy}>
             <option value="" disabled>เลือกระดับชั้น</option>
             {GRADES.filter((g) => !allowedGrades || allowedGrades.includes(g.value)).map((g) => (
@@ -292,7 +287,7 @@ export function UploadForm({ userName }: { userName: string }) {
         </div>
 
         <fieldset>
-          <legend className="field-label">ภาคเรียน <span className="text-red-500">*</span></legend>
+          <legend className="field-label">ภาคเรียน</legend>
           <div className="flex gap-3">
             {SEMESTERS.map((s) => (
               <label key={s} className="flex-1 cursor-pointer">
@@ -306,24 +301,23 @@ export function UploadForm({ userName }: { userName: string }) {
         </fieldset>
 
         <div>
-          <label htmlFor={`${uid}-year`} className="field-label">ปีการศึกษา <span className="text-red-500">*</span></label>
-          <select id={`${uid}-year`} name="academicYear" required className="field" defaultValue="" disabled={busy}>
-            <option value="" disabled>เลือกปีการศึกษา</option>
+          <label htmlFor={`${uid}-year`} className="field-label">ปีการศึกษา</label>
+          <select id={`${uid}-year`} name="academicYear" required className="field" defaultValue={ACADEMIC_YEARS[0]} disabled={busy}>
             {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
 
         <div className="sm:col-span-2">
-          <label htmlFor={`${uid}-desc`} className="field-label">คำอธิบาย <span className="text-red-500">*</span></label>
+          <label htmlFor={`${uid}-desc`} className="field-label">คำอธิบาย</label>
           <textarea
             id={`${uid}-desc`}
             name="description"
             required
             minLength={10}
             maxLength={DESCRIPTION_MAX}
-            rows={5}
+            rows={3}
             className="field resize-y"
-            placeholder="ชีทนี้สรุปเนื้อหาเรื่องอะไรบ้าง เหมาะกับใคร"
+            placeholder="สรุปเนื้อหาเรื่องอะไรบ้าง สั้น ๆ"
             onChange={(e) => setDescLen(e.target.value.length)}
             disabled={busy}
           />
@@ -337,7 +331,7 @@ export function UploadForm({ userName }: { userName: string }) {
 
       <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
         <p className="text-center text-xs sm:mr-auto sm:text-left">
-          การส่งชีทถือว่าคุณเป็นเจ้าของเนื้อหาหรือได้รับอนุญาตให้เผยแพร่
+          กดส่ง = ยืนยันว่าคุณเป็นเจ้าของเนื้อหา หรือได้รับอนุญาตให้เผยแพร่
         </p>
         <button type="submit" className="btn-primary min-w-[220px]" disabled={busy}>
           {phase === "uploading" && <Spinner />}

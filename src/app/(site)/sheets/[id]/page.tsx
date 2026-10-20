@@ -142,9 +142,7 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
                 <Stars average={community.rating.average} count={community.rating.count} />
               </div>
             </div>
-            {!user ? (
-              <Link href={loginUrl(`/sheets/${sheet.id}`)} className="btn-outline btn-sm">เข้าสู่ระบบเพื่อให้ดาว</Link>
-            ) : sheet.authorId === user.id ? (
+            {!user ? null : sheet.authorId === user.id ? (
               <p className="text-sm">ชีทของคุณ (ให้ดาวตัวเองไม่ได้)</p>
             ) : (
               <div className="grid justify-items-end gap-1">
@@ -158,10 +156,10 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
             {user ? (
               <CommentForm sheetId={sheet.id} />
             ) : (
-              <p className="text-sm">
-                <Link href={loginUrl(`/sheets/${sheet.id}`)} className="font-medium text-primary hover:underline">เข้าสู่ระบบ</Link>{" "}
-                เพื่อแสดงความคิดเห็น
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary-50 px-4 py-3 text-sm">
+                <span>เข้าสู่ระบบเพื่อให้ดาวและแสดงความคิดเห็น</span>
+                <Link href={loginUrl(`/sheets/${sheet.id}`)} className="btn-primary btn-sm">เข้าสู่ระบบ</Link>
+              </div>
             )}
 
             {community.comments.length === 0 ? (

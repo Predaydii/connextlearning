@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "th_TH",
     siteName: "Connext Learning",
-    images: [withBase("/img/sheets/banner.webp")],
+    images: [withBase("/img/hero-960.webp")],
   },
 };
 

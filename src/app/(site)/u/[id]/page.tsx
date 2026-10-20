@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
-import { Stars } from "@/components/community";
 import { SheetCard } from "@/components/sheet-card";
 import { formatNumber, formatThaiDate } from "@/lib/format";
 import { getAuthorProfile } from "@/lib/queries";
@@ -34,18 +33,20 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
         {isMe && <Link href="/my-sheets" className="btn-outline btn-sm">จัดการชีทของฉัน</Link>}
       </section>
 
-      <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="card p-5">
-          <dt className="text-sm">ชีทที่เผยแพร่</dt>
-          <dd className="mt-1 text-2xl font-bold text-primary">{formatNumber(sheets.length)}</dd>
+      <dl className="card mt-4 grid grid-cols-3 divide-x divide-line py-4 text-center">
+        <div className="flex flex-col-reverse">
+          <dt className="text-xs sm:text-sm">ชีทที่เผยแพร่</dt>
+          <dd className="text-xl font-bold text-primary sm:text-2xl">{formatNumber(sheets.length)}</dd>
         </div>
-        <div className="card p-5">
-          <dt className="text-sm">ยอดผู้เข้าชมรวม</dt>
-          <dd className="mt-1 text-2xl font-bold text-primary">{formatNumber(totalViews)}</dd>
+        <div className="flex flex-col-reverse">
+          <dt className="text-xs sm:text-sm">ครั้งที่ถูกอ่าน</dt>
+          <dd className="text-xl font-bold text-primary sm:text-2xl">{formatNumber(totalViews)}</dd>
         </div>
-        <div className="card p-5">
-          <dt className="text-sm">คะแนนเฉลี่ยทุกชีท</dt>
-          <dd className="mt-2"><Stars average={rating.average} count={rating.count} /></dd>
+        <div className="flex flex-col-reverse">
+          <dt className="text-xs sm:text-sm">คะแนนเฉลี่ย{rating.count ? ` (${rating.count})` : ""}</dt>
+          <dd className="text-xl font-bold text-primary sm:text-2xl">
+            {rating.count ? <>{rating.average.toFixed(1)} <span className="text-accent">★</span></> : "–"}
+          </dd>
         </div>
       </dl>
 

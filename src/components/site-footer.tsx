@@ -34,7 +34,6 @@ const ABOUT = [
   { href: "/#classroom", label: "ห้องเรียน" },
   { href: "/sheets", label: "ชีทสรุป" },
   { href: "/news", label: "ข่าวสาร" },
-  { href: "#", label: "นโยบายคุ้มครองข้อมูลส่วนบุคคล" },
 ];
 
 const linkCls = "transition hover:text-accent";
@@ -77,9 +76,9 @@ export function SiteFooter({ base = "" }: { base?: string }) {
           </ul>
         </div>
 
-        <FooterCol title="เกี่ยวกับเรา">
+        <FooterCol title="เมนู">
           {ABOUT.map((l) => (
-            <li key={l.label}><Link href={l.href === "#" ? "#" : `${base}${l.href}`} className={linkCls}>{l.label}</Link></li>
+            <li key={l.label}><Link href={`${base}${l.href}`} className={linkCls}>{l.label}</Link></li>
           ))}
         </FooterCol>
 

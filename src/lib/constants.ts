@@ -63,7 +63,7 @@ export const MAX_PAGES = 300;
 export const UPLOADS_PER_DAY = 20;
 
 export const TITLE_MAX = 120;
-export const DESCRIPTION_MAX = 2000;
+export const DESCRIPTION_MAX = 300;
 
 export const PAGE_SIZE = 24;
 

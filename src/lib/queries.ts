@@ -272,3 +272,17 @@ export const getAuthorProfile = cache(async (userId: string) => {
     rating: toSummary(agg),
   };
 });
+
+/** Real numbers for the landing page (published sheets only). */
+export const getSiteStats = unstable_cache(
+  async () => {
+    const where = { status: "APPROVED" as const };
+    const [agg, authors] = await Promise.all([
+      db.sheet.aggregate({ where, _count: { _all: true }, _sum: { viewCount: true } }),
+      db.sheet.groupBy({ by: ["authorId"], where }),
+    ]);
+    return { sheets: agg._count._all, views: agg._sum.viewCount ?? 0, authors: authors.length };
+  },
+  ["site-stats"],
+  { tags: [TAG_SHEETS], revalidate: 300 },
+);
