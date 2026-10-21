@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { register } from "@/app/actions/register";
+import { adminUpdateMember, register } from "@/app/actions/register";
 import { CONTACTS, type Contacts } from "@/lib/contacts";
 import { currentBuddhistYear, DEPARTMENTS, GRADES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
 
@@ -27,9 +27,12 @@ export type ProfileValues = {
 
 const str = (v: string | number | undefined) => (v === undefined ? "" : String(v));
 
-/** Registration (first sign-in) and "แก้ไขโปรไฟล์" share this form and the same server action. */
-export function ProfileForm({ next, email, initial, submitLabel }: { next: string; email: string; initial: ProfileValues; submitLabel: string }) {
-  const [state, action, pending] = useActionState(register, null);
+/**
+ * Registration (first sign-in) and "แก้ไขโปรไฟล์" share this form and the same server action.
+ * With `userId`, an admin edits that user instead (/admin/users/[id]).
+ */
+export function ProfileForm({ next, email, initial, submitLabel, userId }: { next: string; email: string; initial: ProfileValues; submitLabel: string; userId?: string }) {
+  const [state, action, pending] = useActionState(userId ? adminUpdateMember : register, null);
   const [type, setType] = useState<"STUDENT" | "ALUMNI" | "TEACHER">(initial.memberType ?? "STUDENT");
   const year = currentBuddhistYear();
 
@@ -44,6 +47,7 @@ export function ProfileForm({ next, email, initial, submitLabel }: { next: strin
       className="grid gap-5"
     >
       <input type="hidden" name="next" value={next} />
+      {userId && <input type="hidden" name="userId" value={userId} />}
       <p className="rounded-xl bg-primary-50 px-4 py-2.5 text-sm">
         บัญชี <strong className="font-semibold text-ink">{email}</strong>
       </p>

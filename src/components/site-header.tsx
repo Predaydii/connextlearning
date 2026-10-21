@@ -7,11 +7,24 @@ import { UserMenu } from "@/components/user-menu";
 import { withBase } from "@/lib/urls";
 
 const LINKS = [
-  { href: "/", label: "หน้าหลัก", match: (p: string) => p === "/" },
+  { href: "/", label: "หน้าหลัก", match: (p: string, hash: string) => p === "/" && hash !== "#classroom" },
   { href: "/sheets", label: "ชีทสรุป", match: (p: string) => p.startsWith("/sheets") },
-  { href: "/#classroom", label: "ห้องเรียน", match: () => false },
+  { href: "/#classroom", label: "ห้องเรียน", match: (p: string, hash: string) => p === "/" && hash === "#classroom" },
   { href: "/news", label: "ข่าวสารการศึกษา", match: (p: string) => p.startsWith("/news") },
 ];
+
+/**
+ * Jump straight to a section of the landing page: a smooth scroll from the top would
+ * play the whole pinned video scene on the way down (and stops early when images load).
+ */
+function jumpTo(hash: string) {
+  const el = document.getElementById(hash.slice(1));
+  if (!el) return false;
+  el.scrollIntoView({ behavior: "instant", block: "start" });
+  history.replaceState(history.state, "", hash);
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
+  return true;
+}
 
 /**
  * `base` prefixes every link. It is "" on the public site and the main site's
@@ -20,6 +33,15 @@ const LINKS = [
 export function SiteHeader({ base = "" }: { base?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [hash, setHash] = useState("");
+
+  // The hash decides whether "ห้องเรียน" or "หน้าหลัก" is underlined on the landing page
+  useEffect(() => {
+    const sync = () => setHash(window.location.hash);
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, [pathname]);
 
   // Close the mobile menu with Escape (links close it on click)
   useEffect(() => {
@@ -51,12 +73,24 @@ export function SiteHeader({ base = "" }: { base?: string }) {
             }`}
           >
             {LINKS.map((l) => {
-              const active = !base && l.match(pathname);
+              const active = !base && l.match(pathname, hash);
+              const sectionLink = l.href.startsWith("/#");
               return (
                 <li key={l.href}>
                   <Link
                     href={`${base}${l.href}`}
                     aria-current={active ? "page" : undefined}
+                    // Already on the landing page: jump without a route change
+                    onClick={(e) => {
+                      if (sectionLink && pathname === "/" && jumpTo(l.href.slice(1))) e.preventDefault();
+                      else if (l.href === "/" && pathname === "/") {
+                        // Same page (maybe at #classroom): back to the top
+                        e.preventDefault();
+                        window.scrollTo({ top: 0, behavior: "instant" });
+                        history.replaceState(history.state, "", "/");
+                        setHash("");
+                      }
+                    }}
                     className={`relative block rounded-xl px-4 py-3 font-medium transition md:rounded-none md:px-3 md:py-2 md:after:absolute md:after:inset-x-3 md:after:-bottom-0.5 md:after:h-[2.5px] md:after:origin-left md:after:rounded-full md:after:bg-primary md:after:transition-transform md:after:duration-300 md:hover:bg-transparent ${
                       active
                         ? "bg-sky-100 text-primary md:bg-transparent md:after:scale-x-100"

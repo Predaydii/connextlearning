@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { adminEmails } from "@/lib/env";
 import { GRADE_VALUES, gradeLabel } from "@/lib/constants";
 import type { Grade, Prisma } from "@/generated/prisma/client";
+import { readContacts } from "@/lib/contacts";
+import type { ProfileValues } from "@/components/profile-form";
 
 /** Admin "ผู้ใช้งาน" page and its CSV export: who signed up, what they registered as, and when they were last here. */
 
@@ -105,4 +107,30 @@ export async function memberCounts() {
   ]);
   const of = (t: string) => byType.find((r) => r.memberType === t)?._count._all ?? 0;
   return { total, students: of("STUDENT"), teachers: of("TEACHER"), alumni: of("ALUMNI"), unregistered, activeWeek };
+}
+
+/** Saved registration → the values the profile form starts from (birth date shown in พ.ศ.). */
+export const profileSelect = {
+  prefix: true, firstName: true, lastName: true, memberType: true,
+  grade: true, room: true, studentNo: true, birthDate: true, gradYear: true, department: true, teachGrades: true, contacts: true,
+} satisfies Prisma.UserSelect;
+
+export function toProfileValues(u: Prisma.UserGetPayload<{ select: typeof profileSelect }>): ProfileValues {
+  return {
+    prefix: u.prefix ?? undefined,
+    firstName: u.firstName ?? "",
+    lastName: u.lastName ?? "",
+    memberType: u.memberType ?? undefined,
+    grade: u.grade ?? undefined,
+    room: u.room ?? undefined,
+    studentNo: u.studentNo ?? undefined,
+    // birthDate is a DATE column (UTC midnight)
+    birthDay: u.birthDate?.getUTCDate(),
+    birthMonth: u.birthDate ? u.birthDate.getUTCMonth() + 1 : undefined,
+    birthYear: u.birthDate ? u.birthDate.getUTCFullYear() + 543 : undefined,
+    gradYear: u.gradYear ?? undefined,
+    department: u.department ?? undefined,
+    teachGrades: u.teachGrades,
+    contacts: readContacts(u.contacts),
+  };
 }

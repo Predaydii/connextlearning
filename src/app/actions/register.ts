@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { currentBuddhistYear, DEPARTMENTS, GRADE_VALUES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES } from "@/lib/constants";
 import { TAG_SHEETS } from "@/lib/queries";
 import { CONTACTS, type Contacts } from "@/lib/contacts";
-import { assertSignedIn, AuthError } from "@/lib/session";
+import { assertAdmin, assertSignedIn, AuthError } from "@/lib/session";
 
 export type RegisterState = { ok: false; message: string } | null;
 
@@ -56,62 +56,88 @@ function safeNext(v: FormDataEntryValue | null) {
   return s.startsWith("/") && !s.startsWith("//") && !s.startsWith("/\\") && !s.startsWith("/register") ? s : "/sheets";
 }
 
+/** Validated form → the user fields to save. Shared by the user (register / profile) and admins. */
+function memberUpdate(formData: FormData) {
+  // getAll: the teacher's grade checkboxes share one name
+  const data = input.parse({ ...Object.fromEntries(formData), teachGrades: formData.getAll("teachGrades") });
+  const thisYear = currentBuddhistYear();
+
+  // Optional contact links: blank = not shown; anything else must be valid
+  const contacts: Contacts = {};
+  for (const c of CONTACTS) {
+    const raw = String(formData.get(`contact_${c.key}`) ?? "").trim().slice(0, 600); // Facebook search links for Thai names run long
+    if (!raw) continue;
+    const v = c.clean(raw);
+    if (!v) throw new AuthError(`${c.label} ไม่ถูกต้อง`);
+    contacts[c.key] = v;
+  }
+
+  const none = { grade: null, room: null, studentNo: null, birthDate: null, gradYear: null, department: null, teachGrades: [] };
+  let details;
+  if (data.memberType === "TEACHER") {
+    details = { ...none, department: data.department, teachGrades: [...new Set(data.teachGrades)] };
+  } else if (data.memberType === "STUDENT") {
+    details = { ...none, grade: data.grade, room: data.room, studentNo: data.studentNo };
+  } else {
+    if (data.birthYear < thisYear - 100 || data.birthYear > thisYear - 10) throw new AuthError("ปีเกิดไม่ถูกต้อง");
+    if (data.gradYear < data.birthYear + 12 || data.gradYear > thisYear) throw new AuthError("ปีการศึกษาที่จบไม่ถูกต้อง");
+    const birthDate = new Date(Date.UTC(data.birthYear - 543, data.birthMonth - 1, data.birthDay));
+    if (birthDate.getUTCDate() !== data.birthDay) throw new AuthError("วันเกิดไม่ถูกต้อง");
+    details = { ...none, birthDate, gradYear: data.gradYear };
+  }
+
+  return {
+    prefix: data.prefix,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    // Public display name (no prefix): shown on shared sheets
+    name: `${data.firstName} ${data.lastName}`,
+    memberType: data.memberType,
+    ...details,
+    contacts,
+  };
+}
+
+function failed(err: unknown, where: string): RegisterState {
+  if (err instanceof AuthError) return { ok: false, message: err.message };
+  if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  console.error(`[${where}]`, err);
+  return { ok: false, message: "เกิดข้อผิดพลาดของระบบ กรุณาลองใหม่อีกครั้ง" };
+}
+
 /** First registration and later profile edits (/profile). */
 export async function register(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
   let next: string;
   try {
     const user = await assertSignedIn();
-    // getAll: the teacher's grade checkboxes share one name
-    const data = input.parse({ ...Object.fromEntries(formData), teachGrades: formData.getAll("teachGrades") });
+    const data = memberUpdate(formData);
     next = safeNext(formData.get("next"));
-    const thisYear = currentBuddhistYear();
-
-    // Optional contact links: blank = not shown; anything else must be valid
-    const contacts: Contacts = {};
-    for (const c of CONTACTS) {
-      const raw = String(formData.get(`contact_${c.key}`) ?? "").trim().slice(0, 600); // Facebook search links for Thai names run long
-      if (!raw) continue;
-      const v = c.clean(raw);
-      if (!v) throw new AuthError(`${c.label} ไม่ถูกต้อง`);
-      contacts[c.key] = v;
-    }
-
-    const none = { grade: null, room: null, studentNo: null, birthDate: null, gradYear: null, department: null, teachGrades: [] };
-    let details;
-    if (data.memberType === "TEACHER") {
-      details = { ...none, department: data.department, teachGrades: [...new Set(data.teachGrades)] };
-    } else if (data.memberType === "STUDENT") {
-      details = { ...none, grade: data.grade, room: data.room, studentNo: data.studentNo };
-    } else {
-      if (data.birthYear < thisYear - 100 || data.birthYear > thisYear - 10) throw new AuthError("ปีเกิดไม่ถูกต้อง");
-      if (data.gradYear < data.birthYear + 12 || data.gradYear > thisYear) throw new AuthError("ปีการศึกษาที่จบไม่ถูกต้อง");
-      const birthDate = new Date(Date.UTC(data.birthYear - 543, data.birthMonth - 1, data.birthDay));
-      if (birthDate.getUTCDate() !== data.birthDay) throw new AuthError("วันเกิดไม่ถูกต้อง");
-      details = { ...none, birthDate, gradYear: data.gradYear };
-    }
-
     await db.user.update({
       where: { id: user.id },
-      data: {
-        prefix: data.prefix,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        // Public display name (no prefix): shown on shared sheets
-        name: `${data.firstName} ${data.lastName}`,
-        memberType: data.memberType,
-        ...details,
-        contacts,
-        // Kept from the first registration when editing the profile
-        ...(user.registered ? {} : { registeredAt: new Date() }),
-      },
+      // Kept from the first registration when editing the profile
+      data: { ...data, ...(user.registered ? {} : { registeredAt: new Date() }) },
     });
     // The public name appears on cached sheet lists and the contributor rows
     updateTag(TAG_SHEETS);
   } catch (err) {
-    if (err instanceof AuthError) return { ok: false, message: err.message };
-    if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
-    console.error("[register]", err);
-    return { ok: false, message: "เกิดข้อผิดพลาดของระบบ กรุณาลองใหม่อีกครั้ง" };
+    return failed(err, "register");
   }
   redirect(next);
+}
+
+/** Admins correcting someone else's registration (/admin/users/[id]). formData: userId + the profile form. */
+export async function adminUpdateMember(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
+  let id: string;
+  try {
+    await assertAdmin();
+    id = z.string().min(1).max(64).parse(formData.get("userId"));
+    const target = await db.user.findUnique({ where: { id }, select: { registeredAt: true } });
+    if (!target) throw new AuthError("ไม่พบผู้ใช้นี้");
+    const data = memberUpdate(formData);
+    await db.user.update({ where: { id }, data: { ...data, ...(target.registeredAt ? {} : { registeredAt: new Date() }) } });
+    updateTag(TAG_SHEETS);
+  } catch (err) {
+    return failed(err, "admin-member");
+  }
+  redirect(`/admin/users/${encodeURIComponent(id)}?saved=1`);
 }

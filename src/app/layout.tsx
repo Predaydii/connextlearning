@@ -68,7 +68,8 @@ const INTRO_SCRIPT = `try{var d=document.documentElement;if(!sessionStorage.getI
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // html.intro is added by INTRO_SCRIPT before hydration
-    <html lang="th" className={prompt.variable} suppressHydrationWarning>
+    // data-scroll-behavior: Next 16 only switches off the CSS smooth scroll during navigations when asked to
+    <html lang="th" className={prompt.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col">
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
         <div className="intro-screen" aria-hidden>

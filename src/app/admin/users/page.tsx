@@ -98,10 +98,11 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
               <th className="px-4 py-3 text-right font-medium">ชีท</th>
               <th className="px-4 py-3 font-medium">สมัครเมื่อ</th>
               <th className="px-4 py-3 font-medium">ใช้งานล่าสุด</th>
+              <th className="px-4 py-3"><span className="sr-only">แก้ไข</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {rows.length === 0 && <tr><td colSpan={5} className="px-4 py-16 text-center">ไม่พบผู้ใช้</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={6} className="px-4 py-16 text-center">ไม่พบผู้ใช้</td></tr>}
             {rows.map((m) => {
               const role = memberRole(m);
               const seen = lastSeen(m);
@@ -112,7 +113,7 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
                       <Avatar name={m.name} image={m.image} size={32} />
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 truncate font-medium text-ink">
-                          {memberName(m)}
+                          <Link href={adminHref(`/users/${m.id}`)} className="hover:text-primary">{memberName(m)}</Link>
                           {role && <span className="rounded-full bg-primary-50 px-2 text-[11px] font-semibold text-primary">{role}</span>}
                         </p>
                         <p className="truncate text-xs">{m.email}</p>
@@ -131,6 +132,11 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-xs">{formatThaiDate(m.createdAt)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-xs">{seen ? formatThaiDate(seen) : "–"}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={adminHref(`/users/${m.id}`)} className="whitespace-nowrap rounded-full bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white">
+                      แก้ไขข้อมูล
+                    </Link>
+                  </td>
                 </tr>
               );
             })}

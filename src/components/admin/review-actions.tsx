@@ -210,8 +210,9 @@ export function CoverUploader({
         <button disabled={pending || !picked} className="btn-primary btn-sm flex-1 whitespace-nowrap">
           {pending ? "กำลังบันทึก…" : "บันทึกภาพ"}
         </button>
+        {/* not name="reset": that would hide form.reset(), which React calls after every action */}
         {isCustom && (
-          <button name="reset" value="1" disabled={pending} formNoValidate className="btn-outline btn-sm whitespace-nowrap">
+          <button name="useDefault" value="1" disabled={pending} formNoValidate className="btn-outline btn-sm whitespace-nowrap">
             ใช้ภาพเริ่มต้น
           </button>
         )}

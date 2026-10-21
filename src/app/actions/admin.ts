@@ -215,13 +215,13 @@ async function saveCoverKey(target: z.output<typeof coverTarget>, key: string | 
   }
 }
 
-/** Upload a new cover (formData: target, file) or reset to default (formData: target, reset=1). */
+/** Upload a new cover (formData: target, file) or reset to default (formData: target, useDefault=1). */
 export async function updateCover(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertAdmin();
     const target = coverTarget.parse(formData.get("target"));
     const old = await currentCoverKey(target);
-    const reset = formData.get("reset") === "1";
+    const reset = formData.get("useDefault") === "1";
     const key = reset ? null : await storeCover(formData.get("file"), typeof target === "object" && "grade" in target ? 5 / 4 : undefined);
     await saveCoverKey(target, key);
     if (old) await deleteObjects(coverFiles(old));
@@ -498,7 +498,7 @@ export async function moveBanner(id: string, dir: number): Promise<ActionState> 
 const iconFiles = (key: string) => [32, 180, 512].map((s) => `${key}-icon-${s}.png`);
 const ogFiles = (key: string) => [`${key}-og.jpg`];
 
-/** formData: kind ("favicon" | "og"), file — or reset=1 to go back to the built-in one. */
+/** formData: kind ("favicon" | "og"), file — or useDefault=1 to go back to the built-in one. */
 export async function setSiteImage(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertAdmin();
@@ -506,7 +506,7 @@ export async function setSiteImage(_prev: ActionState, formData: FormData): Prom
     const field = kind === "favicon" ? "faviconKey" : "ogImageKey";
     const old = (await db.siteSetting.findUnique({ where: { id: 1 }, select: { [field]: true } }))?.[field] ?? null;
     let key: string | null = null;
-    if (formData.get("reset") !== "1") {
+    if (formData.get("useDefault") !== "1") {
       const file = formData.get("file");
       if (!(file instanceof File) || file.size === 0) throw new UserFacingError("กรุณาเลือกไฟล์รูปภาพ");
       if (file.size > MAX_COVER_BYTES) throw new UserFacingError("รูปภาพต้องมีขนาดไม่เกิน 5 MB");

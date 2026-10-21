@@ -32,7 +32,7 @@ export function SiteImageForm({ kind, src, isCustom }: { kind: "favicon" | "og";
       <div className="flex flex-wrap items-center gap-2">
         <button disabled={pending || !picked} className="btn-primary btn-sm">{pending ? "กำลังบันทึก…" : "บันทึก"}</button>
         {isCustom && (
-          <button name="reset" value="1" disabled={pending} formNoValidate className="btn-outline btn-sm">ใช้ค่าเริ่มต้น</button>
+          <button name="useDefault" value="1" disabled={pending} formNoValidate className="btn-outline btn-sm">ใช้ค่าเริ่มต้น</button>
         )}
       </div>
       {state?.message && <p role="status" className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>}
