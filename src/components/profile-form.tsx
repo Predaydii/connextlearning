@@ -174,8 +174,9 @@ export function ProfileForm({ next, email, initial, submitLabel }: { next: strin
               <input
                 name={`contact_${c.key}`}
                 defaultValue={initial.contacts?.[c.key] ?? ""}
-                placeholder={`${c.label} · ${c.placeholder}`}
-                maxLength={200}
+                placeholder={c.placeholder}
+                title={c.label}
+                maxLength={600}
                 inputMode={c.key === "email" ? "email" : c.key === "website" ? "url" : "text"}
                 className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-ink outline-none placeholder:text-body/60"
               />

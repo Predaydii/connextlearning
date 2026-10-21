@@ -69,7 +69,7 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
     // Optional contact links: blank = not shown; anything else must be valid
     const contacts: Contacts = {};
     for (const c of CONTACTS) {
-      const raw = String(formData.get(`contact_${c.key}`) ?? "").trim().slice(0, 200);
+      const raw = String(formData.get(`contact_${c.key}`) ?? "").trim().slice(0, 600); // Facebook search links for Thai names run long
       if (!raw) continue;
       const v = c.clean(raw);
       if (!v) throw new AuthError(`${c.label} ไม่ถูกต้อง`);

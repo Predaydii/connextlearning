@@ -189,7 +189,7 @@ export function CoverUploader({
   const [picked, setPicked] = useState(false);
 
   return (
-    <form action={action} className="grid gap-3" onSubmit={() => setPicked(false)}>
+    <form action={action} className="@container grid gap-3" onSubmit={() => setPicked(false)}>
       <input type="hidden" name="target" value={target} />
       {/* click the picture to choose a new one */}
       <ImagePick
@@ -205,12 +205,13 @@ export function CoverUploader({
         )}
       />
       {!compact && <p className="font-medium text-ink">{title}</p>}
-      <div className="flex gap-2">
-        <button disabled={pending || !picked} className="btn-primary btn-sm flex-1">
+      {/* narrow tiles (two per row on phones) stack the buttons */}
+      <div className="flex flex-col gap-2 @[260px]:flex-row">
+        <button disabled={pending || !picked} className="btn-primary btn-sm flex-1 whitespace-nowrap">
           {pending ? "กำลังบันทึก…" : "บันทึกภาพ"}
         </button>
         {isCustom && (
-          <button name="reset" value="1" disabled={pending} formNoValidate className="btn-outline btn-sm">
+          <button name="reset" value="1" disabled={pending} formNoValidate className="btn-outline btn-sm whitespace-nowrap">
             ใช้ภาพเริ่มต้น
           </button>
         )}

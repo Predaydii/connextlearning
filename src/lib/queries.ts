@@ -283,11 +283,13 @@ export const getAuthorProfile = cache(async (userId: string) => {
 export const getSiteStats = unstable_cache(
   async () => {
     const where = { status: "APPROVED" as const };
-    const [agg, authors] = await Promise.all([
+    const [agg, authors, users] = await Promise.all([
       db.sheet.aggregate({ where, _count: { _all: true }, _sum: { viewCount: true } }),
       db.sheet.groupBy({ by: ["authorId"], where }),
+      // registered members (register() updates TAG_SHEETS)
+      db.user.count({ where: { registeredAt: { not: null } } }),
     ]);
-    return { sheets: agg._count._all, views: agg._sum.viewCount ?? 0, authors: authors.length };
+    return { sheets: agg._count._all, views: agg._sum.viewCount ?? 0, authors: authors.length, users };
   },
   ["site-stats"],
   { tags: [TAG_SHEETS], revalidate: 1800 },

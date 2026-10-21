@@ -28,7 +28,9 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
   const label = classLabel(user);
   const contacts = readContacts(user.contacts);
   const links = CONTACTS.filter((c) => contacts[c.key]);
-  const item = "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-50 hover:text-primary";
+  // phones: three equal tiles (icon over label); wider screens: one row, sign-out on the right
+  const tile = "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-medium transition sm:flex-row sm:gap-2 sm:px-4 sm:text-sm";
+  const item = `${tile} text-ink hover:bg-primary-50 hover:text-primary`;
   const icon = (d: string) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[18px]" aria-hidden><path d={d} /></svg>
   );
@@ -64,7 +66,12 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
               <Avatar name={user.name} image={user.image} size={64} />
               <div className="min-w-0">
                 <p className="text-xs text-body">ผู้เดินทาง</p>
-                <h1 className="text-[clamp(1.4rem,3.4vw,1.9rem)] leading-tight font-bold break-words text-ink">{user.name}</h1>
+                <h1 className="text-[clamp(1.4rem,3.4vw,1.9rem)] leading-tight font-bold break-words text-ink">
+                  {/* wrap between first and last name, never inside a Thai word */}
+                  {user.name.split(" ").map((w, i) => (
+                    <span key={i}>{i > 0 && " "}<span className="inline-block max-w-full">{w}</span></span>
+                  ))}
+                </h1>
               </div>
             </div>
 
@@ -110,9 +117,9 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
           </div>
 
           {/* stub: the profile's own QR code */}
-          <div className="flex items-center gap-5 p-6 sm:p-8 md:w-60 md:flex-col md:justify-center md:text-center">
+          <div className="flex items-center gap-4 p-5 sm:gap-5 sm:p-8 md:w-60 md:flex-col md:justify-center md:text-center">
             <QrCode value={profileUrl} label={`QR code ลิงก์โปรไฟล์ของ ${user.name}`} className="size-28 shrink-0 rounded-xl ring-1 ring-line md:size-36" />
-            <div className="grid gap-3">
+            <div className="grid min-w-0 flex-1 gap-3 md:w-full md:flex-none">
               <p className="text-xs text-body">สแกนเพื่อเปิดโปรไฟล์นี้</p>
               <span data-no-capture className="contents">
               <ShareButton
@@ -120,7 +127,7 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
                 title={`${user.name} · Connext Learning`}
                 text={`ดูชีทสรุปของ ${user.name} บน Connext Learning`}
                 label="แชร์โปรไฟล์"
-                className="btn-primary btn-sm cursor-pointer gap-2"
+                className="btn-primary btn-sm cursor-pointer gap-2 whitespace-nowrap"
               />
               </span>
               <PassImageButton
@@ -136,10 +143,13 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
 
         {/* Your own profile: account actions */}
         {isMe && (
-          <nav aria-label="บัญชีของฉัน" className="mx-auto mt-1 flex max-w-3xl flex-wrap items-center gap-1 rounded-2xl bg-white p-1.5 shadow-card ring-1 ring-line/60">
+          <nav aria-label="บัญชีของฉัน" className="mx-auto mt-1 grid max-w-3xl grid-cols-3 gap-1 rounded-2xl bg-white p-1.5 shadow-card ring-1 ring-line/60 sm:flex sm:items-center">
             <Link href="/profile" className={item}>{icon("M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z")}แก้ไขข้อมูล</Link>
             <Link href="/my-sheets" className={item}>{icon("M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zm0 0v6h6M8 13h8M8 17h5")}ชีทของฉัน</Link>
-            <SignOutButton className="ml-auto inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60" />
+            <SignOutButton
+              icon={icon("M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h11")}
+              className={`${tile} text-red-600 hover:bg-red-50 disabled:opacity-60 sm:ml-auto`}
+            />
           </nav>
         )}
       </div>

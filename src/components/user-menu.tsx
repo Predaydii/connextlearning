@@ -32,7 +32,7 @@ export function UserMenu({ base = "", variant = "header" }: { base?: string; var
             </Link>
             {isAdminUser(session.user) && (
               <Link href={adminHref("/")} className="mt-1 flex items-center gap-3 rounded-xl px-4 py-2.5 font-medium text-ink transition hover:bg-sky-50 hover:text-primary">
-                <DashIcon /> แดชบอร์ดผู้ดูแล
+                <AdminIcon /> แดชบอร์ดผู้ดูแล
               </Link>
             )}
           </>
@@ -57,7 +57,7 @@ export function UserMenu({ base = "", variant = "header" }: { base?: string; var
     <div className="hidden items-center gap-2 md:flex">
       {isAdminUser(session.user) && (
         <Link href={adminHref("/")} title="แดชบอร์ดผู้ดูแล" className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-ink ring-1 ring-line transition hover:bg-sky-50 hover:text-primary">
-          <DashIcon /> ผู้ดูแล
+          <AdminIcon /> ผู้ดูแล
         </Link>
       )}
       <Link
@@ -72,10 +72,12 @@ export function UserMenu({ base = "", variant = "header" }: { base?: string; var
   );
 }
 
-function DashIcon() {
+function AdminIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[18px]" aria-hidden>
-      <path d="M4 13h6V4H4zm0 7h6v-5H4zm10 0h6v-9h-6zm0-16v5h6V4z" />
+      {/* shield with a check: admin */}
+      <path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6z" />
+      <path d="m9 12 2 2 4-4" />
     </svg>
   );
 }

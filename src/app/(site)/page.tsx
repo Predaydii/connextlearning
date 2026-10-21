@@ -6,8 +6,7 @@ import { EyeIcon } from "@/components/sheet-card";
 import { getContributors, getHomeMedia, getLeaderboards, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
 import { bannerSrc, GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
 import { BannerCarousel } from "@/components/banner-carousel";
-import { GRADES, gradeLabel } from "@/lib/constants";
-import { classroomsOf } from "@/lib/classrooms";
+import { gradeLabel } from "@/lib/constants";
 import { formatNumber } from "@/lib/format";
 import { CountUp } from "@/components/count-up";
 import { Typewriter } from "@/components/typewriter";
@@ -16,7 +15,6 @@ import { AutoVideo } from "@/components/auto-video";
 // Static page, refreshed every 5 minutes (all data comes from cached queries)
 export const revalidate = 300;
 
-const ROOMS = GRADES.reduce((n, g) => n + classroomsOf(g.value).length, 0);
 
 export default async function HomePage() {
   const [stats, contributors, boards, media] = await Promise.all([getSiteStats(), getContributors(30), getLeaderboards(5), getHomeMedia()]);
@@ -33,7 +31,7 @@ export default async function HomePage() {
           ]}
         />
       )}
-      <Stats sheets={stats.sheets} views={stats.views} authors={stats.authors} />
+      <Stats sheets={stats.sheets} views={stats.views} authors={stats.authors} users={stats.users} />
       {contributors.length > 0 && <Contributors people={contributors} />}
       <Leaderboards topRated={boards.topRated} mostRead={boards.mostRead} />
       <ByGrade art={media.gradeArt} />
@@ -79,8 +77,8 @@ function Hero() {
             />
           </p>
           <div style={at(240)} className={`${rise} flex flex-wrap justify-center gap-4 min-[901px]:justify-start`}>
-            <Link href="/sheets" className="btn-primary min-h-11 min-w-0 flex-[1_1_130px] px-6 py-2 text-[15px] sm:min-w-[150px] sm:flex-none">ดูชีทสรุป</Link>
-            <a href="#classroom" className="btn-outline min-h-11 min-w-0 flex-[1_1_130px] px-6 py-2 text-[15px] sm:min-w-[150px] sm:flex-none">เข้าห้องเรียน</a>
+            <Link href="/sheets" className="btn-primary min-h-11 min-w-0 flex-[1_1_140px] px-8 py-2 text-[15px] sm:min-w-[176px] sm:flex-none">ดูชีทสรุป</Link>
+            <a href="#classroom" className="btn-outline min-h-11 min-w-0 flex-[1_1_140px] px-8 py-2 text-[15px] sm:min-w-[176px] sm:flex-none">เข้าห้องเรียน</a>
           </div>
         </div>
 
@@ -121,12 +119,12 @@ function HeroVisual() {
 // Numbers (real data only)
 // ---------------------------------------------------------------------------
 
-function Stats({ sheets, views, authors }: { sheets: number; views: number; authors: number }) {
+function Stats({ sheets, views, authors, users }: { sheets: number; views: number; authors: number; users: number }) {
   const items = [
     { value: sheets, label: "ชีทที่เผยแพร่" },
     { value: views, label: "ครั้งที่เปิดอ่าน" },
     { value: authors, label: "นักเรียนที่ร่วมแชร์" },
-    { value: ROOMS, label: "ห้องเรียนออนไลน์" },
+    { value: users, label: "ผู้ใช้ในระบบ" },
   ];
   return (
     <section aria-label="ตัวเลขของ Connext Learning" className="bg-white pt-[clamp(28px,4vw,48px)]">
