@@ -98,5 +98,3 @@ export const DEPARTMENTS = [
   "สนับสนุนการศึกษา",
 ] as const;
 
-/** News card categories (admin picks one; the news page filters by them) */
-export const NEWS_CATEGORIES = ["ประกาศ", "กิจกรรม", "การสอบ", "ทุนการศึกษา", "แนะแนว / ศึกษาต่อ", "อื่น ๆ"] as const;

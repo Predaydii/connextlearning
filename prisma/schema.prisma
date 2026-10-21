@@ -185,13 +185,21 @@ model HomeImage {
   imageKey String // R2 key prefix "covers/<uuid>"
 }
 
+// News categories, managed by admins (NewsPost.category stores the name)
+model NewsCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 // Admin-managed news cards on the news page
 model NewsPost {
   id          String   @id @default(cuid())
   title       String
   summary     String
   linkUrl     String?
-  category    String? // one of NEWS_CATEGORIES
+  category    String? // NewsCategory.name (null = uncategorised)
   // R2 key prefix ("covers/<uuid>", served by /media); null = no image
   imageKey    String?
   publishedAt DateTime @default(now())

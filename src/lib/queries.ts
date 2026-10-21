@@ -375,10 +375,15 @@ export const getNews = unstable_cache(
       db.siteSetting.findUnique({ where: { id: 1 }, select: { newsVideoKey: true } }),
       db.newsPost.findMany({ orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }] }),
     ]);
+    const categories = await db.newsCategory.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { name: true } });
     // ISO strings: unstable_cache stores JSON, so Dates would come back as strings anyway
-    return { videoKey: setting?.newsVideoKey ?? null, posts: posts.map((p) => ({ ...p, publishedAt: p.publishedAt.toISOString() })) };
+    return {
+      videoKey: setting?.newsVideoKey ?? null,
+      categories: categories.map((c) => c.name),
+      posts: posts.map((p) => ({ ...p, publishedAt: p.publishedAt.toISOString() })),
+    };
   },
-  ["news-v2"],
+  ["news-v3"],
   { tags: [TAG_NEWS], revalidate: 600 },
 );
 

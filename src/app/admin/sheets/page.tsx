@@ -69,7 +69,8 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
       {sp.deleted === "1" && (
         <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">ลบชีทถาวรแล้ว</p>
       )}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      {/* min-w-0: the tab row scrolls inside instead of widening the whole page on phones */}
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <nav aria-label="สถานะ" className="-mx-1 flex min-w-0 gap-1 overflow-x-auto rounded-full bg-white p-1 shadow-card ring-1 ring-line [scrollbar-width:none] lg:mx-0">
           {TABS.map((t) => (
             <Link

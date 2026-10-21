@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const [{ posts }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
+  const [{ posts, categories }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
   const empty = posts.length === 0 && !igPosts?.length;
 
   return (
@@ -30,6 +30,7 @@ export default async function NewsPage() {
 
       {posts.length > 0 && (
         <NewsGrid
+          categories={categories}
           items={posts.map((p) => ({
             id: p.id,
             title: p.title,

@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { deleteNewsPost, saveNewsPost, type ActionState } from "@/app/actions/admin";
+import { addNewsCategory, deleteNewsCategory, deleteNewsPost, renameNewsCategory, saveNewsPost, type ActionState } from "@/app/actions/admin";
 import { shrinkInForm } from "@/lib/shrink-image";
-import { NEWS_CATEGORIES } from "@/lib/constants";
 import { ImagePick } from "@/components/admin/image-pick";
 
 function Notice({ state }: { state: ActionState }) {
@@ -26,7 +25,7 @@ export type NewsFormPost = {
   publishedAt: string; // YYYY-MM-DD
 };
 
-export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: () => void }) {
+export function NewsPostForm({ post, categories, onDone }: { post?: NewsFormPost; categories: string[]; onDone?: () => void }) {
   const [state, action, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
     // Shrink big photos in the browser first (Vercel refuses bodies over 4.5 MB)
     const err = await shrinkInForm(fd);
@@ -50,15 +49,15 @@ export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: (
           <input name="title" required maxLength={150} defaultValue={post?.title} className="field" />
         </label>
         <label className="grid gap-1 text-sm font-medium text-ink">
-          รายละเอียด
-          <textarea name="summary" required maxLength={1000} rows={4} defaultValue={post?.summary} className="field" />
+          รายละเอียด <span className="font-normal text-body">(ไม่บังคับ)</span>
+          <textarea name="summary" maxLength={1000} rows={4} defaultValue={post?.summary} className="field" />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-medium text-ink">
             หมวดหมู่
-            <select name="category" required defaultValue={post?.category ?? ""} className="field">
-              <option value="" disabled>เลือกหมวดหมู่</option>
-              {NEWS_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            <select name="category" defaultValue={post?.category ?? ""} className="field">
+              <option value="">ไม่ระบุ</option>
+              {categories.map((c) => <option key={c}>{c}</option>)}
             </select>
           </label>
           <label className="grid gap-1 text-sm font-medium text-ink">
@@ -68,7 +67,7 @@ export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: (
         </div>
         <div className="grid gap-3">
           <label className="grid gap-1 text-sm font-medium text-ink">
-            ลิงก์แนะนำ (ไม่บังคับ)
+            ลิงก์รายละเอียดเพิ่มเติม (ไม่บังคับ)
             <input name="linkUrl" type="url" maxLength={500} defaultValue={post?.linkUrl ?? ""} placeholder="https://" className="field" />
           </label>
         </div>
@@ -106,7 +105,7 @@ export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: (
   );
 }
 
-export function NewsPostRow({ post, date }: { post: NewsFormPost; date: string }) {
+export function NewsPostRow({ post, date, categories }: { post: NewsFormPost; date: string; categories: string[] }) {
   const [editing, setEditing] = useState(false);
   const [state, setState] = useState<ActionState>(null);
   const [deleting, startDelete] = useTransition();
@@ -114,7 +113,7 @@ export function NewsPostRow({ post, date }: { post: NewsFormPost; date: string }
   if (editing) {
     return (
       <li className="rounded-2xl bg-primary-50/60 p-4 ring-1 ring-line">
-        <NewsPostForm post={post} onDone={() => setEditing(false)} />
+        <NewsPostForm post={post} categories={categories} onDone={() => setEditing(false)} />
       </li>
     );
   }
@@ -145,6 +144,72 @@ export function NewsPostRow({ post, date }: { post: NewsFormPost; date: string }
           {deleting ? "กำลังลบ…" : "ลบ"}
         </button>
       </div>
+    </li>
+  );
+}
+
+/** Admins add, rename and delete news categories (renaming updates the news that use it). */
+export function NewsCategoryManager({ categories }: { categories: { id: string; name: string; count: number }[] }) {
+  const [state, action, pending] = useActionState(addNewsCategory, null);
+  return (
+    <div className="grid gap-4">
+      <ul className="flex flex-wrap gap-2">
+        {categories.map((c) => <CategoryChip key={`${c.id}-${c.name}`} category={c} />)}
+        {categories.length === 0 && <li className="text-sm">ยังไม่มีหมวดหมู่</li>}
+      </ul>
+      <form action={action} className="flex max-w-md gap-2">
+        <input name="name" required maxLength={40} placeholder="ชื่อหมวดหมู่ใหม่" className="field min-w-0 flex-1 py-2 text-sm" />
+        <button disabled={pending} className="btn-primary btn-sm">{pending ? "กำลังเพิ่ม…" : "เพิ่มหมวดหมู่"}</button>
+      </form>
+      <Notice state={state} />
+    </div>
+  );
+}
+
+function CategoryChip({ category }: { category: { id: string; name: string; count: number } }) {
+  const [editing, setEditing] = useState(false);
+  const [state, setState] = useState<ActionState>(null);
+  const [pending, start] = useTransition();
+  if (editing) {
+    return (
+      <li>
+        <form
+          className="flex items-center gap-1.5 rounded-full bg-white p-1 ring-1 ring-primary"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const name = String(new FormData(e.currentTarget).get("name") ?? "");
+            start(async () => {
+              const res = await renameNewsCategory(category.id, name);
+              setState(res);
+              if (!res || res.ok) setEditing(false);
+            });
+          }}
+        >
+          <input name="name" defaultValue={category.name} maxLength={40} autoFocus className="w-36 rounded-full px-3 py-1 text-sm outline-none" />
+          <button disabled={pending} className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">บันทึก</button>
+          <button type="button" onClick={() => setEditing(false)} className="rounded-full px-2 py-1 text-xs">ยกเลิก</button>
+        </form>
+        {state && !state.ok && <p className="mt-1 text-xs text-red-600">{state.message}</p>}
+      </li>
+    );
+  }
+  return (
+    <li className="flex items-center gap-1 rounded-full bg-primary-50 py-1 pr-1 pl-3 text-sm text-ink ring-1 ring-line">
+      <button type="button" onClick={() => setEditing(true)} title="คลิกเพื่อเปลี่ยนชื่อ" className="cursor-pointer font-medium hover:text-primary">
+        {category.name} <span className="text-xs text-body">({category.count})</span>
+      </button>
+      <button
+        type="button"
+        aria-label={`ลบหมวดหมู่ ${category.name}`}
+        disabled={pending}
+        onClick={() => {
+          if (!confirm(`ลบหมวดหมู่ "${category.name}"? ข่าวในหมวดนี้จะไม่มีหมวดหมู่`)) return;
+          start(async () => setState(await deleteNewsCategory(category.id)));
+        }}
+        className="grid size-6 cursor-pointer place-items-center rounded-full text-body transition hover:bg-red-100 hover:text-red-600"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5" aria-hidden><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
     </li>
   );
 }

@@ -17,7 +17,6 @@ import {
   GRADE_VALUES,
   gradeLabel,
   MAX_VIDEO_BYTES,
-  NEWS_CATEGORIES,
   SCHOOL_DOMAIN,
   SEMESTERS,
   SUBJECT_IDS,
@@ -262,14 +261,15 @@ function refreshNews() {
 const newsInput = z.object({
   id: z.string().max(40).optional(),
   title: z.string().trim().min(1, "กรุณากรอกหัวข้อข่าว").max(150, "หัวข้อข่าวยาวเกิน 150 ตัวอักษร"),
-  summary: z.string().trim().min(1, "กรุณากรอกรายละเอียด").max(1000, "รายละเอียดยาวเกิน 1000 ตัวอักษร"),
+  // optional: a news card can be just a title (and a picture)
+  summary: z.string().trim().max(1000, "รายละเอียดยาวเกิน 1000 ตัวอักษร"),
   linkUrl: z
     .string()
     .trim()
     .max(500)
     .refine((v) => !v || /^https?:\/\//i.test(v), "ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://")
     .transform((v) => v || null),
-  category: z.enum(NEWS_CATEGORIES, { message: "กรุณาเลือกหมวดหมู่" }),
+  category: z.string().trim().max(40).transform((v) => v || null),
   publishedAt: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ไม่ถูกต้อง")
@@ -283,11 +283,14 @@ export async function saveNewsPost(_prev: ActionState, formData: FormData): Prom
     const input = newsInput.parse({
       id: formData.get("id") || undefined,
       title: formData.get("title"),
-      summary: formData.get("summary"),
+      summary: formData.get("summary") ?? "",
       linkUrl: formData.get("linkUrl") ?? "",
       category: formData.get("category"),
       publishedAt: formData.get("publishedAt"),
     });
+    if (input.category && !(await db.newsCategory.findUnique({ where: { name: input.category } }))) {
+      throw new UserFacingError("ไม่พบหมวดหมู่นี้ กรุณาเลือกใหม่");
+    }
     const existing = input.id ? await db.newsPost.findUnique({ where: { id: input.id } }) : null;
     if (input.id && !existing) throw new UserFacingError("ไม่พบข่าวนี้");
 
@@ -521,6 +524,63 @@ export async function setSiteImage(_prev: ActionState, formData: FormData): Prom
     updateTag(TAG_SETTINGS);
     revalidatePath("/", "layout");
     return { ok: true, message: key ? "บันทึกแล้ว" : "กลับไปใช้ค่าเริ่มต้นแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// News categories (admins add, rename and delete them)
+// ---------------------------------------------------------------------------
+
+const categoryName = z.string().trim().min(1, "กรุณากรอกชื่อหมวดหมู่").max(40, "ชื่อหมวดหมู่ยาวเกิน 40 ตัวอักษร");
+
+export async function addNewsCategory(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const name = categoryName.parse(formData.get("name"));
+    if (await db.newsCategory.findUnique({ where: { name } })) throw new UserFacingError("มีหมวดหมู่นี้แล้ว");
+    const last = await db.newsCategory.aggregate({ _max: { sortOrder: true } });
+    await db.newsCategory.create({ data: { name, sortOrder: (last._max.sortOrder ?? 0) + 1 } });
+    refreshNews();
+    return { ok: true, message: `เพิ่มหมวดหมู่ "${name}" แล้ว` };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Renames the category and every news card that uses it. */
+export async function renameNewsCategory(id: string, nameInput: string): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const name = categoryName.parse(nameInput);
+    const cat = await db.newsCategory.findUnique({ where: { id: z.string().min(1).max(40).parse(id) } });
+    if (!cat) throw new UserFacingError("ไม่พบหมวดหมู่นี้");
+    if (cat.name === name) return null;
+    if (await db.newsCategory.findUnique({ where: { name } })) throw new UserFacingError("มีหมวดหมู่นี้แล้ว");
+    await db.$transaction([
+      db.newsCategory.update({ where: { id: cat.id }, data: { name } }),
+      db.newsPost.updateMany({ where: { category: cat.name }, data: { category: name } }),
+    ]);
+    refreshNews();
+    return { ok: true, message: "เปลี่ยนชื่อแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Deletes the category; its news cards stay, without a category. */
+export async function deleteNewsCategory(id: string): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const cat = await db.newsCategory.findUnique({ where: { id: z.string().min(1).max(40).parse(id) } });
+    if (!cat) throw new UserFacingError("ไม่พบหมวดหมู่นี้");
+    await db.$transaction([
+      db.newsPost.updateMany({ where: { category: cat.name }, data: { category: null } }),
+      db.newsCategory.delete({ where: { id: cat.id } }),
+    ]);
+    refreshNews();
+    return { ok: true, message: "ลบหมวดหมู่แล้ว" };
   } catch (err) {
     return fail(err);
   }

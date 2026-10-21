@@ -57,8 +57,10 @@ export function SiteHeader({ base = "" }: { base?: string }) {
                   <Link
                     href={`${base}${l.href}`}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded-xl px-4 py-3 font-medium transition md:rounded-full md:py-2 ${
-                      active ? "bg-sky-100 text-primary" : "text-ink hover:bg-sky-50 hover:text-primary active:bg-sky-100"
+                    className={`relative block rounded-xl px-4 py-3 font-medium transition md:rounded-none md:px-3 md:py-2 md:after:absolute md:after:inset-x-3 md:after:-bottom-0.5 md:after:h-[2.5px] md:after:origin-left md:after:rounded-full md:after:bg-primary md:after:transition-transform md:after:duration-300 md:hover:bg-transparent ${
+                      active
+                        ? "bg-sky-100 text-primary md:bg-transparent md:after:scale-x-100"
+                        : "text-ink hover:bg-sky-50 hover:text-primary active:bg-sky-100 md:after:scale-x-0 md:active:bg-transparent"
                     }`}
                   >
                     {l.label}
