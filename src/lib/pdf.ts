@@ -107,3 +107,34 @@ export async function makeCoverImages(bytes: Uint8Array, ratio = 9 / 16, widths:
     throw new UserFacingError("ไม่สามารถอ่านไฟล์รูปภาพได้");
   }
 }
+
+/** Site icon: square PNGs (32 tab icon, 180 Apple touch icon, 512 PWA/large). */
+export async function makeIconImages(bytes: Uint8Array) {
+  assertImage(bytes);
+  try {
+    const base = sharp(bytes, { limitInputPixels: 60_000_000 }).rotate();
+    const [s32, s180, s512] = await Promise.all(
+      [32, 180, 512].map((size) => base.clone().resize({ width: size, height: size, fit: "cover", position: "attention" }).png().toBuffer()),
+    );
+    return { s32, s180, s512 };
+  } catch {
+    throw new UserFacingError("ไม่สามารถอ่านไฟล์รูปภาพได้");
+  }
+}
+
+/** Link-preview image: 1200×630 JPEG (the most widely supported og:image format). */
+export async function makeOgImage(bytes: Uint8Array) {
+  assertImage(bytes);
+  try {
+    return await sharp(bytes, { limitInputPixels: 60_000_000 }).rotate().resize({ width: 1200, height: 630, fit: "cover", position: "attention" }).jpeg({ quality: 85 }).toBuffer();
+  } catch {
+    throw new UserFacingError("ไม่สามารถอ่านไฟล์รูปภาพได้");
+  }
+}
+
+function assertImage(bytes: Uint8Array) {
+  const kind = sniffKind(bytes);
+  const isWebp = bytes.length > 12 && Buffer.from(bytes.subarray(0, 4)).toString("latin1") === "RIFF" &&
+    Buffer.from(bytes.subarray(8, 12)).toString("latin1") === "WEBP";
+  if (kind !== "png" && kind !== "jpg" && !isWebp) throw new UserFacingError("รองรับเฉพาะไฟล์ PNG, JPG หรือ WebP");
+}

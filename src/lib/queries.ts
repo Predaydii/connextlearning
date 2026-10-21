@@ -382,6 +382,16 @@ export const getNews = unstable_cache(
   { tags: [TAG_NEWS], revalidate: 600 },
 );
 
+/** Admin-set site icon and link-preview image (R2 key prefixes; null = built-in). */
+export const getSiteImages = unstable_cache(
+  async () => {
+    const s = await db.siteSetting.findUnique({ where: { id: 1 }, select: { faviconKey: true, ogImageKey: true } });
+    return { faviconKey: s?.faviconKey ?? null, ogImageKey: s?.ogImageKey ?? null };
+  },
+  ["site-images"],
+  { tags: [TAG_SETTINGS], revalidate: 600 },
+);
+
 /** Landing page media: custom grade tiles (slot → R2 key) and the video above the footer. */
 export const getHomeMedia = unstable_cache(
   async () => {

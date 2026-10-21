@@ -37,7 +37,7 @@ const MENU = [
   { href: "/", label: "หน้าหลัก" },
   { href: "/#classroom", label: "ห้องเรียนออนไลน์" },
   { href: "/sheets", label: "ชีทสรุปทั้งหมด" },
-  { href: "/news", label: "ข่าวสาร" },
+  { href: "/news", label: "ข่าวสารการศึกษา" },
 ];
 const SHEETS = [
   { href: "/sheets/upload", label: "แชร์ชีทของคุณ" },

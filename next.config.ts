@@ -14,8 +14,8 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.cdninstagram.com https://*.fbcdn.net",
   "font-src 'self'",
-  // Browser uploads go straight to R2 via presigned URLs
-  "connect-src 'self' https://*.r2.cloudflarestorage.com",
+  // R2: browser uploads · lh3: Google profile photos read by "บันทึก / แชร์รูป" (boarding pass image)
+  "connect-src 'self' https://*.r2.cloudflarestorage.com https://lh3.googleusercontent.com",
   // Admin-uploaded videos play straight from R2 (/media redirects to a signed link)
   "media-src 'self' blob: https://*.r2.cloudflarestorage.com",
   "frame-src 'self'",

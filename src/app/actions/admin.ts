@@ -7,7 +7,7 @@ import { adminHref } from "@/lib/urls";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { deleteObjects, headObject, presignPut, putObject } from "@/lib/r2";
-import { makeCoverImages, UserFacingError } from "@/lib/pdf";
+import { makeCoverImages, makeIconImages, makeOgImage, UserFacingError } from "@/lib/pdf";
 import { assertAdmin, assertSuperAdmin, AuthError } from "@/lib/session";
 import { adminEmails } from "@/lib/env";
 import { TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
@@ -17,6 +17,7 @@ import {
   GRADE_VALUES,
   gradeLabel,
   MAX_VIDEO_BYTES,
+  NEWS_CATEGORIES,
   SCHOOL_DOMAIN,
   SEMESTERS,
   SUBJECT_IDS,
@@ -268,6 +269,7 @@ const newsInput = z.object({
     .max(500)
     .refine((v) => !v || /^https?:\/\//i.test(v), "ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://")
     .transform((v) => v || null),
+  category: z.enum(NEWS_CATEGORIES, { message: "กรุณาเลือกหมวดหมู่" }),
   publishedAt: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ไม่ถูกต้อง")
@@ -283,6 +285,7 @@ export async function saveNewsPost(_prev: ActionState, formData: FormData): Prom
       title: formData.get("title"),
       summary: formData.get("summary"),
       linkUrl: formData.get("linkUrl") ?? "",
+      category: formData.get("category"),
       publishedAt: formData.get("publishedAt"),
     });
     const existing = input.id ? await db.newsPost.findUnique({ where: { id: input.id } }) : null;
@@ -294,7 +297,7 @@ export async function saveNewsPost(_prev: ActionState, formData: FormData): Prom
     // News images are portrait 4:5
     const imageKey = hasFile ? await storeCover(file, 5 / 4) : removeImage ? null : (existing?.imageKey ?? null);
 
-    const data = { title: input.title, summary: input.summary, linkUrl: input.linkUrl, publishedAt: input.publishedAt, imageKey };
+    const data = { title: input.title, summary: input.summary, linkUrl: input.linkUrl, category: input.category, publishedAt: input.publishedAt, imageKey };
     if (existing) await db.newsPost.update({ where: { id: existing.id }, data });
     else await db.newsPost.create({ data });
     if (existing?.imageKey && existing.imageKey !== imageKey) await deleteObjects(coverFiles(existing.imageKey));
@@ -478,6 +481,46 @@ export async function moveBanner(id: string, dir: number): Promise<ActionState> 
     await db.$transaction(all.map((b, n) => db.banner.update({ where: { id: b.id }, data: { sortOrder: n + 1 } })));
     refreshBanners();
     return null;
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Site icon (favicon) and link-preview image
+// ---------------------------------------------------------------------------
+
+const iconFiles = (key: string) => [32, 180, 512].map((s) => `${key}-icon-${s}.png`);
+const ogFiles = (key: string) => [`${key}-og.jpg`];
+
+/** formData: kind ("favicon" | "og"), file — or reset=1 to go back to the built-in one. */
+export async function setSiteImage(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const kind = z.enum(["favicon", "og"]).parse(formData.get("kind"));
+    const field = kind === "favicon" ? "faviconKey" : "ogImageKey";
+    const old = (await db.siteSetting.findUnique({ where: { id: 1 }, select: { [field]: true } }))?.[field] ?? null;
+    let key: string | null = null;
+    if (formData.get("reset") !== "1") {
+      const file = formData.get("file");
+      if (!(file instanceof File) || file.size === 0) throw new UserFacingError("กรุณาเลือกไฟล์รูปภาพ");
+      if (file.size > MAX_COVER_BYTES) throw new UserFacingError("รูปภาพต้องมีขนาดไม่เกิน 5 MB");
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      key = `covers/${randomUUID()}`;
+      const immutable = "public, max-age=31536000, immutable";
+      if (kind === "favicon") {
+        const { s32, s180, s512 } = await makeIconImages(bytes);
+        const [a, b, c] = iconFiles(key);
+        await Promise.all([putObject(a, s32, "image/png", immutable), putObject(b, s180, "image/png", immutable), putObject(c, s512, "image/png", immutable)]);
+      } else {
+        await putObject(ogFiles(key)[0], await makeOgImage(bytes), "image/jpeg", immutable);
+      }
+    }
+    await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, [field]: key }, update: { [field]: key } });
+    if (old) await deleteObjects(kind === "favicon" ? iconFiles(old) : ogFiles(old));
+    updateTag(TAG_SETTINGS);
+    revalidatePath("/", "layout");
+    return { ok: true, message: key ? "บันทึกแล้ว" : "กลับไปใช้ค่าเริ่มต้นแล้ว" };
   } catch (err) {
     return fail(err);
   }

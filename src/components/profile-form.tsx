@@ -162,7 +162,7 @@ export function ProfileForm({ next, email, initial, submitLabel }: { next: strin
       <details open={!!initial.contacts && Object.keys(initial.contacts).length > 0} className="group rounded-2xl border border-line p-4">
         <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-ink [&::-webkit-details-marker]:hidden">
           <span>
-            ช่องทางติดต่อ <span className="text-sm font-normal text-body">(ไม่บังคับ · แสดงบนหน้าโปรไฟล์)</span>
+            ช่องทางติดต่อ <span className="text-sm font-normal text-body">(ไม่บังคับ)</span>
           </span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 transition group-open:rotate-180" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
         </summary>

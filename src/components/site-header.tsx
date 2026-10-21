@@ -10,7 +10,7 @@ const LINKS = [
   { href: "/", label: "หน้าหลัก", match: (p: string) => p === "/" },
   { href: "/#classroom", label: "ห้องเรียน", match: () => false },
   { href: "/sheets", label: "ชีทสรุป", match: (p: string) => p.startsWith("/sheets") },
-  { href: "/news", label: "ข่าวสาร", match: (p: string) => p.startsWith("/news") },
+  { href: "/news", label: "ข่าวสารการศึกษา", match: (p: string) => p.startsWith("/news") },
 ];
 
 /**

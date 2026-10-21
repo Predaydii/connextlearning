@@ -63,12 +63,10 @@ export function ClassroomPicker() {
                 href={c.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-col items-center gap-1 rounded-xl border border-line bg-white px-2 py-3 text-center transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary-50 sm:py-4"
+                aria-label={`เข้าห้องเรียนออนไลน์ ${info.label}/${c.room.split("/")[1]} (Google Meet)`}
+                className="group flex items-center justify-center rounded-xl border border-line bg-white px-2 py-4 text-center transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary-50 sm:py-5"
               >
                 <span className="text-lg leading-none font-bold text-ink group-hover:text-primary sm:text-xl">{info.label}/{c.room.split("/")[1]}</span>
-                <span className="flex items-center gap-1 text-xs text-body/80 group-hover:text-primary">
-                  <MeetIcon /> เข้าห้อง
-                </span>
               </a>
             </li>
           ))}
@@ -78,11 +76,3 @@ export function ClassroomPicker() {
   );
 }
 
-function MeetIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5" aria-hidden>
-      <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
-      <path d="m15.5 10.5 6-3.5v10l-6-3.5z" />
-    </svg>
-  );
-}

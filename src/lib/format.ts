@@ -9,6 +9,13 @@ const dateTimeFmt = new Intl.DateTimeFormat("th-TH", {
 });
 const numberFmt = new Intl.NumberFormat("th-TH");
 
+const shortDateFmt = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "2-digit", timeZone: "Asia/Bangkok" });
+
+/** "20 ต.ค. 69" */
+export function formatThaiDateShort(d: Date | string) {
+  return shortDateFmt.format(typeof d === "string" ? new Date(d) : d);
+}
+
 export function formatThaiDate(d: Date | string) {
   return dateFmt.format(typeof d === "string" ? new Date(d) : d);
 }

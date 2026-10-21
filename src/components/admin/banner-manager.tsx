@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { addBanner, deleteBanner, moveBanner, type ActionState } from "@/app/actions/admin";
 import { MAX_UPLOAD_BYTES, shrinkImage } from "@/lib/shrink-image";
+import { ImagePick } from "@/components/admin/image-pick";
 
 type Banner = { id: string; src: string; linkUrl: string | null };
 
@@ -14,7 +15,7 @@ function Notice({ state }: { state: ActionState }) {
 /** Landing banners: add one or many at once (optional link for all of them), reorder, delete. */
 export function BannerManager({ banners }: { banners: Banner[] }) {
   const [state, setState] = useState<ActionState>(null);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [pickKey, setPickKey] = useState(0); // remounts the picker after a successful upload
   const [progress, setProgress] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -44,7 +45,7 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
       if (done) {
         setState({ ok: true, message: `เพิ่มแบนเนอร์แล้ว ${done} รูป` });
         form.reset();
-        setPreviews([]);
+        setPickKey((k) => k + 1);
       }
     });
   }
@@ -67,21 +68,13 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
         className="grid gap-3 rounded-2xl border border-dashed border-line p-4"
       >
         <p className="font-semibold text-ink">เพิ่มแบนเนอร์ <span className="text-sm font-normal text-body">(เลือกได้หลายรูปพร้อมกัน)</span></p>
-        {previews.length > 0 ? (
-          <div className="grid max-w-2xl gap-2 sm:grid-cols-2">
-            {previews.map((p) => <img key={p} src={p} alt="" className="aspect-[10/3] w-full rounded-xl object-cover ring-1 ring-line" />)}
-          </div>
-        ) : (
-          <div className="grid aspect-[10/3] max-w-2xl place-items-center rounded-xl bg-primary-50 text-xs ring-1 ring-line">ตัวอย่างภาพ 2000×600</div>
-        )}
-        <input
-          type="file"
-          name="file"
+        <ImagePick
+          key={pickKey}
+          aspect="aspect-[10/3]"
+          className="max-w-2xl"
           multiple
           required
-          accept="image/png,image/jpeg,image/webp"
-          onChange={(e) => setPreviews(Array.from(e.target.files ?? [], (f) => URL.createObjectURL(f)))}
-          className="block w-full max-w-2xl cursor-pointer text-xs file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary hover:file:text-white"
+          placeholder="คลิกเพื่อเลือกรูป 2000×600 (เลือกได้หลายรูป)"
         />
         <input name="linkUrl" type="url" maxLength={500} placeholder="ลิงก์เมื่อกดแบนเนอร์ (ไม่บังคับ) https://" className="field max-w-2xl text-sm" />
         <div className="flex flex-wrap items-center gap-3">

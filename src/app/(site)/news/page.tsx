@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getInstagramPosts, INSTAGRAM_PROFILE_URL, INSTAGRAM_USERNAME } from "@/lib/instagram";
-import { customCover, videoUrl } from "@/lib/covers";
+import { customCover } from "@/lib/covers";
 import { formatThaiDate } from "@/lib/format";
 import { getNews } from "@/lib/queries";
-import { AutoVideo } from "@/components/auto-video";
+import { NewsGrid } from "@/components/news-grid";
 
 export const metadata: Metadata = {
   title: "ข่าวสารการศึกษา",
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const [{ videoKey, posts }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
-  const empty = !videoKey && posts.length === 0 && !igPosts?.length;
+  const [{ posts }, igPosts] = await Promise.all([getNews(), getInstagramPosts()]);
+  const empty = posts.length === 0 && !igPosts?.length;
 
   return (
     <div className="container-page py-10 md:py-14">
@@ -28,59 +28,19 @@ export default async function NewsPage() {
         </div>
       )}
 
-      {videoKey && (
-        <div className="mx-auto mb-10 w-full max-w-5xl rounded-2xl bg-ink shadow-card ring-1 ring-line/60 overflow-hidden">
-          <AutoVideo src={videoUrl(videoKey)} className="block aspect-video w-full" />
-        </div>
-      )}
-
       {posts.length > 0 && (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((p, i) => {
-            const body = (
-              <>
-                {p.imageKey && (
-                  <div className="aspect-[4/5] overflow-hidden bg-primary-50">
-                    <img
-                      src={customCover(p.imageKey).small}
-                      srcSet={`${customCover(p.imageKey).small} 640w, ${customCover(p.imageKey).large} 1280w`}
-                      sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
-                      alt=""
-                      width={640}
-                      height={800}
-                      loading={i < 3 ? "eager" : "lazy"}
-                      decoding="async"
-                      className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                    />
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-5">
-                  <time dateTime={p.publishedAt} className="text-xs text-body/80">{formatThaiDate(p.publishedAt)}</time>
-                  <h2 className="mt-1 text-lg font-semibold text-ink group-hover:text-primary">{p.title}</h2>
-                  <p className="mt-2 line-clamp-4 text-sm whitespace-pre-line">{p.summary}</p>
-                  {p.linkUrl && <span className="mt-auto pt-4 text-sm font-semibold text-primary">อ่านต่อ</span>}
-                </div>
-              </>
-            );
-            const cls = "group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-line/70";
-            return (
-              <li key={p.id}>
-                {p.linkUrl ? (
-                  <a
-                    href={p.linkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${cls} transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg`}
-                  >
-                    {body}
-                  </a>
-                ) : (
-                  <article className={cls}>{body}</article>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <NewsGrid
+          items={posts.map((p) => ({
+            id: p.id,
+            title: p.title,
+            summary: p.summary,
+            category: p.category,
+            linkUrl: p.linkUrl,
+            date: formatThaiDate(p.publishedAt),
+            dateTime: p.publishedAt,
+            image: p.imageKey ? customCover(p.imageKey) : null,
+          }))}
+        />
       )}
 
       {igPosts && igPosts.length > 0 && (

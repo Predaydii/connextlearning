@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Prompt } from "next/font/google";
 import "./globals.css";
 import { withBase } from "@/lib/urls";
+import { getSiteImages } from "@/lib/queries";
 
 const prompt = Prompt({
   subsets: ["thai", "latin"],
@@ -10,7 +11,7 @@ const prompt = Prompt({
   variable: "--font-prompt",
 });
 
-export const metadata: Metadata = {
+const BASE_METADATA: Metadata = {
   metadataBase: new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
   title: {
     default: "Connext Learning – พื้นที่เรียนออนไลน์สำหรับทุกคน",
@@ -32,6 +33,27 @@ export const metadata: Metadata = {
     images: [withBase("/img/hero-960.webp")],
   },
 };
+
+/** Site icon and share image can be replaced by admins (หน้าแรก → ไอคอนและรูปแชร์). */
+export async function generateMetadata(): Promise<Metadata> {
+  const { faviconKey, ogImageKey } = await getSiteImages().catch(() => ({ faviconKey: null, ogImageKey: null }));
+  return {
+    ...BASE_METADATA,
+    ...(faviconKey && {
+      icons: {
+        icon: [
+          { url: withBase(`/media/${faviconKey}-icon-32.png`), type: "image/png", sizes: "32x32" },
+          { url: withBase(`/media/${faviconKey}-icon-512.png`), type: "image/png", sizes: "512x512" },
+        ],
+        apple: withBase(`/media/${faviconKey}-icon-180.png`),
+      },
+    }),
+    ...(ogImageKey && {
+      openGraph: { ...BASE_METADATA.openGraph, images: [{ url: withBase(`/media/${ogImageKey}-og.jpg`), width: 1200, height: 630 }] },
+      twitter: { card: "summary_large_image", images: [withBase(`/media/${ogImageKey}-og.jpg`)] },
+    }),
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#254ce9",

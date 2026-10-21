@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { approveSheet, deleteSheet, hideSheet, rejectSheet, updateCover, updateSheetDetails, type ActionState } from "@/app/actions/admin";
 import { shrinkInForm } from "@/lib/shrink-image";
+import { ImagePick } from "@/components/admin/image-pick";
 import { ACADEMIC_YEARS, GRADES, SEMESTERS, SUBJECTS, DESCRIPTION_MAX, TITLE_MAX } from "@/lib/constants";
 
 function Notice({ state }: { state: ActionState }) {
@@ -185,30 +186,27 @@ export function CoverUploader({
     const err = await shrinkInForm(fd);
     return err ? { ok: false, message: err } : updateCover(prev, fd);
   }, null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [picked, setPicked] = useState(false);
 
   return (
-    <form action={action} className="grid gap-3" onSubmit={() => setPreview(null)}>
+    <form action={action} className="grid gap-3" onSubmit={() => setPicked(false)}>
       <input type="hidden" name="target" value={target} />
-      <div className="relative overflow-hidden rounded-xl bg-primary-50 ring-1 ring-line">
-        <img src={preview ?? src} alt={`ภาพ ${title}`} width={640} height={portrait ? 800 : 360} className={`${portrait ? "aspect-[4/5]" : "aspect-video"} w-full object-cover`} />
-        <span className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-semibold ${isCustom ? "bg-primary text-white" : "bg-white/90 text-ink"}`}>
-          {preview ? "ตัวอย่าง (ยังไม่บันทึก)" : isCustom ? "ภาพที่ตั้งค่าไว้" : "ภาพเริ่มต้น"}
-        </span>
-      </div>
-      {!compact && <p className="font-medium text-ink">{title}</p>}
-      <input
-        type="file"
-        name="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="block w-full cursor-pointer text-xs file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary hover:file:text-white"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          setPreview(f ? URL.createObjectURL(f) : null);
-        }}
+      {/* click the picture to choose a new one */}
+      <ImagePick
+        key={src}
+        src={src}
+        alt={`ภาพ ${title}`}
+        aspect={portrait ? "aspect-[4/5]" : "aspect-video"}
+        onPick={(files) => setPicked(files.length > 0)}
+        badge={(p) => (
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${p || isCustom ? "bg-primary text-white" : "bg-white/90 text-ink"}`}>
+            {p ? "ตัวอย่าง (ยังไม่บันทึก)" : isCustom ? "ภาพที่ตั้งค่าไว้" : "ภาพเริ่มต้น"}
+          </span>
+        )}
       />
+      {!compact && <p className="font-medium text-ink">{title}</p>}
       <div className="flex gap-2">
-        <button disabled={pending || !preview} className="btn-primary btn-sm flex-1">
+        <button disabled={pending || !picked} className="btn-primary btn-sm flex-1">
           {pending ? "กำลังบันทึก…" : "บันทึกภาพ"}
         </button>
         {isCustom && (

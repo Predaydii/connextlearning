@@ -384,6 +384,18 @@ html.intro .intro-screen span {
   50% { opacity: 0; }
 }
 
+/* Profile doodles drift and sway gently */
+@media (prefers-reduced-motion: no-preference) {
+  .doodle {
+    animation: doodle-drift ease-in-out infinite alternate;
+  }
+}
+@keyframes doodle-drift {
+  0% { transform: translate(0, 0) rotate(-6deg); }
+  50% { transform: translate(8px, -14px) rotate(4deg); }
+  100% { transform: translate(-6px, 6px) rotate(8deg); }
+}
+
 /* Hero arch: a soft band of light sweeps across, then rests (transform only) */
 .hero-sheen {
   position: absolute;

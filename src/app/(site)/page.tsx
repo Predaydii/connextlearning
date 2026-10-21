@@ -208,9 +208,9 @@ function PersonCard({ person, hidden }: { person: Contributor; hidden: boolean }
       href={`/u/${person.id}`}
       tabIndex={hidden ? -1 : undefined}
       // Vivid blue fading to airy light blue, with a soft glow in the corner
-      className="relative isolate flex h-[140px] w-[320px] items-center gap-5 overflow-hidden rounded-2xl bg-[linear-gradient(100deg,#254ce9_0%,#3a68f0_45%,#8db8f8_100%)] px-6 text-white shadow-card transition hover:brightness-105 sm:h-[160px] sm:w-[360px]"
+      className="relative isolate flex h-[140px] w-[320px] items-center gap-5 overflow-hidden rounded-2xl bg-[linear-gradient(100deg,#254ce9_0%,#3462ef_50%,#5f93f6_100%)] px-6 text-white shadow-card transition hover:brightness-105 sm:h-[160px] sm:w-[360px]"
     >
-      <span aria-hidden className="absolute -right-10 -bottom-16 -z-10 size-44 rounded-full bg-white/35 blur-2xl" />
+      <span aria-hidden className="absolute -right-10 -bottom-16 -z-10 size-44 rounded-full bg-[#9fd0ff]/35 blur-2xl" />
       <span className="shrink-0 rounded-full bg-white p-1 shadow-[0_6px_20px_rgb(16_26_77/0.25)]">
         <Avatar name={person.name} image={person.image} size={84} />
       </span>

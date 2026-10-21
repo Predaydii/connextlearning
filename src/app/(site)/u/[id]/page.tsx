@@ -6,11 +6,11 @@ import { SheetCard } from "@/components/sheet-card";
 import { ShareButton } from "@/components/share-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { QrCode } from "@/components/qr-code";
+import { PassImageButton } from "@/components/pass-image-button";
 import { CONTACTS, readContacts } from "@/lib/contacts";
-import { formatNumber, formatThaiDate } from "@/lib/format";
+import { formatNumber, formatThaiDateShort } from "@/lib/format";
 import { classLabel, getAuthorProfile } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
-import { adminHref } from "@/lib/urls";
 
 export async function generateMetadata(props: PageProps<"/u/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -41,10 +41,14 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
   ];
 
   return (
-    <div className="bg-primary-50 pt-10 md:pt-14">
+    <div className="bg-primary-50">
+      {/* top band: the boarding pass over drifting doodles */}
+      <div className="relative isolate overflow-hidden pt-10 pb-12 md:pt-14 md:pb-16">
+      <Doodles />
       <div className="container-page">
-        {/* ---------- Boarding pass: every fact once ---------- */}
-        <section aria-label={`บัตรโปรไฟล์ของ ${user.name}`} className="mx-auto flex max-w-3xl flex-col overflow-hidden rounded-[28px] bg-white shadow-brand-lg motion-safe:animate-rise md:flex-row">
+        {/* ---------- Boarding pass: every fact once (#boarding-pass is what "บันทึกรูป" captures) ---------- */}
+        <div className="mx-auto max-w-[calc(48rem+2rem)] p-4">
+        <section id="boarding-pass" aria-label={`บัตรโปรไฟล์ของ ${user.name}`} className="mx-auto flex max-w-3xl flex-col overflow-hidden rounded-[28px] bg-white shadow-brand-lg motion-safe:animate-rise md:flex-row">
           <div className="flex-1 p-6 sm:p-8">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-bold text-primary">Connext Learning</p>
@@ -75,7 +79,7 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-body">
-                สมาชิกตั้งแต่ {formatThaiDate(user.createdAt)}
+                สมาชิกตั้งแต่ {formatThaiDateShort(user.createdAt)}
                 {rating.count > 0 && <> · คะแนนเฉลี่ย <span className="font-semibold text-ink">{rating.average.toFixed(1)}</span> <span className="text-accent">★</span> ({rating.count})</>}
               </p>
               {links.length > 0 && (
@@ -106,10 +110,11 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
           </div>
 
           {/* stub: the profile's own QR code */}
-          <div className="flex items-center gap-5 p-6 sm:p-8 md:w-56 md:flex-col md:justify-center md:text-center">
+          <div className="flex items-center gap-5 p-6 sm:p-8 md:w-60 md:flex-col md:justify-center md:text-center">
             <QrCode value={profileUrl} label={`QR code ลิงก์โปรไฟล์ของ ${user.name}`} className="size-28 shrink-0 rounded-xl ring-1 ring-line md:size-36" />
             <div className="grid gap-3">
               <p className="text-xs text-body">สแกนเพื่อเปิดโปรไฟล์นี้</p>
+              <span data-no-capture className="contents">
               <ShareButton
                 path={`/u/${user.id}`}
                 title={`${user.name} · Connext Learning`}
@@ -117,22 +122,30 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
                 label="แชร์โปรไฟล์"
                 className="btn-primary btn-sm cursor-pointer gap-2"
               />
+              </span>
+              <PassImageButton
+                targetId="boarding-pass"
+                fileName={`connext-boarding-pass-${user.id.slice(0, 6)}.png`}
+                className="btn-outline btn-sm cursor-pointer gap-2"
+              />
             </div>
           </div>
         </section>
 
+        </div>
+
         {/* Your own profile: account actions */}
         {isMe && (
-          <nav aria-label="บัญชีของฉัน" className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center gap-1 rounded-2xl bg-white p-1.5 shadow-card ring-1 ring-line/60">
+          <nav aria-label="บัญชีของฉัน" className="mx-auto mt-1 flex max-w-3xl flex-wrap items-center gap-1 rounded-2xl bg-white p-1.5 shadow-card ring-1 ring-line/60">
             <Link href="/profile" className={item}>{icon("M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z")}แก้ไขข้อมูล</Link>
             <Link href="/my-sheets" className={item}>{icon("M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zm0 0v6h6M8 13h8M8 17h5")}ชีทของฉัน</Link>
-            {viewer.isAdmin && <Link href={adminHref("/")} className={item}>{icon("M4 13h6V4H4zm0 7h6v-5H4zm10 0h6v-9h-6zm0-16v5h6V4z")}แดชบอร์ดผู้ดูแล</Link>}
             <SignOutButton className="ml-auto inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60" />
           </nav>
         )}
       </div>
 
-      <div className="mt-12 bg-white py-10 md:py-14">
+      </div>
+      <div className="bg-white py-10 md:py-14">
         <div className="container-page">
           <h2 className="mb-5 text-xl font-semibold">ชีทสรุปที่แชร์</h2>
           {sheets.length === 0 ? (
@@ -149,6 +162,46 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Playful outline doodles drifting behind the boarding pass (decorative only)
+const DOODLES = [
+  { d: "m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z", x: "6%", y: "12%", s: 56, t: 9 },
+  { d: "m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z", x: "16%", y: "4%", s: 34, t: 7 },
+  { d: "M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4zM14 6l4 4", x: "26%", y: "70%", s: 50, t: 11 },
+  { d: "M4 5h16v11H9l-5 4zM8 10.5h.01M12 10.5h.01M16 10.5h.01", x: "62%", y: "6%", s: 60, t: 10 },
+  { d: "m2 9 10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5M22 9v6", x: "86%", y: "14%", s: 66, t: 12 },
+  { d: "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z", x: "92%", y: "52%", s: 52, t: 9 },
+  { d: "M3 11v2a2 2 0 0 0 2 2h1l5 4V5L6 9H5a2 2 0 0 0-2 2zM15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12", x: "80%", y: "78%", s: 58, t: 13 },
+  { d: "m5 3 13 6-6 2-2 6z", x: "52%", y: "84%", s: 44, t: 8 },
+  { d: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1", x: "3%", y: "48%", s: 58, t: 12 },
+  { d: "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zm0 0v6h6M8 13h8M8 17h5", x: "8%", y: "82%", s: 54, t: 10 },
+];
+
+function Doodles() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 text-[#b9c3ec]">
+      {DOODLES.map((o, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`doodle absolute ${i % 3 === 2 ? "hidden md:block" : ""}`}
+          style={{ left: o.x, top: o.y, width: o.s, height: o.s, animationDuration: `${o.t}s`, animationDelay: `-${i * 1.3}s` }}
+        >
+          <path d={o.d} />
+        </svg>
+      ))}
+      {/* dashed path, like a doodled trail */}
+      <svg viewBox="0 0 400 120" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="10 12" strokeLinecap="round" className="absolute bottom-[4%] left-[18%] hidden w-[42%] md:block">
+        <path d="M5 100C80 20 160 120 240 60s110-40 150 10" />
+      </svg>
     </div>
   );
 }

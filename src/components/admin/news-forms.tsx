@@ -3,6 +3,8 @@
 import { useActionState, useState, useTransition } from "react";
 import { deleteNewsPost, saveNewsPost, type ActionState } from "@/app/actions/admin";
 import { shrinkInForm } from "@/lib/shrink-image";
+import { NEWS_CATEGORIES } from "@/lib/constants";
+import { ImagePick } from "@/components/admin/image-pick";
 
 function Notice({ state }: { state: ActionState }) {
   if (!state) return null;
@@ -19,6 +21,7 @@ export type NewsFormPost = {
   title: string;
   summary: string;
   linkUrl: string | null;
+  category: string | null;
   image: string | null;
   publishedAt: string; // YYYY-MM-DD
 };
@@ -34,7 +37,6 @@ export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: (
   }, null);
   const [preview, setPreview] = useState<string | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
-  const shown = preview ?? (removeImage ? null : (post?.image ?? null));
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
 
   return (
@@ -51,31 +53,35 @@ export function NewsPostForm({ post, onDone }: { post?: NewsFormPost; onDone?: (
           รายละเอียด
           <textarea name="summary" required maxLength={1000} rows={4} defaultValue={post?.summary} className="field" />
         </label>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-medium text-ink">
-            ลิงก์อ่านต่อ (ไม่บังคับ)
-            <input name="linkUrl" type="url" maxLength={500} defaultValue={post?.linkUrl ?? ""} placeholder="https://" className="field" />
+            หมวดหมู่
+            <select name="category" required defaultValue={post?.category ?? ""} className="field">
+              <option value="" disabled>เลือกหมวดหมู่</option>
+              {NEWS_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            </select>
           </label>
           <label className="grid gap-1 text-sm font-medium text-ink">
             วันที่
             <input name="publishedAt" type="date" required defaultValue={post?.publishedAt ?? today} className="field" />
           </label>
         </div>
+        <div className="grid gap-3">
+          <label className="grid gap-1 text-sm font-medium text-ink">
+            ลิงก์แนะนำ (ไม่บังคับ)
+            <input name="linkUrl" type="url" maxLength={500} defaultValue={post?.linkUrl ?? ""} placeholder="https://" className="field" />
+          </label>
+        </div>
       </div>
       <div className="grid content-start gap-2">
         <span className="text-sm font-medium text-ink">ภาพประกอบ 4:5 (ไม่บังคับ)</span>
-        <div className="grid aspect-[4/5] place-items-center overflow-hidden rounded-xl bg-primary-50 text-xs ring-1 ring-line">
-          {shown ? <img src={shown} alt="" className="size-full object-cover" /> : "ไม่มีภาพ"}
-        </div>
-        <input
-          type="file"
-          name="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="block w-full cursor-pointer text-xs file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary hover:file:text-white"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            setPreview(f ? URL.createObjectURL(f) : null);
-            if (f) setRemoveImage(false);
+        <ImagePick
+          key={removeImage ? "removed" : "kept"}
+          src={removeImage ? null : (post?.image ?? null)}
+          aspect="aspect-[4/5]"
+          onPick={(files) => {
+            setPreview(files[0] ? "picked" : null);
+            if (files[0]) setRemoveImage(false);
           }}
         />
         {post?.image && !preview && (
@@ -118,7 +124,7 @@ export function NewsPostRow({ post, date }: { post: NewsFormPost; date: string }
         {post.image && <img src={post.image} alt="" className="size-full object-cover" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs">{date}</p>
+        <p className="text-xs">{date}{post.category ? ` · ${post.category}` : ""}</p>
         <p className="font-semibold text-ink">{post.title}</p>
         <p className="line-clamp-2 text-sm">{post.summary}</p>
         <Notice state={state} />

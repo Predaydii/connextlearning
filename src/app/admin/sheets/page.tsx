@@ -69,22 +69,22 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
       {sp.deleted === "1" && (
         <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">ลบชีทถาวรแล้ว</p>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <nav aria-label="สถานะ" className="flex flex-wrap gap-1 rounded-full bg-white p-1 shadow-card ring-1 ring-line">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <nav aria-label="สถานะ" className="-mx-1 flex min-w-0 gap-1 overflow-x-auto rounded-full bg-white p-1 shadow-card ring-1 ring-line [scrollbar-width:none] lg:mx-0">
           {TABS.map((t) => (
             <Link
               key={t.value}
               href={link({ status: t.value, page: 1 })}
               aria-current={status === t.value ? "true" : undefined}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${status === t.value ? "bg-primary text-white" : "text-ink hover:text-primary"}`}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition ${status === t.value ? "bg-primary text-white" : "text-ink hover:text-primary"}`}
             >
               {t.label} <span className="opacity-70">({formatNumber(countOf(t.value))})</span>
             </Link>
           ))}
         </nav>
-        <Form action={adminHref("/sheets")} className="flex w-full gap-2 sm:w-auto">
+        <Form action={adminHref("/sheets")} className="flex w-full min-w-0 gap-2 lg:w-auto">
           <input type="hidden" name="status" value={status} />
-          <input name="q" defaultValue={q} placeholder="ค้นหาชื่อชีท / ผู้ส่ง" className="field py-2 text-sm sm:w-64" aria-label="ค้นหา" />
+          <input name="q" defaultValue={q} placeholder="ค้นหาชื่อชีท / ผู้ส่ง" className="field min-w-0 flex-1 py-2 text-sm lg:w-64 lg:flex-none" aria-label="ค้นหา" />
           <button className="btn-primary btn-sm">ค้นหา</button>
         </Form>
       </div>
