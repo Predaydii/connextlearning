@@ -21,7 +21,7 @@ export default async function HomePage() {
   const [stats, contributors, mostRead, media, news] = await Promise.all([
     getSiteStats(),
     getContributors(30),
-    getMostRead(6),
+    getMostRead(5),
     getHomeMedia(),
     getNews().catch(() => null),
   ]);
@@ -276,9 +276,9 @@ function Chart({ items, metric, empty }: { items: SheetCardData[]; metric: (s: S
               <span className="mt-1 block text-sm">{first.subjectName} · {gradeLabel(first.grade)}</span>
               <span className="mt-3 flex items-center gap-2 text-sm">
                 <Avatar name={first.author.name} image={first.author.image} size={24} />
-                <span className="truncate">โดย <span className="font-medium text-ink">{first.author.name}</span></span>
+                <span className="min-w-0 truncate">โดย <span className="font-medium text-ink">{first.author.name}</span></span>
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 font-semibold text-ink">{metric(first)}</span>
               </span>
-              <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-ink">{metric(first)}</span>
             </span>
           </Link>
           {rest.length > 0 && (
