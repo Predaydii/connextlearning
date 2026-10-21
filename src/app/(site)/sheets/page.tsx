@@ -41,7 +41,7 @@ export default async function SheetsPage(props: PageProps<"/sheets">) {
         </Link>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[260px_1fr] lg:gap-10">
+      <div className="grid gap-5 lg:grid-cols-[260px_1fr] lg:gap-10">
         <SheetFiltersPanel filters={filters} facets={facets} />
 
         <div>
@@ -75,7 +75,7 @@ export default async function SheetsPage(props: PageProps<"/sheets">) {
               <Link href="/sheets/upload" className="btn-primary btn-sm mt-6">แชร์ชีทของคุณ</Link>
             </div>
           ) : (
-            <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
               {items.map((s, i) => (
                 <li key={s.id}><SheetCard sheet={s} priority={i < 3} /></li>
               ))}

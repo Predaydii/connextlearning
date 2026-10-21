@@ -13,8 +13,11 @@ export type NewsItem = {
   image: { small: string; large: string } | null;
 };
 
-/** News cards (newest first) with category + text filters; a card opens the full story in a popup. */
-export function NewsGrid({ items, categories }: { items: NewsItem[]; categories: string[] }) {
+/**
+ * News cards (newest first) with category + text filters; a card opens the full story in a popup.
+ * `filters={false}` shows the cards only (the landing page preview).
+ */
+export function NewsGrid({ items, categories, filters = true }: { items: NewsItem[]; categories: string[]; filters?: boolean }) {
   const count = (c: string) => items.filter((i) => i.category === c).length;
   const [filter, setFilter] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -39,7 +42,7 @@ export function NewsGrid({ items, categories }: { items: NewsItem[]; categories:
   return (
     <>
             {/* computers: categories wrap on the left, search on the right; phones: search, then a swipeable row */}
-      <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-8">
+      {filters && <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-8">
         <label className="relative md:order-2 md:w-72 md:shrink-0">
           <span className="sr-only">ค้นหาข่าว</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-body" aria-hidden>
@@ -59,24 +62,25 @@ export function NewsGrid({ items, categories }: { items: NewsItem[]; categories:
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {shown.length === 0 && <p className="card px-6 py-14 text-center">ไม่พบข่าวที่ตรงกับตัวกรอง</p>}
 
-      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="grid gap-4 md:grid-cols-2 md:gap-5">
         {shown.map((p, i) => (
           <li key={p.id}>
             <button
               type="button"
               onClick={() => setOpen(p)}
-              className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white text-left shadow-card ring-1 ring-line/70 transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg"
+              // Picture (whole 4:5, never cropped) on the left, text on the right: a short card
+              className="group flex h-full w-full cursor-pointer overflow-hidden rounded-2xl bg-white text-left shadow-card ring-1 ring-line/70 transition duration-300 hover:-translate-y-1 hover:shadow-brand-lg"
             >
               {p.image && (
-                <span className="block aspect-[4/5] overflow-hidden bg-primary-50">
+                <span className="block aspect-[4/5] w-[34%] max-w-[180px] shrink-0 self-start overflow-hidden bg-primary-50">
                   <img
                     src={p.image.small}
                     srcSet={`${p.image.small} 640w, ${p.image.large} 1280w`}
-                    sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+                    sizes="(min-width: 768px) 180px, 34vw"
                     alt=""
                     width={640}
                     height={800}
@@ -86,14 +90,14 @@ export function NewsGrid({ items, categories }: { items: NewsItem[]; categories:
                   />
                 </span>
               )}
-              <span className="flex flex-1 flex-col p-5">
+              <span className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
                 <span className="flex flex-wrap items-center gap-2 text-xs text-body/80">
                   {p.category && <span className="rounded-full bg-primary-50 px-2.5 py-0.5 font-semibold text-primary">{p.category}</span>}
                   <time dateTime={p.dateTime}>{p.date}</time>
                 </span>
-                <span className="mt-2 text-lg font-semibold text-ink group-hover:text-primary">{p.title}</span>
-                {p.summary && <span className="mt-2 line-clamp-3 text-sm whitespace-pre-line">{p.summary}</span>}
-                <span className="mt-auto pt-4 text-sm font-semibold text-primary">อ่านรายละเอียด</span>
+                <span className="mt-1.5 line-clamp-2 font-semibold leading-snug text-ink group-hover:text-primary sm:text-lg">{p.title}</span>
+                {p.summary && <span className="mt-1.5 line-clamp-2 text-sm">{p.summary}</span>}
+                <span className="mt-auto pt-3 text-sm font-semibold text-primary">อ่านรายละเอียด</span>
               </span>
             </button>
           </li>

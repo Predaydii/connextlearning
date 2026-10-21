@@ -154,8 +154,8 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
             {!user ? null : sheet.authorId === user.id ? (
               <p className="text-sm">ชีทของคุณ (ให้ดาวตัวเองไม่ได้)</p>
             ) : (
-              <div className="grid justify-items-end gap-1">
-                <p className="text-sm">{community.myScore ? "คะแนนของคุณ" : "ให้คะแนนชีทนี้"}</p>
+              <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-primary-50/70 px-4 py-2 sm:w-auto sm:bg-transparent sm:p-0">
+                <p className="shrink-0 text-sm font-medium text-ink">{community.myScore ? "คะแนนของคุณ" : "ให้คะแนน"}</p>
                 <RateSheet sheetId={sheet.id} myScore={community.myScore} />
               </div>
             )}
@@ -171,9 +171,7 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
               </div>
             )}
 
-            {community.comments.length === 0 ? (
-              <p className="mt-6 text-center text-sm">ยังไม่มีความคิดเห็น เป็นคนแรกที่บอกผู้จัดทำเลย</p>
-            ) : (
+            {community.comments.length > 0 && (
               <ul className="mt-6 grid gap-5">
                 {community.comments.map((c) => (
                   <li key={c.id} className="flex gap-3">

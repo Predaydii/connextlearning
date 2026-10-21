@@ -3,11 +3,12 @@ import { withBase } from "@/lib/urls";
 import { ClassroomPicker } from "@/components/classroom-picker";
 import { Avatar } from "@/components/avatar";
 import { EyeIcon } from "@/components/sheet-card";
-import { getContributors, getHomeMedia, getLeaderboards, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
-import { bannerSrc, GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
+import { getContributors, getHomeMedia, getLeaderboards, getNews, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
+import { bannerSrc, customCover, GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
+import { NewsGrid } from "@/components/news-grid";
 import { BannerCarousel } from "@/components/banner-carousel";
 import { gradeLabel } from "@/lib/constants";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatThaiDate } from "@/lib/format";
 import { CountUp } from "@/components/count-up";
 import { Typewriter } from "@/components/typewriter";
 import { AutoVideo } from "@/components/auto-video";
@@ -17,7 +18,13 @@ export const revalidate = 300;
 
 
 export default async function HomePage() {
-  const [stats, contributors, boards, media] = await Promise.all([getSiteStats(), getContributors(30), getLeaderboards(5), getHomeMedia()]);
+  const [stats, contributors, boards, media, news] = await Promise.all([
+    getSiteStats(),
+    getContributors(30),
+    getLeaderboards(5),
+    getHomeMedia(),
+    getNews().catch(() => null),
+  ]);
 
   return (
     <>
@@ -41,6 +48,7 @@ export default async function HomePage() {
         />
       )}
       <ClassroomSection />
+      {news && news.posts.length > 0 && <NewsSection posts={news.posts.slice(0, 4)} />}
     </>
   );
 }
@@ -76,9 +84,9 @@ function Hero() {
               ]}
             />
           </p>
-          <div style={at(240)} className={`${rise} flex flex-wrap justify-center gap-4 min-[901px]:justify-start`}>
-            <Link href="/sheets" className="btn-primary min-h-11 min-w-0 flex-[1_1_140px] px-8 py-2 text-[15px] sm:min-w-[176px] sm:flex-none">ดูชีทสรุป</Link>
-            <a href="#classroom" className="btn-outline min-h-11 min-w-0 flex-[1_1_140px] px-8 py-2 text-[15px] sm:min-w-[176px] sm:flex-none">เข้าห้องเรียน</a>
+          <div style={at(240)} className={`${rise} flex flex-wrap justify-center gap-3 sm:gap-4 min-[901px]:justify-start`}>
+            <Link href="/sheets" className="btn-primary min-h-11 px-6 py-2 text-[15px] sm:min-w-[176px] sm:px-8">ดูชีทสรุป</Link>
+            <a href="#classroom" className="btn-outline min-h-11 px-6 py-2 text-[15px] sm:min-w-[176px] sm:px-8">เข้าห้องเรียน</a>
           </div>
         </div>
 
@@ -175,13 +183,13 @@ function Contributors({ people }: { people: Contributor[] }) {
           ร่วมแชร์ชีทเพื่อขึ้นหน้าเว็บไซต์
         </p>
       </div>
-      <div className="group space-y-4 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
+      <div className="group space-y-3 sm:space-y-4 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
         {rows.map((row, r) => {
           const looped = loopRow(row);
           return (
             <ul
               key={r}
-              className={`flex w-max gap-4 group-hover:[animation-play-state:paused] ${r === 0 ? "motion-safe:animate-marquee" : "motion-safe:animate-marquee-reverse"}`}
+              className={`flex w-max gap-3 sm:gap-4 group-hover:[animation-play-state:paused] ${r === 0 ? "motion-safe:animate-marquee" : "motion-safe:animate-marquee-reverse"}`}
             >
               {looped.map((p, i) => {
                 // The second half repeats the first; keep it out of the tab order and screen readers
@@ -206,16 +214,17 @@ function PersonCard({ person, hidden }: { person: Contributor; hidden: boolean }
       href={`/u/${person.id}`}
       tabIndex={hidden ? -1 : undefined}
       // Vivid blue fading to airy light blue, with a soft glow in the corner
-      className="relative isolate flex h-[140px] w-[320px] items-center gap-5 overflow-hidden rounded-2xl bg-[linear-gradient(100deg,#254ce9_0%,#3462ef_50%,#5f93f6_100%)] px-6 text-white shadow-card transition hover:brightness-105 sm:h-[160px] sm:w-[360px]"
+      className="relative isolate flex h-[96px] w-[248px] items-center gap-3 overflow-hidden rounded-2xl bg-[linear-gradient(100deg,#254ce9_0%,#3462ef_50%,#5f93f6_100%)] px-4 text-white shadow-card transition hover:brightness-105 sm:h-[160px] sm:w-[360px] sm:gap-5 sm:px-6"
     >
       <span aria-hidden className="absolute -right-10 -bottom-16 -z-10 size-44 rounded-full bg-[#9fd0ff]/35 blur-2xl" />
-      <span className="shrink-0 rounded-full bg-white p-1 shadow-[0_6px_20px_rgb(16_26_77/0.25)]">
-        <Avatar name={person.name} image={person.image} size={84} />
+      <span className="shrink-0 rounded-full bg-white p-0.5 shadow-[0_6px_20px_rgb(16_26_77/0.25)] sm:p-1">
+        <span className="sm:hidden"><Avatar name={person.name} image={person.image} size={56} /></span>
+        <span className="hidden sm:block"><Avatar name={person.name} image={person.image} size={84} /></span>
       </span>
       <span className="min-w-0">
-        <span className="inline-block rounded-full bg-white/20 px-3 py-0.5 text-xs font-semibold backdrop-blur-sm">แชร์ {person.sheets} ชีท</span>
-        <span className="mt-1.5 block truncate text-xl font-bold">{shortName(person.name)}</span>
-        {person.classLabel && <span className="block truncate text-sm text-white/90">{person.classLabel}</span>}
+        <span className="inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm sm:px-3 sm:text-xs">แชร์ {person.sheets} ชีท</span>
+        <span className="mt-1 block truncate text-base font-bold sm:mt-1.5 sm:text-xl">{shortName(person.name)}</span>
+        {person.classLabel && <span className="block truncate text-xs text-white/90 sm:text-sm">{person.classLabel}</span>}
       </span>
     </Link>
   );
@@ -370,6 +379,30 @@ function ClassroomSection() {
       <div className="container-page">
         <SectionHead id="classroom-title" title="ห้องเรียนออนไลน์" />
         <ClassroomPicker />
+      </div>
+    </section>
+  );
+}
+
+function NewsSection({ posts }: { posts: NonNullable<Awaited<ReturnType<typeof getNews>>>["posts"] }) {
+  return (
+    <section aria-labelledby="news-title" className="py-[clamp(56px,8vw,88px)]">
+      <div className="container-page">
+        <SectionHead id="news-title" title="ข่าวสารการศึกษา" href="/news" linkLabel="ดูทั้งหมด" />
+        <NewsGrid
+          filters={false}
+          categories={[]}
+          items={posts.map((p) => ({
+            id: p.id,
+            title: p.title,
+            summary: p.summary,
+            category: p.category,
+            linkUrl: p.linkUrl,
+            date: formatThaiDate(p.publishedAt),
+            dateTime: p.publishedAt,
+            image: p.imageKey ? customCover(p.imageKey) : null,
+          }))}
+        />
       </div>
     </section>
   );

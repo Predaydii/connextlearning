@@ -55,37 +55,36 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
     go(buildQuery(filters, { [key]: [...set] }));
   };
 
-  const panel = (
-    <div className={`space-y-1 transition-opacity ${pending ? "opacity-60" : ""}`}>
-      <form
-        role="search"
-        className="pb-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
-          go(buildQuery(filters, { q }));
-          setDrawer(false);
-        }}
-      >
-        <h2 className="mb-3 text-lg font-semibold after:mt-2 after:block after:h-[3px] after:w-9 after:rounded after:bg-sky">ค้นหา</h2>
-        <div className="relative">
-          <input
-            type="search"
-            name="q"
-            defaultValue={filters.q}
-            maxLength={100}
-            placeholder="ค้นหาชีทสรุป"
-            className="field pr-11 text-sm"
-            aria-label="ค้นหาชีทสรุป"
-          />
-          <button type="submit" aria-label="ค้นหา" className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-lg text-primary hover:bg-primary-50">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-[18px]" aria-hidden>
-              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-            </svg>
-          </button>
-        </div>
-      </form>
+  /** Search box: inside the desktop sidebar, or the big rounded field next to the filter button on phones. */
+  const search = (big: boolean) => (
+    <form
+      role="search"
+      className="relative flex-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
+        go(buildQuery(filters, { q }));
+      }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-body/70 ${big ? "left-4 size-5" : "left-3 size-[18px]"}`} aria-hidden>
+        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+      </svg>
+      <input
+        key={filters.q}
+        type="search"
+        name="q"
+        defaultValue={filters.q}
+        maxLength={100}
+        enterKeyHint="search"
+        placeholder={big ? "ค้นหาชื่อชีท, วิชา, ผู้อัปโหลด..." : "ค้นหาชีทสรุป"}
+        className={big ? "field h-14 rounded-2xl pl-12 text-[15px]" : "field pl-10 text-sm"}
+        aria-label="ค้นหาชีทสรุป"
+      />
+    </form>
+  );
 
+  const groups = (
+    <>
       <Group title="ระดับชั้น">
         {GRADES.map((g) => (
           <Check key={g.value} label={g.label} count={facets.grade[g.value]} checked={current.grade.includes(g.value)} onChange={() => toggle("grade", g.value)} />
@@ -106,8 +105,10 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
           <Check key={y} label={String(y)} count={facets.year[y]} checked={current.year.includes(String(y))} onChange={() => toggle("year", String(y))} />
         ))}
       </Group>
+    </>
+  );
 
-      {activeCount > 0 && (
+  const clear = activeCount > 0 && (
         <button
           type="button"
           onClick={() => go(buildQuery(filters, { grade: [], subject: [], semester: [], year: [] }))}
@@ -115,7 +116,16 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
         >
           ล้างตัวกรองทั้งหมด ({activeCount})
         </button>
-      )}
+  );
+
+  const panel = (
+    <div className={`space-y-1 transition-opacity ${pending ? "opacity-60" : ""}`}>
+      <div className="pb-5">
+        <h2 className="mb-3 text-lg font-semibold after:mt-2 after:block after:h-[3px] after:w-9 after:rounded after:bg-sky">ค้นหา</h2>
+        {search(false)}
+      </div>
+      {groups}
+      {clear}
     </div>
   );
 
@@ -124,21 +134,24 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
       {/* Desktop sidebar */}
       <aside className="hidden lg:block" aria-label="ตัวกรองชีทสรุป">{panel}</aside>
 
-      {/* Mobile: button + slide-over */}
-      <div className="lg:hidden">
+      {/* Phones and tablets: filter button (opens the checkboxes) beside the search box */}
+      <div className={`flex items-center gap-3 transition-opacity lg:hidden ${pending ? "opacity-60" : ""}`}>
         <button
           type="button"
           onClick={() => setDrawer(true)}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-white py-3 font-medium text-ink shadow-card"
+          className="relative grid size-14 shrink-0 cursor-pointer place-items-center rounded-2xl border border-line bg-white text-ink shadow-card transition hover:text-primary"
           aria-expanded={drawer}
           aria-controls="filter-drawer"
+          aria-label={activeCount ? `ตัวกรอง (เลือกอยู่ ${activeCount})` : "ตัวกรอง"}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-primary" aria-hidden>
-            <path d="M4 5h16M7 12h10M10 19h4" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-6" aria-hidden>
+            <path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4" />
           </svg>
-          ค้นหา & ตัวกรอง
-          {activeCount > 0 && <span className="rounded-full bg-primary px-2 text-xs text-white">{activeCount}</span>}
+          {activeCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-primary text-[11px] font-semibold text-white">{activeCount}</span>
+          )}
         </button>
+        {search(true)}
       </div>
       {drawer && (
         <div className="fixed inset-0 z-[60] lg:hidden" id="filter-drawer" role="dialog" aria-modal="true" aria-label="ตัวกรองชีทสรุป">
@@ -150,7 +163,7 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5" aria-hidden><path d="M6 6l12 12M18 6 6 18" /></svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-5">{panel}</div>
+            <div className="flex-1 space-y-1 overflow-y-auto px-5 pb-5">{groups}{clear}</div>
             <div className="border-t border-line p-4">
               <button type="button" onClick={() => setDrawer(false)} className="btn-primary w-full">ดูผลลัพธ์</button>
             </div>
