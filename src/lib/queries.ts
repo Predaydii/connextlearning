@@ -17,10 +17,10 @@ export const TAG_SETTINGS = "settings";
 
 export const getCoverSettings = unstable_cache(
   async (): Promise<CoverSettings> => {
-    const s = await db.siteSetting.findUnique({ where: { id: 1 }, select: { coverMode: true, uniformCoverKey: true } });
-    return { coverMode: s?.coverMode ?? "SUBJECT", uniformCoverKey: s?.uniformCoverKey ?? null };
+    const s = await db.siteSetting.findUnique({ where: { id: 1 }, select: { coverMode: true } });
+    return { coverMode: s?.coverMode ?? "SUBJECT" };
   },
-  ["cover-settings"],
+  ["cover-settings-v2"],
   { tags: [TAG_SETTINGS], revalidate: 3600 },
 );
 
@@ -80,6 +80,7 @@ const cardSelect = {
   createdAt: true,
   viewCount: true,
   coverKey: true,
+  pageCoverKey: true,
   subject: { select: { id: true, name: true, coverKey: true } },
   author: { select: { id: true, name: true, image: true } },
 } satisfies Prisma.SheetSelect;
@@ -233,29 +234,8 @@ export async function getRelatedSheets(sheet: { id: string; authorId: string; gr
 }
 
 // ---------------------------------------------------------------------------
-// Community (ratings, comments, author profile)
+// Author profile
 // ---------------------------------------------------------------------------
-
-export type RatingSummary = { average: number; count: number };
-
-function toSummary(agg: { _avg: { score: number | null }; _count: { _all: number } }): RatingSummary {
-  return { average: agg._avg.score ?? 0, count: agg._count._all };
-}
-
-/** Rating summary, the viewer's own score and the latest comments of one sheet. */
-export async function getSheetCommunity(sheetId: string, userId: string | null) {
-  const [agg, mine, comments] = await Promise.all([
-    db.rating.aggregate({ where: { sheetId }, _avg: { score: true }, _count: { _all: true } }),
-    userId ? db.rating.findUnique({ where: { sheetId_userId: { sheetId, userId } }, select: { score: true } }) : null,
-    db.comment.findMany({
-      where: { sheetId },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-      select: { id: true, body: true, createdAt: true, user: { select: { id: true, name: true, image: true } } },
-    }),
-  ]);
-  return { rating: toSummary(agg), myScore: mine?.score ?? null, comments };
-}
 
 /** Public profile: name, photo and published sheets only (never the email). Deduplicated per request. */
 export const getAuthorProfile = cache(async (userId: string) => {
@@ -265,17 +245,15 @@ export const getAuthorProfile = cache(async (userId: string) => {
   });
   if (!user) return null;
   const published = { authorId: userId, status: "APPROVED" as const };
-  const [rows, views, agg, settings] = await Promise.all([
+  const [rows, views, settings] = await Promise.all([
     db.sheet.findMany({ where: published, orderBy: { publishedAt: "desc" }, select: cardSelect, take: 200 }),
     db.sheet.aggregate({ where: published, _sum: { viewCount: true } }),
-    db.rating.aggregate({ where: { sheet: published }, _avg: { score: true }, _count: { _all: true } }),
     getCoverSettings(),
   ]);
   return {
     user,
     sheets: rows.map((r) => toCard(r, settings)),
     totalViews: views._sum.viewCount ?? 0,
-    rating: toSummary(agg),
   };
 });
 
@@ -336,34 +314,16 @@ export const getContributors = unstable_cache(
   { tags: [TAG_SHEETS], revalidate: 1800 },
 );
 
-export type RankedSheet = SheetCardData & { score?: number; ratings?: number };
-
-/** Top published sheets by star rating and by readers (landing page leaderboards). */
-export const getLeaderboards = unstable_cache(
+/** Most-read published sheets (landing page chart). */
+export const getMostRead = unstable_cache(
   async (take: number) => {
-    const settings = await getCoverSettings();
-    const [byViews, rated] = await Promise.all([
+    const [rows, settings] = await Promise.all([
       db.sheet.findMany({ where: { status: "APPROVED" }, orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }], select: cardSelect, take }),
-      db.rating.groupBy({
-        by: ["sheetId"],
-        where: { sheet: { status: "APPROVED" } },
-        _avg: { score: true },
-        _count: { _all: true },
-        orderBy: [{ _avg: { score: "desc" } }, { _count: { sheetId: "desc" } }],
-        take,
-      }),
+      getCoverSettings(),
     ]);
-    const ratedRows = rated.length
-      ? await db.sheet.findMany({ where: { id: { in: rated.map((r) => r.sheetId) } }, select: cardSelect })
-      : [];
-    const byId = new Map(ratedRows.map((r) => [r.id, r]));
-    const topRated: RankedSheet[] = rated.flatMap((r) => {
-      const row = byId.get(r.sheetId);
-      return row ? [{ ...toCard(row, settings), score: r._avg.score ?? 0, ratings: r._count._all }] : [];
-    });
-    return { topRated, mostRead: byViews.map((r) => toCard(r, settings)) };
+    return rows.map((r) => toCard(r, settings));
   },
-  ["leaderboards"],
+  ["most-read"],
   { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 600 },
 );
 
@@ -434,4 +394,22 @@ export const getVisitStats = unstable_cache(
   },
   ["visit-stats"],
   { revalidate: 600 },
+);
+
+// ---------------------------------------------------------------------------
+// Pop-up announcement
+// ---------------------------------------------------------------------------
+
+export const TAG_ANNOUNCEMENT = "announcement";
+
+/** The newest active announcement, or null. */
+export const getAnnouncement = unstable_cache(
+  () =>
+    db.announcement.findFirst({
+      where: { active: true },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, body: true, linkUrl: true, linkLabel: true },
+    }),
+  ["announcement"],
+  { tags: [TAG_ANNOUNCEMENT], revalidate: 3600 },
 );

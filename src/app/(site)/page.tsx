@@ -3,7 +3,7 @@ import { withBase } from "@/lib/urls";
 import { ClassroomPicker } from "@/components/classroom-picker";
 import { Avatar } from "@/components/avatar";
 import { EyeIcon } from "@/components/sheet-card";
-import { getContributors, getHomeMedia, getLeaderboards, getNews, getSiteStats, type Contributor, type RankedSheet } from "@/lib/queries";
+import { getContributors, getHomeMedia, getMostRead, getNews, getSiteStats, type Contributor, type SheetCardData } from "@/lib/queries";
 import { bannerSrc, customCover, GRADE_ART, gradeArt, videoUrl } from "@/lib/covers";
 import { NewsGrid } from "@/components/news-grid";
 import { BannerCarousel } from "@/components/banner-carousel";
@@ -18,10 +18,10 @@ export const revalidate = 300;
 
 
 export default async function HomePage() {
-  const [stats, contributors, boards, media, news] = await Promise.all([
+  const [stats, contributors, mostRead, media, news] = await Promise.all([
     getSiteStats(),
     getContributors(30),
-    getLeaderboards(5),
+    getMostRead(6),
     getHomeMedia(),
     getNews().catch(() => null),
   ]);
@@ -40,7 +40,7 @@ export default async function HomePage() {
       )}
       <Stats sheets={stats.sheets} views={stats.views} authors={stats.authors} users={stats.users} />
       {contributors.length > 0 && <Contributors people={contributors} />}
-      <Leaderboards topRated={boards.topRated} mostRead={boards.mostRead} />
+      <MostRead items={mostRead} />
       <ByGrade art={media.gradeArt} />
       {media.banners.length > 0 && (
         <BannerCarousel
@@ -234,33 +234,20 @@ function PersonCard({ person, hidden }: { person: Contributor; hidden: boolean }
 // Leaderboards
 // ---------------------------------------------------------------------------
 
-function Leaderboards({ topRated, mostRead }: { topRated: RankedSheet[]; mostRead: RankedSheet[] }) {
+function MostRead({ items }: { items: SheetCardData[] }) {
   return (
     <section aria-labelledby="board-title" className="bg-primary-50 py-[clamp(48px,7vw,80px)]">
       <div className="container-page">
-        <SectionHead id="board-title" title="ชีทยอดนิยม" href="/sheets?sort=popular" linkLabel="ดูทั้งหมด" />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Chart
-            title="ได้ดาวมากที่สุด"
-            items={topRated}
-            empty="ยังไม่มีใครให้ดาว อ่านแล้วกดให้ดาวชีทที่ชอบได้เลย"
-            metric={(s) => (
-              <>
-                <span className="text-sky">★</span> {s.score?.toFixed(1)} <span className="font-normal text-body">({s.ratings})</span>
-              </>
-            )}
-          />
-          <Chart
-            title="มีคนอ่านมากที่สุด"
-            items={mostRead}
-            empty="ยังไม่มีชีทที่เผยแพร่"
-            metric={(s) => (
-              <>
-                <EyeIcon className="size-4 text-primary" /> {formatNumber(s.viewCount)}
-              </>
-            )}
-          />
-        </div>
+        <SectionHead id="board-title" title="ชีทยอดนิยม" sub="ชีทที่มีคนอ่านมากที่สุด" href="/sheets?sort=popular" linkLabel="ดูทั้งหมด" />
+        <Chart
+          items={items}
+          empty="ยังไม่มีชีทที่เผยแพร่"
+          metric={(s) => (
+            <>
+              <EyeIcon className="size-4 text-primary" /> {formatNumber(s.viewCount)}
+            </>
+          )}
+        />
       </div>
     </section>
   );
@@ -270,18 +257,18 @@ function Leaderboards({ topRated, mostRead }: { topRated: RankedSheet[]; mostRea
 const RANK_COLOR = ["text-primary", "text-sky", "text-[#6aa8ff]"];
 
 /** Top-charts list: the leader as a cover card, the rest as rows with big rank numbers. */
-function Chart({ title, items, metric, empty }: { title: string; items: RankedSheet[]; metric: (s: RankedSheet) => React.ReactNode; empty: string }) {
+function Chart({ items, metric, empty }: { items: SheetCardData[]; metric: (s: SheetCardData) => React.ReactNode; empty: string }) {
   const [first, ...rest] = items;
   return (
-    <div className="card p-5 sm:p-6">
-      <h3 className="mb-4 text-lg font-semibold">{title}</h3>
+    <div className="card p-5 sm:p-6 lg:p-8">
       {!first ? (
         <p className="rounded-xl bg-primary-50/60 px-4 py-10 text-center text-sm">{empty}</p>
       ) : (
-        <>
-          <Link href={`/sheets/${first.id}`} className="group grid gap-4 sm:grid-cols-[1.1fr_1fr] sm:items-center">
+        // wide screens: the leader on the left, the runners-up beside it
+        <div className="lg:grid lg:grid-cols-2 lg:gap-10">
+          <Link href={`/sheets/${first.id}`} className="group grid gap-4 sm:grid-cols-[1.1fr_1fr] sm:items-center lg:grid-cols-1 lg:items-start">
             <span className="relative block overflow-hidden rounded-2xl">
-              <img src={first.cover.small} srcSet={`${first.cover.small} 640w, ${first.cover.large} 1280w`} sizes="(min-width: 1024px) 300px, 90vw" alt="" width={640} height={360} loading="lazy" className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+              <img src={first.cover.small} srcSet={`${first.cover.small} 640w, ${first.cover.large} 1280w`} sizes="(min-width: 1024px) 560px, 90vw" alt="" width={640} height={360} loading="lazy" className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
               <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-0.5 text-xs font-bold text-ink shadow-sm">อันดับ 1</span>
             </span>
             <span className="min-w-0">
@@ -295,7 +282,7 @@ function Chart({ title, items, metric, empty }: { title: string; items: RankedSh
             </span>
           </Link>
           {rest.length > 0 && (
-            <ol start={2} className="mt-5 divide-y divide-line border-t border-line">
+            <ol start={2} className="mt-5 divide-y divide-line border-t border-line lg:mt-0 lg:border-t-0">
               {rest.map((s, i) => (
                 <li key={s.id}>
                   <Link href={`/sheets/${s.id}`} className="group flex items-center gap-4 py-3">
@@ -311,7 +298,7 @@ function Chart({ title, items, metric, empty }: { title: string; items: RankedSh
               ))}
             </ol>
           )}
-        </>
+        </div>
       )}
     </div>
   );

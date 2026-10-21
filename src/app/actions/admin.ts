@@ -10,7 +10,9 @@ import { deleteObjects, headObject, presignPut, putObject } from "@/lib/r2";
 import { makeCoverImages, makeIconImages, makeOgImage, UserFacingError } from "@/lib/pdf";
 import { assertAdmin, assertSuperAdmin, AuthError } from "@/lib/session";
 import { adminEmails } from "@/lib/env";
-import { TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
+import { TAG_ANNOUNCEMENT, TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
+import { storePageCover } from "@/lib/page-cover";
+import { getObjectBytes } from "@/lib/r2";
 import {
   ACADEMIC_YEARS,
   DESCRIPTION_MAX,
@@ -155,7 +157,7 @@ export async function deleteSheet(id: string): Promise<ActionState> {
     const sheet = await db.sheet.findUnique({ where: { id: sheetId.parse(id) } });
     if (!sheet) throw new UserFacingError("ไม่พบชีทนี้");
     await db.sheet.delete({ where: { id: sheet.id } });
-    await deleteObjects([sheet.pdfKey, ...(sheet.coverKey ? coverFiles(sheet.coverKey) : [])]);
+    await deleteObjects([sheet.pdfKey, ...[sheet.coverKey, sheet.pageCoverKey].flatMap((k) => (k ? coverFiles(k) : []))]);
     refreshSheets(sheet.id);
   } catch (err) {
     return fail(err);
@@ -187,7 +189,6 @@ async function storeCover(file: FormDataEntryValue | null, ratio?: number) {
 }
 
 const coverTarget = z.union([
-  z.literal("uniform"),
   z.enum(SUBJECT_IDS).transform((id) => ({ subject: id })),
   z.string().regex(/^sheet:.+$/).transform((v) => ({ sheet: v.slice(6) })),
   // Landing-page "sheets by grade" tile (4:5)
@@ -195,19 +196,16 @@ const coverTarget = z.union([
 ]);
 
 async function currentCoverKey(target: z.output<typeof coverTarget>) {
-  if (target === "uniform") return (await db.siteSetting.findUnique({ where: { id: 1 }, select: { uniformCoverKey: true } }))?.uniformCoverKey ?? null;
   if ("subject" in target) return (await db.subject.findUnique({ where: { id: target.subject } }))?.coverKey ?? null;
   if ("grade" in target) return (await db.homeImage.findUnique({ where: { slot: target.grade } }))?.imageKey ?? null;
   return (await db.sheet.findUnique({ where: { id: target.sheet } }))?.coverKey ?? null;
 }
 
 async function saveCoverKey(target: z.output<typeof coverTarget>, key: string | null) {
-  if (target !== "uniform" && "grade" in target) {
+  if ("grade" in target) {
     const slot = target.grade;
     if (key) await db.homeImage.upsert({ where: { slot }, create: { slot, imageKey: key }, update: { imageKey: key } });
     else await db.homeImage.deleteMany({ where: { slot } });
-  } else if (target === "uniform") {
-    await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, uniformCoverKey: key }, update: { uniformCoverKey: key } });
   } else if ("subject" in target) {
     await db.subject.update({ where: { id: target.subject }, data: { coverKey: key } });
   } else {
@@ -222,7 +220,7 @@ export async function updateCover(_prev: ActionState, formData: FormData): Promi
     const target = coverTarget.parse(formData.get("target"));
     const old = await currentCoverKey(target);
     const reset = formData.get("useDefault") === "1";
-    const key = reset ? null : await storeCover(formData.get("file"), typeof target === "object" && "grade" in target ? 5 / 4 : undefined);
+    const key = reset ? null : await storeCover(formData.get("file"), "grade" in target ? 5 / 4 : undefined);
     await saveCoverKey(target, key);
     if (old) await deleteObjects(coverFiles(old));
 
@@ -238,12 +236,38 @@ export async function updateCover(_prev: ActionState, formData: FormData): Promi
 export async function setCoverMode(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertAdmin();
-    const mode = z.enum(["SUBJECT", "UNIFORM"]).parse(formData.get("mode"));
+    const mode = z.enum(["SUBJECT", "FIRST_PAGE"]).parse(formData.get("mode"));
     await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, coverMode: mode }, update: { coverMode: mode } });
     updateTag(TAG_SETTINGS);
     updateTag(TAG_SHEETS);
     revalidatePath("/admin", "layout");
-    return { ok: true, message: mode === "UNIFORM" ? "ใช้ภาพปกเดียวกันทุกชีทแล้ว" : "ใช้ภาพปกแยกตามวิชาแล้ว" };
+    return { ok: true, message: mode === "FIRST_PAGE" ? "ใช้หน้าแรกของชีทเป็นภาพปกแล้ว" : "ใช้ภาพปกตามวิชาแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+const PAGE_COVER_BATCH = 10; // keeps one click well inside the function time limit
+
+/** Draw first-page covers for sheets uploaded before covers were made at upload time. */
+export async function makeMissingPageCovers(): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const missing = { pageCoverKey: null, NOT: { pdfKey: { startsWith: "demo/" } } };
+    const sheets = await db.sheet.findMany({ where: missing, select: { id: true, pdfKey: true }, orderBy: { createdAt: "desc" }, take: PAGE_COVER_BATCH });
+    let failed = 0;
+    for (const sheet of sheets) {
+      const key = await storePageCover(await getObjectBytes(sheet.pdfKey));
+      if (key) await db.sheet.update({ where: { id: sheet.id }, data: { pageCoverKey: key } });
+      else failed++;
+    }
+    const left = (await db.sheet.count({ where: missing })) - failed;
+    updateTag(TAG_SHEETS);
+    revalidatePath("/admin", "layout");
+    return {
+      ok: failed === 0,
+      message: `สร้างภาพแล้ว ${sheets.length - failed} ชีท${failed ? ` · สร้างไม่ได้ ${failed} ชีท` : ""}${left > 0 ? ` · เหลืออีก ${left} ชีท กดอีกครั้ง` : ""}`,
+    };
   } catch (err) {
     return fail(err);
   }
@@ -583,6 +607,61 @@ export async function deleteNewsCategory(id: string): Promise<ActionState> {
     ]);
     refreshNews();
     return { ok: true, message: "ลบหมวดหมู่แล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pop-up announcements (the newest active one is shown once to every visitor)
+// ---------------------------------------------------------------------------
+
+function refreshAnnouncements() {
+  updateTag(TAG_ANNOUNCEMENT);
+  revalidatePath("/admin", "layout");
+}
+
+const announcementInput = z.object({
+  title: z.string().trim().min(1, "กรุณากรอกหัวข้อ").max(100, "หัวข้อยาวเกิน 100 ตัวอักษร"),
+  body: z.string().trim().max(1000, "ข้อความยาวเกิน 1000 ตัวอักษร"),
+  linkUrl: newsInput.shape.linkUrl,
+  linkLabel: newsInput.shape.linkLabel,
+});
+
+export async function sendAnnouncement(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const input = announcementInput.parse({
+      title: formData.get("title"),
+      body: formData.get("body") ?? "",
+      linkUrl: formData.get("linkUrl") ?? "",
+      linkLabel: formData.get("linkLabel") ?? "",
+    });
+    await db.announcement.create({ data: { ...input, linkLabel: input.linkUrl ? input.linkLabel : null } });
+    refreshAnnouncements();
+    return { ok: true, message: "ส่งประกาศแล้ว ผู้ใช้จะเห็นเมื่อเปิดเว็บครั้งถัดไป" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function setAnnouncementActive(id: string, active: boolean): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    await db.announcement.update({ where: { id: z.string().min(1).max(40).parse(id) }, data: { active } });
+    refreshAnnouncements();
+    return { ok: true, message: active ? "แสดงประกาศอีกครั้งแล้ว" : "หยุดแสดงประกาศแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function deleteAnnouncement(id: string): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    await db.announcement.delete({ where: { id: z.string().min(1).max(40).parse(id) } });
+    refreshAnnouncements();
+    return { ok: true, message: "ลบประกาศแล้ว" };
   } catch (err) {
     return fail(err);
   }

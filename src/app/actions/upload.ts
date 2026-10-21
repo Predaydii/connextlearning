@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { deleteObjects, getObjectBytes, headObject, presignPut, putObject } from "@/lib/r2";
 import { mergeToPdf, sniffKind, UserFacingError, type FileKind } from "@/lib/pdf";
 import { assertUser, AuthError } from "@/lib/session";
+import { storePageCover } from "@/lib/page-cover";
 import {
   ACADEMIC_YEARS,
   ACCEPTED_TYPES,
@@ -144,7 +145,7 @@ export async function submitSheet(input: SubmitSheetInput): Promise<Result<{ id:
     });
 
     const pdfKey = `sheets/${randomUUID()}.pdf`;
-    await putObject(pdfKey, bytes, "application/pdf");
+    const [pageCoverKey] = await Promise.all([storePageCover(bytes), putObject(pdfKey, bytes, "application/pdf")]);
 
     const sheet = await db.sheet.create({
       data: {
@@ -157,6 +158,7 @@ export async function submitSheet(input: SubmitSheetInput): Promise<Result<{ id:
         pdfKey,
         pdfBytes: bytes.byteLength,
         pageCount,
+        pageCoverKey,
         authorId: user.id,
       },
       select: { id: true },

@@ -39,6 +39,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   basePath: BASE_PATH,
   poweredByHeader: false,
+  // First-page covers (src/lib/page-cover.ts): pdf.js + a native canvas, loaded from node_modules
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+  outputFileTracingIncludes: {
+    "/**": [
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/pdfjs-dist/standard_fonts/**",
+      "./node_modules/pdfjs-dist/cmaps/**",
+    ],
+  },
   experimental: {
     serverActions: {
       // Cover images are posted to a server action; sheet files go directly to R2.

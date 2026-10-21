@@ -165,7 +165,7 @@ export function DeleteButton({ id }: { id: string }) {
   );
 }
 
-/** Upload a 16:9 cover for a target ("uniform", a subject id, "sheet:<id>"), or a 4:5 landing tile ("grade:<n>"), or reset it. */
+/** Upload a 16:9 cover for a target (a subject id, "sheet:<id>"), or a 4:5 landing tile ("grade:<n>"), or reset it. */
 export function CoverUploader({
   target,
   src,

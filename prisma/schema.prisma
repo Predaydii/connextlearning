@@ -55,8 +55,6 @@ model User {
   sheets        Sheet[]     @relation("SheetAuthor")
   reviewed      Sheet[]     @relation("SheetReviewer")
   views         SheetView[]
-  ratings       Rating[]
-  comments      Comment[]
 
   @@map("user")
 }
@@ -139,7 +137,7 @@ enum Grade {
 
 enum CoverMode {
   SUBJECT // each subject uses its own cover
-  UNIFORM // every sheet uses the same cover
+  FIRST_PAGE // each sheet shows the top of its own first page (Sheet.pageCoverKey), else the subject cover
 }
 
 model Subject {
@@ -154,7 +152,6 @@ model Subject {
 model SiteSetting {
   id              Int       @id @default(1)
   coverMode       CoverMode @default(SUBJECT)
-  uniformCoverKey String?
   // Instagram long-lived token for the news page (auto-refreshed; seeded from INSTAGRAM_ACCESS_TOKEN)
   igAccessToken    String?
   igTokenExpiresAt DateTime?
@@ -224,8 +221,10 @@ model Sheet {
   status       SheetStatus @default(PENDING)
   rejectReason String?
 
-  // Admin-chosen cover for this sheet only (overrides subject / uniform cover)
+  // Admin-chosen cover for this sheet only (overrides everything else)
   coverKey     String?
+  // Top of the first page, rendered at upload (R2 prefix "covers/<uuid>"); used in FIRST_PAGE mode
+  pageCoverKey String?
 
   // Merged PDF kept privately in R2; readers get a short-lived signed link
   pdfKey       String
@@ -245,8 +244,6 @@ model Sheet {
   updatedAt    DateTime    @updatedAt
 
   views        SheetView[]
-  ratings      Rating[]
-  comments     Comment[]
 
   @@index([status, publishedAt(sort: Desc)])
   @@index([status, viewCount(sort: Desc)])
@@ -268,31 +265,18 @@ model SheetView {
   @@index([userId])
 }
 
-// One star rating (1–5) per (sheet, user); rating again replaces the score
-model Rating {
-  sheetId   String
-  userId    String
-  score     Int
+// Admin message that pops up once for every visitor (the newest active one is shown)
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  linkUrl   String?
+  linkLabel String?
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([sheetId, userId])
-  @@index([userId])
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  body      String
-  sheetId   String
-  userId    String
-  createdAt DateTime @default(now())
-  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([sheetId, createdAt(sort: Desc)])
-  @@index([userId, createdAt])
+  @@index([active, createdAt(sort: Desc)])
 }
 
 // Visits per day (Asia/Bangkok) for the footer: each browser counts once a day, nothing personal is stored

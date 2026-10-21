@@ -67,11 +67,6 @@ export const DESCRIPTION_MAX = 500;
 
 export const PAGE_SIZE = 24;
 
-// Comments
-export const COMMENT_MAX = 1000;
-export const COMMENTS_PER_WINDOW = 10;
-export const COMMENT_WINDOW_MIN = 10;
-
 // Admin-uploaded site videos (stored in R2, played straight from it)
 export const VIDEO_TYPES = { "video/mp4": "mp4", "video/webm": "webm" } as const;
 export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;

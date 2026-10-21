@@ -119,7 +119,7 @@ export default async function AdminSheetReviewPage(props: PageProps<"/admin/shee
           <section className="card grid gap-3 p-6">
             <h3 className="font-semibold">ภาพปกของชีทนี้ (16:9)</h3>
             <p className="text-xs">
-              ถ้าไม่ตั้งค่า ระบบจะใช้{settings.coverMode === "UNIFORM" ? "ภาพปกกลางของทุกชีท" : `ภาพปกของวิชา${sheet.subject.name}`} ·{" "}
+              ถ้าไม่ตั้งค่า ระบบจะใช้{settings.coverMode === "FIRST_PAGE" && sheet.pageCoverKey ? "หน้าแรกของชีท" : `ภาพปกของวิชา${sheet.subject.name}`} ·{" "}
               <Link href={adminHref("/covers")} className="text-primary hover:underline">ตั้งค่าภาพปกเริ่มต้น</Link>
             </p>
             <CoverUploader target={`sheet:${sheet.id}`} src={cover.small} title={sheet.title} isCustom={!!sheet.coverKey} compact />

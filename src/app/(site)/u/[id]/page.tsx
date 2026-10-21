@@ -23,7 +23,7 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
   const { id } = await props.params;
   const [viewer, profile] = await Promise.all([getCurrentUser(), getAuthorProfile(id)]);
   if (!profile) notFound();
-  const { user, sheets, totalViews, rating } = profile;
+  const { user, sheets, totalViews } = profile;
   const isMe = viewer?.id === user.id;
   const label = classLabel(user);
   const contacts = readContacts(user.contacts);
@@ -87,7 +87,6 @@ export default async function AuthorProfilePage(props: PageProps<"/u/[id]">) {
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-body">
                 สมาชิกตั้งแต่ {formatThaiDateShort(user.createdAt)}
-                {rating.count > 0 && <> · คะแนนเฉลี่ย <span className="font-semibold text-ink">{rating.average.toFixed(1)}</span> <span className="text-accent">★</span> ({rating.count})</>}
               </p>
               {links.length > 0 && (
                 <ul className="flex flex-wrap gap-1.5" aria-label="ช่องทางติดต่อ">

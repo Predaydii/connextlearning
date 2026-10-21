@@ -1,14 +1,18 @@
 "use client";
 
 import { useActionState } from "react";
-import { setCoverMode } from "@/app/actions/admin";
+import { makeMissingPageCovers, setCoverMode } from "@/app/actions/admin";
 
 const OPTIONS = [
-  { value: "SUBJECT", title: "แยกตามวิชา", desc: "แต่ละวิชาใช้ภาพปกของตัวเอง (เลือกเองได้ทีละวิชา)" },
-  { value: "UNIFORM", title: "เหมือนกันทั้งหมด", desc: "ทุกชีทใช้ภาพปกเดียวกัน" },
+  { value: "SUBJECT", title: "ภาพปกที่ตั้งไว้", desc: "แต่ละวิชาใช้ภาพปกของตัวเอง (เปลี่ยนได้ด้านล่าง)" },
+  { value: "FIRST_PAGE", title: "หน้าแรกของชีท", desc: "แสดงส่วนบนของหน้าแรกในไฟล์ที่ผู้จัดทำอัปโหลด" },
 ] as const;
 
-export function CoverModeForm({ mode }: { mode: "SUBJECT" | "UNIFORM" }) {
+function Status({ state }: { state: { ok: boolean; message: string } | null }) {
+  return state && <p role="status" className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>;
+}
+
+export function CoverModeForm({ mode }: { mode: "SUBJECT" | "FIRST_PAGE" }) {
   const [state, action, pending] = useActionState(setCoverMode, null);
   return (
     <form action={action} className="grid gap-3">
@@ -25,8 +29,20 @@ export function CoverModeForm({ mode }: { mode: "SUBJECT" | "UNIFORM" }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button disabled={pending} className="btn-primary btn-sm">{pending ? "กำลังบันทึก…" : "บันทึกรูปแบบภาพปก"}</button>
-        {state && <p role="status" className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>}
+        <Status state={state} />
       </div>
+    </form>
+  );
+}
+
+/** Older sheets have no first-page image yet; drawn in small batches. */
+export function MissingPageCovers({ count }: { count: number }) {
+  const [state, action, pending] = useActionState(makeMissingPageCovers, null);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm ring-1 ring-amber-200">
+      <span className="text-amber-900">มี {count} ชีทที่ยังไม่มีภาพหน้าแรก (จะแสดงภาพปกวิชาแทน)</span>
+      <button disabled={pending} className="btn-outline btn-sm">{pending ? "กำลังสร้างภาพ…" : "สร้างภาพหน้าแรก"}</button>
+      <Status state={state} />
     </form>
   );
 }

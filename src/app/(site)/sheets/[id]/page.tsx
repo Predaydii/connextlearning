@@ -6,9 +6,8 @@ import { BackButton } from "@/components/back-button";
 import { ShareButton } from "@/components/share-button";
 import { StatusBadge } from "@/components/status-badge";
 import { gradeLabel } from "@/lib/constants";
-import { formatNumber, formatThaiDate, formatThaiDateTime } from "@/lib/format";
-import { getRelatedSheets, getSheetCommunity, getSheetDetail } from "@/lib/queries";
-import { CommentForm, DeleteCommentButton, RateSheet, Stars } from "@/components/community";
+import { formatNumber, formatThaiDate } from "@/lib/format";
+import { getRelatedSheets, getSheetDetail } from "@/lib/queries";
 import { SheetCardCompact } from "@/components/sheet-card";
 import { getCurrentUser, loginUrl } from "@/lib/session";
 import Link from "next/link";
@@ -36,10 +35,7 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
   // Prototype sheets (npm run db:demo) have no real file
   const isDemo = sheet.pdfKey.startsWith("demo/");
   const published = sheet.status === "APPROVED";
-  const [related, community] = await Promise.all([
-    getRelatedSheets(sheet),
-    published ? getSheetCommunity(sheet.id, user?.id ?? null) : null,
-  ]);
+  const related = await getRelatedSheets(sheet);
 
   return (
     <div className="container-page py-8 md:py-12">
@@ -83,11 +79,6 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
             </span>
           </div>
           <h1 className="mt-4 text-[clamp(1.5rem,2.8vw,2.1rem)] font-bold">{sheet.title}</h1>
-          {community && (
-            <a href="#community" className="mt-2 w-fit">
-              <Stars average={community.rating.average} count={community.rating.count} />
-            </a>
-          )}
 
           <Link
             href={`/u/${sheet.author.id}`}
@@ -141,63 +132,6 @@ export default async function SheetDetailPage(props: PageProps<"/sheets/[id]">) 
         <h2 className="mb-3 text-xl font-semibold">คำอธิบาย</h2>
         <p className="whitespace-pre-line break-words">{sheet.description}</p>
       </section>
-
-      {community && (
-        <section id="community" className="card mt-6 scroll-mt-24 p-6" aria-labelledby="community-title">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
-            <div>
-              <h2 id="community-title" className="text-xl font-semibold">คะแนนและความคิดเห็น</h2>
-              <div className="mt-1">
-                <Stars average={community.rating.average} count={community.rating.count} />
-              </div>
-            </div>
-            {!user ? null : sheet.authorId === user.id ? (
-              <p className="text-sm">ชีทของคุณ (ให้ดาวตัวเองไม่ได้)</p>
-            ) : (
-              <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-primary-50/70 px-4 py-2 sm:w-auto sm:bg-transparent sm:p-0">
-                <p className="shrink-0 text-sm font-medium text-ink">{community.myScore ? "คะแนนของคุณ" : "ให้คะแนน"}</p>
-                <RateSheet sheetId={sheet.id} myScore={community.myScore} />
-              </div>
-            )}
-          </div>
-
-          <div className="pt-5">
-            {user ? (
-              <CommentForm sheetId={sheet.id} />
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary-50 px-4 py-3 text-sm">
-                <span>เข้าสู่ระบบเพื่อให้ดาวและแสดงความคิดเห็น</span>
-                <Link href={loginUrl(`/sheets/${sheet.id}`)} className="btn-primary btn-sm">เข้าสู่ระบบ</Link>
-              </div>
-            )}
-
-            {community.comments.length > 0 && (
-              <ul className="mt-6 grid gap-5">
-                {community.comments.map((c) => (
-                  <li key={c.id} className="flex gap-3">
-                    <Link href={`/u/${c.user.id}`} className="shrink-0">
-                      <Avatar name={c.user.name} image={c.user.image} size={36} />
-                    </Link>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-x-2">
-                        <Link href={`/u/${c.user.id}`} className="font-semibold text-ink hover:text-primary">{c.user.name}</Link>
-                        {c.user.id === sheet.authorId && (
-                          <span className="rounded-full bg-primary-50 px-2 text-[11px] font-medium text-primary">ผู้จัดทำ</span>
-                        )}
-                        <time dateTime={c.createdAt.toISOString()} className="text-xs">{formatThaiDateTime(c.createdAt)}</time>
-                        {user && (user.id === c.user.id || user.isAdmin) && (
-                          <span className="ml-auto"><DeleteCommentButton id={c.id} /></span>
-                        )}
-                      </div>
-                      <p className="mt-1 whitespace-pre-line break-words text-sm text-ink">{c.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-      )}
 
       {related.items.length > 0 && (
         <section className="mt-12" aria-labelledby="related-title">
