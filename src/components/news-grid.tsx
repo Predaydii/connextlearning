@@ -14,9 +14,8 @@ export type NewsItem = {
 };
 
 /** News cards (newest first) with category + text filters; a card opens the full story in a popup. */
-export function NewsGrid({ items, categories: allCategories }: { items: NewsItem[]; categories: string[] }) {
-  // admin order, only categories that have news
-  const categories = allCategories.filter((c) => items.some((i) => i.category === c));
+export function NewsGrid({ items, categories }: { items: NewsItem[]; categories: string[] }) {
+  const count = (c: string) => items.filter((i) => i.category === c).length;
   const [filter, setFilter] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<NewsItem | null>(null);
@@ -34,23 +33,29 @@ export function NewsGrid({ items, categories: allCategories }: { items: NewsItem
     (i) => (!filter || i.category === filter) && (!q || i.title.toLowerCase().includes(q) || i.summary.toLowerCase().includes(q)),
   );
   const chip = (active: boolean) =>
-    `shrink-0 cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition ${active ? "bg-primary text-white shadow-brand" : "bg-white text-ink ring-1 ring-line hover:text-primary"}`;
+    `inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition ${active ? "bg-primary text-white shadow-brand" : "bg-white text-ink ring-1 ring-line hover:text-primary hover:ring-primary/40"}`;
+  const badge = (active: boolean) => `text-xs ${active ? "text-white/75" : "text-body/70"}`;
 
   return (
     <>
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
-        <label className="relative md:order-2 md:ml-auto md:w-72 md:shrink-0">
+            {/* computers: categories wrap on the left, search on the right; phones: search, then a swipeable row */}
+      <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-8">
+        <label className="relative md:order-2 md:w-72 md:shrink-0">
           <span className="sr-only">ค้นหาข่าว</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-body" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-body" aria-hidden>
             <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
           </svg>
-          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาข่าว" className="field rounded-full py-2 pl-10 text-sm" />
+          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาข่าว" className="field rounded-full py-2 pl-11 text-sm" />
         </label>
         {categories.length > 0 && (
-          <div role="group" aria-label="หมวดหมู่ข่าว" className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0">
-            <button type="button" aria-pressed={!filter} onClick={() => setFilter(null)} className={chip(!filter)}>ทั้งหมด</button>
+          <div role="group" aria-label="กรองตามหมวดหมู่" className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:p-0">
+            <button type="button" aria-pressed={!filter} onClick={() => setFilter(null)} className={chip(!filter)}>
+              ทั้งหมด <span className={badge(!filter)}>{items.length}</span>
+            </button>
             {categories.map((c) => (
-              <button key={c} type="button" aria-pressed={filter === c} onClick={() => setFilter(c)} className={chip(filter === c)}>{c}</button>
+              <button key={c} type="button" aria-pressed={filter === c} onClick={() => setFilter(c)} className={chip(filter === c)}>
+                {c} <span className={badge(filter === c)}>{count(c)}</span>
+              </button>
             ))}
           </div>
         )}

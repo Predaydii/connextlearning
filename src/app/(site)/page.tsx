@@ -13,8 +13,8 @@ import { CountUp } from "@/components/count-up";
 import { Typewriter } from "@/components/typewriter";
 import { AutoVideo } from "@/components/auto-video";
 
-// Static page, refreshed every 2 minutes (all data comes from cached queries)
-export const revalidate = 120;
+// Static page, refreshed every 5 minutes (all data comes from cached queries)
+export const revalidate = 300;
 
 const ROOMS = GRADES.reduce((n, g) => n + classroomsOf(g.value).length, 0);
 

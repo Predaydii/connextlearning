@@ -8,6 +8,8 @@ import type { Grade, Prisma } from "@/generated/prisma/client";
 
 export const TAG_SHEETS = "sheets";
 export const TAG_SETTINGS = "settings";
+// Every write updates these tags, so the revalidate timers below are only a safety net
+// (and refresh view counts): long timers keep the free Neon database asleep more often.
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -19,7 +21,7 @@ export const getCoverSettings = unstable_cache(
     return { coverMode: s?.coverMode ?? "SUBJECT", uniformCoverKey: s?.uniformCoverKey ?? null };
   },
   ["cover-settings"],
-  { tags: [TAG_SETTINGS], revalidate: 300 },
+  { tags: [TAG_SETTINGS], revalidate: 3600 },
 );
 
 // ---------------------------------------------------------------------------
@@ -131,7 +133,7 @@ export const getSheetList = unstable_cache(
     return { items: rows.map((r) => toCard(r, settings)), total, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
   },
   ["sheet-list"],
-  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 60 },
+  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 300 },
 );
 
 export type Facets = {
@@ -159,7 +161,7 @@ export const getFacets = unstable_cache(
     };
   },
   ["sheet-facets"],
-  { tags: [TAG_SHEETS], revalidate: 60 },
+  { tags: [TAG_SHEETS], revalidate: 3600 },
 );
 
 export const getLatestSheets = unstable_cache(
@@ -176,7 +178,7 @@ export const getLatestSheets = unstable_cache(
     return rows.map((r) => toCard(r, settings));
   },
   ["latest-sheets"],
-  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 120 },
+  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 600 },
 );
 
 // ---------------------------------------------------------------------------
@@ -288,7 +290,7 @@ export const getSiteStats = unstable_cache(
     return { sheets: agg._count._all, views: agg._sum.viewCount ?? 0, authors: authors.length };
   },
   ["site-stats"],
-  { tags: [TAG_SHEETS], revalidate: 300 },
+  { tags: [TAG_SHEETS], revalidate: 1800 },
 );
 
 /** `classLabel`: "ม.5/1" for students, "ครู · กลุ่มสาระ" for teachers, "ศิษย์เก่า" for alumni (from registration). */
@@ -329,7 +331,7 @@ export const getContributors = unstable_cache(
     }));
   },
   ["contributors-v2"],
-  { tags: [TAG_SHEETS], revalidate: 300 },
+  { tags: [TAG_SHEETS], revalidate: 1800 },
 );
 
 export type RankedSheet = SheetCardData & { score?: number; ratings?: number };
@@ -360,7 +362,7 @@ export const getLeaderboards = unstable_cache(
     return { topRated, mostRead: byViews.map((r) => toCard(r, settings)) };
   },
   ["leaderboards"],
-  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 120 },
+  { tags: [TAG_SHEETS, TAG_SETTINGS], revalidate: 600 },
 );
 
 // ---------------------------------------------------------------------------
@@ -384,7 +386,7 @@ export const getNews = unstable_cache(
     };
   },
   ["news-v3"],
-  { tags: [TAG_NEWS], revalidate: 600 },
+  { tags: [TAG_NEWS], revalidate: 3600 },
 );
 
 /** Admin-set site icon and link-preview image (R2 key prefixes; null = built-in). */
@@ -394,7 +396,7 @@ export const getSiteImages = unstable_cache(
     return { faviconKey: s?.faviconKey ?? null, ogImageKey: s?.ogImageKey ?? null };
   },
   ["site-images"],
-  { tags: [TAG_SETTINGS], revalidate: 600 },
+  { tags: [TAG_SETTINGS], revalidate: 3600 },
 );
 
 /** Landing page media: custom grade tiles (slot → R2 key) and the video above the footer. */
@@ -413,7 +415,7 @@ export const getHomeMedia = unstable_cache(
     };
   },
   ["home-media-v2"],
-  { tags: [TAG_SETTINGS], revalidate: 300 },
+  { tags: [TAG_SETTINGS], revalidate: 3600 },
 );
 
 // ---------------------------------------------------------------------------

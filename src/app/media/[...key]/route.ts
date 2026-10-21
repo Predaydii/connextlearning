@@ -12,10 +12,10 @@ export async function GET(_req: Request, ctx: RouteContext<"/media/[...key]">) {
 
   if (PUBLIC_VIDEO.test(key)) {
     // Videos are big and seekable: send the browser to R2 itself (range requests, no function bandwidth).
-    // The link lives 12 h; the redirect is cached for 1 h so it never hands out a nearly expired one.
+    // The link lives 12 h; the redirect is cached (browser + Vercel CDN) for 1 h so it never hands out a nearly expired one.
     return new Response(null, {
       status: 302,
-      headers: { Location: await presignVideoGet(key), "Cache-Control": "public, max-age=3600" },
+      headers: { Location: await presignVideoGet(key), "Cache-Control": "public, max-age=3600, s-maxage=3600" },
     });
   }
 
@@ -27,8 +27,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/media/[...key]">) {
       headers: {
         "Content-Type": site ? (key.endsWith(".png") ? "image/png" : "image/jpeg") : "image/webp",
         ...(size ? { "Content-Length": String(size) } : {}),
-        // Keys are content-unique (new upload = new UUID), so cache forever at the CDN and browser
-        "Cache-Control": "public, max-age=31536000, immutable",
+        // Keys are content-unique (new upload = new UUID), so cache forever at the CDN and browser.
+        // s-maxage is what lets Vercel's CDN keep it: without it every view runs this function again.
+        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
       },
     });
