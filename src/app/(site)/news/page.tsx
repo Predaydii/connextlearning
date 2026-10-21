@@ -37,6 +37,7 @@ export default async function NewsPage() {
             summary: p.summary,
             category: p.category,
             linkUrl: p.linkUrl,
+            linkLabel: p.linkLabel ?? null,
             date: formatThaiDate(p.publishedAt),
             dateTime: p.publishedAt,
             image: p.imageKey ? customCover(p.imageKey) : null,

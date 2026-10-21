@@ -199,6 +199,8 @@ model NewsPost {
   title       String
   summary     String
   linkUrl     String?
+  // Text of the popup button that opens linkUrl (null = "รายละเอียดเพิ่มเติม")
+  linkLabel   String?
   category    String? // NewsCategory.name (null = uncategorised)
   // R2 key prefix ("covers/<uuid>", served by /media); null = no image
   imageKey    String?

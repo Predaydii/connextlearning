@@ -8,8 +8,8 @@ import { withBase } from "@/lib/urls";
 
 const LINKS = [
   { href: "/", label: "หน้าหลัก", match: (p: string) => p === "/" },
-  { href: "/#classroom", label: "ห้องเรียน", match: () => false },
   { href: "/sheets", label: "ชีทสรุป", match: (p: string) => p.startsWith("/sheets") },
+  { href: "/#classroom", label: "ห้องเรียน", match: () => false },
   { href: "/news", label: "ข่าวสารการศึกษา", match: (p: string) => p.startsWith("/news") },
 ];
 

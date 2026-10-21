@@ -8,6 +8,7 @@ export type NewsItem = {
   summary: string;
   category: string | null;
   linkUrl: string | null;
+  linkLabel: string | null;
   date: string; // formatted
   dateTime: string; // ISO
   image: { small: string; large: string } | null;
@@ -23,11 +24,16 @@ export function NewsGrid({ items, categories, filters = true }: { items: NewsIte
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<NewsItem | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  const story = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const d = dialog.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
+    if (open && !d.open) {
+      d.showModal();
+      // The browser would focus the first button (and ring it); focus the story itself instead
+      story.current?.focus();
+    }
     if (!open && d.open) d.close();
   }, [open]);
 
@@ -115,7 +121,7 @@ export function NewsGrid({ items, categories, filters = true }: { items: NewsIte
       >
         {open && (
           // phones: one scrolling column; computers: the 4:5 picture fills the left, the text scrolls on the right
-          <article className={`max-h-[calc(100dvh-24px)] overflow-y-auto ${open.image ? "md:flex md:overflow-hidden" : ""}`}>
+          <article ref={story} tabIndex={-1} className={`max-h-[calc(100dvh-24px)] overflow-y-auto outline-none ${open.image ? "md:flex md:overflow-hidden" : ""}`}>
             {open.image && (
               <img
                 src={open.image.large}
@@ -132,7 +138,7 @@ export function NewsGrid({ items, categories, filters = true }: { items: NewsIte
               {open.summary && <p className="mt-4 whitespace-pre-line break-words">{open.summary}</p>}
               {open.linkUrl && (
                 <a href={open.linkUrl} target="_blank" rel="noopener noreferrer" className="btn-primary btn-sm mt-6">
-                  รายละเอียดเพิ่มเติม ↗
+                  {open.linkLabel || "รายละเอียดเพิ่มเติม"} ↗
                 </a>
               )}
             </div>

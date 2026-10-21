@@ -45,6 +45,7 @@ export default async function AdminNewsPage() {
                   title: p.title,
                   summary: p.summary,
                   linkUrl: p.linkUrl,
+                  linkLabel: p.linkLabel,
                   category: p.category,
                   image: p.imageKey ? customCover(p.imageKey).small : null,
                   publishedAt: p.publishedAt.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),

@@ -47,8 +47,8 @@ export default async function HomePage() {
           banners={media.banners.map((b) => ({ id: b.id, ...bannerSrc(b.imageKey), linkUrl: b.linkUrl }))}
         />
       )}
-      <ClassroomSection />
       {news && news.posts.length > 0 && <NewsSection posts={news.posts.slice(0, 4)} />}
+      <ClassroomSection />
     </>
   );
 }
@@ -398,6 +398,7 @@ function NewsSection({ posts }: { posts: NonNullable<Awaited<ReturnType<typeof g
             summary: p.summary,
             category: p.category,
             linkUrl: p.linkUrl,
+            linkLabel: p.linkLabel ?? null,
             date: formatThaiDate(p.publishedAt),
             dateTime: p.publishedAt,
             image: p.imageKey ? customCover(p.imageKey) : null,

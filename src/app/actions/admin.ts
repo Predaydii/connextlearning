@@ -269,6 +269,7 @@ const newsInput = z.object({
     .max(500)
     .refine((v) => !v || /^https?:\/\//i.test(v), "ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://")
     .transform((v) => v || null),
+  linkLabel: z.string().trim().max(40, "ชื่อปุ่มยาวเกิน 40 ตัวอักษร").transform((v) => v || null),
   category: z.string().trim().max(40).transform((v) => v || null),
   publishedAt: z
     .string()
@@ -276,7 +277,7 @@ const newsInput = z.object({
     .transform((v) => new Date(`${v}T12:00:00+07:00`)),
 });
 
-/** Create (no id) or update a news card. formData: id?, title, summary, linkUrl, publishedAt, file?, removeImage? */
+/** Create (no id) or update a news card. formData: id?, title, summary, linkUrl, linkLabel, publishedAt, file?, removeImage? */
 export async function saveNewsPost(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertAdmin();
@@ -285,6 +286,7 @@ export async function saveNewsPost(_prev: ActionState, formData: FormData): Prom
       title: formData.get("title"),
       summary: formData.get("summary") ?? "",
       linkUrl: formData.get("linkUrl") ?? "",
+      linkLabel: formData.get("linkLabel") ?? "",
       category: formData.get("category"),
       publishedAt: formData.get("publishedAt"),
     });
@@ -300,7 +302,7 @@ export async function saveNewsPost(_prev: ActionState, formData: FormData): Prom
     // News images are portrait 4:5
     const imageKey = hasFile ? await storeCover(file, 5 / 4) : removeImage ? null : (existing?.imageKey ?? null);
 
-    const data = { title: input.title, summary: input.summary, linkUrl: input.linkUrl, category: input.category, publishedAt: input.publishedAt, imageKey };
+    const data = { title: input.title, summary: input.summary, linkUrl: input.linkUrl, linkLabel: input.linkUrl ? input.linkLabel : null, category: input.category, publishedAt: input.publishedAt, imageKey };
     if (existing) await db.newsPost.update({ where: { id: existing.id }, data });
     else await db.newsPost.create({ data });
     if (existing?.imageKey && existing.imageKey !== imageKey) await deleteObjects(coverFiles(existing.imageKey));

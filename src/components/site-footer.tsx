@@ -35,8 +35,8 @@ const SOCIAL: { label: string; href: string; path: string; evenOdd?: boolean }[]
 
 const MENU = [
   { href: "/", label: "หน้าหลัก" },
-  { href: "/#classroom", label: "ห้องเรียนออนไลน์" },
   { href: "/sheets", label: "ชีทสรุปทั้งหมด" },
+  { href: "/#classroom", label: "ห้องเรียนออนไลน์" },
   { href: "/news", label: "ข่าวสารการศึกษา" },
 ];
 const SHEETS = [

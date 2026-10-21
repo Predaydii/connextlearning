@@ -20,6 +20,7 @@ export type NewsFormPost = {
   title: string;
   summary: string;
   linkUrl: string | null;
+  linkLabel: string | null;
   category: string | null;
   image: string | null;
   publishedAt: string; // YYYY-MM-DD
@@ -65,10 +66,14 @@ export function NewsPostForm({ post, categories, onDone }: { post?: NewsFormPost
             <input name="publishedAt" type="date" required defaultValue={post?.publishedAt ?? today} className="field" />
           </label>
         </div>
-        <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_13rem]">
           <label className="grid gap-1 text-sm font-medium text-ink">
-            ลิงก์รายละเอียดเพิ่มเติม (ไม่บังคับ)
+            ลิงก์ในปุ่ม <span className="font-normal text-body">(ไม่บังคับ)</span>
             <input name="linkUrl" type="url" maxLength={500} defaultValue={post?.linkUrl ?? ""} placeholder="https://" className="field" />
+          </label>
+          <label className="grid gap-1 text-sm font-medium text-ink">
+            ชื่อปุ่ม
+            <input name="linkLabel" maxLength={40} defaultValue={post?.linkLabel ?? ""} placeholder="รายละเอียดเพิ่มเติม" className="field" />
           </label>
         </div>
       </div>

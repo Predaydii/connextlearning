@@ -66,7 +66,7 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
         go(buildQuery(filters, { q }));
       }}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-body/70 ${big ? "left-4 size-5" : "left-3 size-[18px]"}`} aria-hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-body/70 ${big ? "left-3.5 size-[18px]" : "left-3 size-[18px]"}`} aria-hidden>
         <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
       </svg>
       <input
@@ -77,7 +77,7 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
         maxLength={100}
         enterKeyHint="search"
         placeholder={big ? "ค้นหาชื่อชีท, วิชา, ผู้อัปโหลด..." : "ค้นหาชีทสรุป"}
-        className={big ? "field h-14 rounded-2xl pl-12 text-[15px]" : "field pl-10 text-sm"}
+        className={big ? "field h-11 rounded-xl py-0 pl-10 text-sm" : "field pl-10 text-sm"}
         aria-label="ค้นหาชีทสรุป"
       />
     </form>
@@ -135,20 +135,20 @@ export function SheetFiltersPanel({ filters, facets }: { filters: SheetFilters; 
       <aside className="hidden lg:block" aria-label="ตัวกรองชีทสรุป">{panel}</aside>
 
       {/* Phones and tablets: filter button (opens the checkboxes) beside the search box */}
-      <div className={`flex items-center gap-3 transition-opacity lg:hidden ${pending ? "opacity-60" : ""}`}>
+      <div className={`flex items-center gap-2 transition-opacity lg:hidden ${pending ? "opacity-60" : ""}`}>
         <button
           type="button"
           onClick={() => setDrawer(true)}
-          className="relative grid size-14 shrink-0 cursor-pointer place-items-center rounded-2xl border border-line bg-white text-ink shadow-card transition hover:text-primary"
+          className="relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-line bg-white text-ink transition hover:text-primary"
           aria-expanded={drawer}
           aria-controls="filter-drawer"
           aria-label={activeCount ? `ตัวกรอง (เลือกอยู่ ${activeCount})` : "ตัวกรอง"}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-6" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-5" aria-hidden>
             <path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4" />
           </svg>
           {activeCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-primary text-[11px] font-semibold text-white">{activeCount}</span>
+            <span className="absolute -top-1.5 -right-1.5 grid size-[18px] place-items-center rounded-full bg-primary text-[10px] font-semibold text-white">{activeCount}</span>
           )}
         </button>
         {search(true)}
