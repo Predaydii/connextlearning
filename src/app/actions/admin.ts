@@ -286,19 +286,22 @@ export async function watermarkOldSheets(): Promise<ActionState> {
     await assertAdmin();
     const sheets = await db.sheet.findMany({
       where: UNWATERMARKED,
-      select: { id: true, pdfKey: true, author: { select: { name: true } } },
+      select: { id: true, pdfKey: true, pageCoverKey: true, author: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
       take: WATERMARK_BATCH,
     });
     let failed = 0;
     for (const sheet of sheets) {
       try {
-        const doc = await PDFDocument.load(await getObjectBytes(sheet.pdfKey), { updateMetadata: false });
+        const original = await getObjectBytes(sheet.pdfKey);
+        // Last chance for a clean first-page cover: draw it before the watermark goes on
+        const pageCoverKey = sheet.pageCoverKey ?? (await storePageCover(original));
+        const doc = await PDFDocument.load(original, { updateMetadata: false });
         await addWatermark(doc, sheet.author.name);
         const bytes = await doc.save({ useObjectStreams: true });
         const pdfKey = `${WATERMARKED_PREFIX}${randomUUID()}.pdf`;
         await putObject(pdfKey, bytes, "application/pdf");
-        await db.sheet.update({ where: { id: sheet.id }, data: { pdfKey, pdfBytes: bytes.byteLength } });
+        await db.sheet.update({ where: { id: sheet.id }, data: { pdfKey, pdfBytes: bytes.byteLength, pageCoverKey } });
         await deleteObjects([sheet.pdfKey]);
       } catch (err) {
         console.error("[watermark]", sheet.id, err);

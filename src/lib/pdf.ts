@@ -79,9 +79,13 @@ export async function mergeToPdf(
   }
 
   if (out.getPageCount() === 0) throw new UserFacingError("ไม่พบหน้าเอกสารในไฟล์ที่อัปโหลด");
+  // Page 1 alone, before the watermark: the first-page cover is drawn from this so it stays clean
+  const first = await PDFDocument.create();
+  first.addPage((await first.copyPages(out, [0]))[0]);
+  const coverSource = await first.save();
   await addWatermark(out, meta.author);
   const bytes = await out.save({ useObjectStreams: true });
-  return { bytes, pageCount: out.getPageCount() };
+  return { bytes, coverSource, pageCount: out.getPageCount() };
 }
 
 /**

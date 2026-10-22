@@ -139,14 +139,14 @@ export async function submitSheet(input: SubmitSheetInput): Promise<Result<{ id:
       files.push({ bytes, kind });
     }
 
-    const { bytes, pageCount } = await mergeToPdf(files, {
+    const { bytes, coverSource, pageCount } = await mergeToPdf(files, {
       title: data.title,
       author: user.name,
       subject: subject.name,
     });
 
     const pdfKey = `${WATERMARKED_PREFIX}${randomUUID()}.pdf`; // mergeToPdf added the watermark
-    const [pageCoverKey] = await Promise.all([storePageCover(bytes), putObject(pdfKey, bytes, "application/pdf")]);
+    const [pageCoverKey] = await Promise.all([storePageCover(coverSource), putObject(pdfKey, bytes, "application/pdf")]);
 
     const sheet = await db.sheet.create({
       data: {
