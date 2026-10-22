@@ -522,6 +522,20 @@ export async function moveBanner(id: string, dir: number): Promise<ActionState> 
 const iconFiles = (key: string) => [32, 180, 512].map((s) => `${key}-icon-${s}.png`);
 const ogFiles = (key: string) => [`${key}-og.jpg`];
 
+/** formData: siteName (blank = the built-in name). The browser-tab title of the home page. */
+export async function setSiteName(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const siteName = z.string().trim().max(80, "ชื่อเว็บยาวเกิน 80 ตัวอักษร").parse(formData.get("siteName") ?? "") || null;
+    await db.siteSetting.upsert({ where: { id: 1 }, create: { id: 1, siteName }, update: { siteName } });
+    updateTag(TAG_SETTINGS);
+    revalidatePath("/", "layout");
+    return { ok: true, message: siteName ? "บันทึกชื่อเว็บแล้ว" : "กลับไปใช้ชื่อเริ่มต้นแล้ว" };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
 /** formData: kind ("favicon" | "og"), file — or useDefault=1 to go back to the built-in one. */
 export async function setSiteImage(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
@@ -613,7 +627,8 @@ export async function deleteNewsCategory(id: string): Promise<ActionState> {
 }
 
 // ---------------------------------------------------------------------------
-// Pop-up announcements (the newest active one is shown once to every visitor)
+// Pop-up announcements: to everyone or chosen users, from startsAt until endsAt or until stopped;
+// each browser sees each one once
 // ---------------------------------------------------------------------------
 
 function refreshAnnouncements() {
@@ -628,6 +643,18 @@ const announcementInput = z.object({
   linkLabel: newsInput.shape.linkLabel,
 });
 
+/** `<input type="datetime-local">` value, read as Thai time ("2026-11-01T08:00" → Date); blank → null */
+function thaiDateTime(v: FormDataEntryValue | null) {
+  const s = String(v ?? "").trim();
+  if (!s) return null;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) throw new UserFacingError("วันเวลาไม่ถูกต้อง");
+  return new Date(`${s}:00+07:00`);
+}
+
+/**
+ * formData: title, body, linkUrl, linkLabel, audience ("all" | "users"), emails (one per line
+ * or comma-separated, for "users"), startsAt / endsAt (datetime-local, optional).
+ */
 export async function sendAnnouncement(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertAdmin();
@@ -637,9 +664,32 @@ export async function sendAnnouncement(_prev: ActionState, formData: FormData): 
       linkUrl: formData.get("linkUrl") ?? "",
       linkLabel: formData.get("linkLabel") ?? "",
     });
-    await db.announcement.create({ data: { ...input, linkLabel: input.linkUrl ? input.linkLabel : null } });
+
+    let userIds: string[] = [];
+    if (formData.get("audience") === "users") {
+      const emails = [...new Set(String(formData.get("emails") ?? "").toLowerCase().split(/[\s,;]+/).filter(Boolean))];
+      if (emails.length === 0) throw new UserFacingError("กรุณาใส่อีเมลผู้รับอย่างน้อย 1 คน");
+      if (emails.length > 500) throw new UserFacingError("ส่งแบบเลือกคนได้ครั้งละไม่เกิน 500 คน");
+      const users = await db.user.findMany({ where: { email: { in: emails } }, select: { id: true, email: true } });
+      const missing = emails.filter((e) => !users.some((u) => u.email.toLowerCase() === e));
+      if (missing.length) {
+        throw new UserFacingError(`ไม่พบผู้ใช้ ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? ` และอีก ${missing.length - 3} คน` : ""}`);
+      }
+      userIds = users.map((u) => u.id);
+    }
+
+    const startsAt = thaiDateTime(formData.get("startsAt")) ?? new Date();
+    const endsAt = thaiDateTime(formData.get("endsAt"));
+    if (endsAt && endsAt <= startsAt) throw new UserFacingError("เวลาสิ้นสุดต้องหลังเวลาเริ่มแสดง");
+    if (endsAt && endsAt <= new Date()) throw new UserFacingError("เวลาสิ้นสุดผ่านไปแล้ว");
+
+    await db.announcement.create({
+      data: { ...input, linkLabel: input.linkUrl ? input.linkLabel : null, userIds, startsAt, endsAt },
+    });
     refreshAnnouncements();
-    return { ok: true, message: "ส่งประกาศแล้ว ผู้ใช้จะเห็นเมื่อเปิดเว็บครั้งถัดไป" };
+    const who = userIds.length ? `ผู้ใช้ ${userIds.length} คน` : "ทุกคน";
+    const when = startsAt > new Date() ? "จะเริ่มแสดงตามเวลาที่ตั้งไว้" : "จะเห็นเมื่อเปิดเว็บครั้งถัดไป";
+    return { ok: true, message: `ส่งประกาศถึง${who}แล้ว ${when}` };
   } catch (err) {
     return fail(err);
   }

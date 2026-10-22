@@ -1,10 +1,10 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AnnouncementPopup } from "@/components/announcement-popup";
-import { getAnnouncement } from "@/lib/queries";
+import { getAnnouncements } from "@/lib/queries";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const announcement = await getAnnouncement().catch(() => null);
+  const announcements = await getAnnouncements().catch(() => null);
   return (
     <>
       <SiteHeader />
@@ -12,7 +12,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         {children}
       </main>
       <SiteFooter />
-      {announcement && <AnnouncementPopup key={announcement.id} announcement={announcement} />}
+      <AnnouncementPopup everyone={announcements?.everyone ?? []} />
     </>
   );
 }

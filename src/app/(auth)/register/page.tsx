@@ -29,7 +29,7 @@ export default async function RegisterPage(props: PageProps<"/register">) {
             <img src={withBase("/img/logo-480.webp")} alt="Connext Learning" width={240} height={69} className="mx-auto mb-5 h-auto w-[180px]" />
             <h1 className="text-2xl font-bold">ลงทะเบียนครั้งแรก</h1>
           </div>
-          <ProfileForm next={next} email={user.email} initial={{ firstName: first, lastName: rest.join(" ") }} submitLabel="ลงทะเบียนและเริ่มใช้งาน" />
+          <ProfileForm next={next} email={user.email} initial={{ firstName: first, lastName: rest.join(" ") }} submitLabel="ลงทะเบียน" consent />
         </div>
       </div>
     </section>

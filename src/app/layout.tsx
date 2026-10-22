@@ -3,6 +3,7 @@ import { Prompt } from "next/font/google";
 import "./globals.css";
 import { withBase } from "@/lib/urls";
 import { getSiteImages } from "@/lib/queries";
+import { DEFAULT_SITE_NAME } from "@/lib/constants";
 
 const prompt = Prompt({
   subsets: ["thai", "latin"],
@@ -11,10 +12,11 @@ const prompt = Prompt({
   variable: "--font-prompt",
 });
 
+
 const BASE_METADATA: Metadata = {
   metadataBase: new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
   title: {
-    default: "Connext Learning – พื้นที่เรียนออนไลน์สำหรับทุกคน",
+    default: DEFAULT_SITE_NAME,
     template: "%s | Connext Learning",
   },
   description:
@@ -34,11 +36,12 @@ const BASE_METADATA: Metadata = {
   },
 };
 
-/** Site icon and share image can be replaced by admins (หน้าแรก → ไอคอนและรูปแชร์). */
+/** Site name, icon and share image can be replaced by admins (หน้าแรก → ชื่อ ไอคอน และรูปแชร์). */
 export async function generateMetadata(): Promise<Metadata> {
-  const { faviconKey, ogImageKey } = await getSiteImages().catch(() => ({ faviconKey: null, ogImageKey: null }));
+  const { faviconKey, ogImageKey, siteName } = await getSiteImages().catch(() => ({ faviconKey: null, ogImageKey: null, siteName: null }));
   return {
     ...BASE_METADATA,
+    ...(siteName && { title: { default: siteName, template: "%s | Connext Learning" } }),
     ...(faviconKey && {
       icons: {
         icon: [

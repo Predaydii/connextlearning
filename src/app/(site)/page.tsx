@@ -238,7 +238,7 @@ function MostRead({ items }: { items: SheetCardData[] }) {
   return (
     <section aria-labelledby="board-title" className="bg-primary-50 py-[clamp(48px,7vw,80px)]">
       <div className="container-page">
-        <SectionHead id="board-title" title="ชีทยอดนิยม" sub="ชีทที่มีคนอ่านมากที่สุด" href="/sheets?sort=popular" linkLabel="ดูทั้งหมด" />
+        <SectionHead id="board-title" title="ชีทยอดนิยม" href="/sheets?sort=popular" linkLabel="ดูทั้งหมด" />
         <Chart
           items={items}
           empty="ยังไม่มีชีทที่เผยแพร่"
@@ -264,8 +264,8 @@ function Chart({ items, metric, empty }: { items: SheetCardData[]; metric: (s: S
       {!first ? (
         <p className="rounded-xl bg-primary-50/60 px-4 py-10 text-center text-sm">{empty}</p>
       ) : (
-        // wide screens: the leader on the left, the runners-up beside it
-        <div className="lg:grid lg:grid-cols-2 lg:gap-10">
+        // wide screens: a narrower leader on the left, the runners-up stretched to the same height beside it
+        <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
           <Link href={`/sheets/${first.id}`} className="group grid gap-4 sm:grid-cols-[1.1fr_1fr] sm:items-center lg:grid-cols-1 lg:items-start">
             <span className="relative block overflow-hidden rounded-2xl">
               <img src={first.cover.small} srcSet={`${first.cover.small} 640w, ${first.cover.large} 1280w`} sizes="(min-width: 1024px) 560px, 90vw" alt="" width={640} height={360} loading="lazy" className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
@@ -282,12 +282,12 @@ function Chart({ items, metric, empty }: { items: SheetCardData[]; metric: (s: S
             </span>
           </Link>
           {rest.length > 0 && (
-            <ol start={2} className="mt-5 divide-y divide-line border-t border-line lg:mt-0 lg:border-t-0">
+            <ol start={2} className="mt-5 divide-y divide-line border-t border-line lg:mt-0 lg:flex lg:flex-col lg:border-t-0">
               {rest.map((s, i) => (
-                <li key={s.id}>
-                  <Link href={`/sheets/${s.id}`} className="group flex items-center gap-4 py-3">
+                <li key={s.id} className="lg:flex lg:flex-1">
+                  <Link href={`/sheets/${s.id}`} className="group flex items-center gap-4 py-3 lg:w-full lg:py-2">
                     <span className={`w-8 shrink-0 text-center text-3xl leading-none font-extrabold tabular-nums ${RANK_COLOR[i + 1] ?? "text-primary/25"}`}>{i + 2}</span>
-                    <img src={s.cover.small} alt="" width={640} height={360} loading="lazy" className="aspect-video w-20 shrink-0 rounded-lg object-cover" />
+                    <img src={s.cover.small} alt="" width={640} height={360} loading="lazy" className="aspect-video w-20 shrink-0 rounded-lg object-cover lg:w-32" />
                     <span className="min-w-0 flex-1">
                       <span className="line-clamp-1 font-semibold text-ink group-hover:text-primary">{s.title}</span>
                       <span className="block truncate text-xs">{s.subjectName} · {gradeLabel(s.grade)} · โดย {s.author.name}</span>

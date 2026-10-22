@@ -93,3 +93,6 @@ export const DEPARTMENTS = [
   "สนับสนุนการศึกษา",
 ] as const;
 
+
+/** Home-page browser-tab title when admins have not set one (SiteSetting.siteName) */
+export const DEFAULT_SITE_NAME = "Connext Learning – พื้นที่เรียนออนไลน์สำหรับทุกคน";

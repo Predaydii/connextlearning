@@ -354,10 +354,10 @@ export const getNews = unstable_cache(
 /** Admin-set site icon and link-preview image (R2 key prefixes; null = built-in). */
 export const getSiteImages = unstable_cache(
   async () => {
-    const s = await db.siteSetting.findUnique({ where: { id: 1 }, select: { faviconKey: true, ogImageKey: true } });
-    return { faviconKey: s?.faviconKey ?? null, ogImageKey: s?.ogImageKey ?? null };
+    const s = await db.siteSetting.findUnique({ where: { id: 1 }, select: { faviconKey: true, ogImageKey: true, siteName: true } });
+    return { faviconKey: s?.faviconKey ?? null, ogImageKey: s?.ogImageKey ?? null, siteName: s?.siteName ?? null };
   },
-  ["site-images"],
+  ["site-images-v2"],
   { tags: [TAG_SETTINGS], revalidate: 3600 },
 );
 
@@ -397,19 +397,46 @@ export const getVisitStats = unstable_cache(
 );
 
 // ---------------------------------------------------------------------------
-// Pop-up announcement
+// Pop-up announcements
 // ---------------------------------------------------------------------------
 
 export const TAG_ANNOUNCEMENT = "announcement";
 
-/** The newest active announcement, or null. */
-export const getAnnouncement = unstable_cache(
-  () =>
-    db.announcement.findFirst({
-      where: { active: true },
+export type PublicAnnouncement = {
+  id: string;
+  title: string;
+  body: string;
+  linkUrl: string | null;
+  linkLabel: string | null;
+  startsAt: string; // ISO; the browser checks the time window, so scheduled ones appear on time
+  endsAt: string | null;
+};
+
+/**
+ * Active announcements that have not ended, newest first: `everyone` goes into every
+ * page, `targeted` (with its user list) is filtered per user by /api/announcements.
+ */
+export const getAnnouncements = unstable_cache(
+  async () => {
+    const rows = await db.announcement.findMany({
+      where: { active: true, OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }] },
       orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, body: true, linkUrl: true, linkLabel: true },
-    }),
-  ["announcement"],
+      take: 20,
+    });
+    const pub = (a: (typeof rows)[number]): PublicAnnouncement => ({
+      id: a.id,
+      title: a.title,
+      body: a.body,
+      linkUrl: a.linkUrl,
+      linkLabel: a.linkLabel,
+      startsAt: a.startsAt.toISOString(),
+      endsAt: a.endsAt?.toISOString() ?? null,
+    });
+    return {
+      everyone: rows.filter((a) => a.userIds.length === 0).map(pub),
+      targeted: rows.filter((a) => a.userIds.length > 0).map((a) => ({ ...pub(a), userIds: a.userIds })),
+    };
+  },
+  ["announcements-v2"],
   { tags: [TAG_ANNOUNCEMENT], revalidate: 3600 },
 );

@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
       "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
       "./node_modules/pdfjs-dist/standard_fonts/**",
       "./node_modules/pdfjs-dist/cmaps/**",
+      // Sheet watermark (src/lib/watermark.ts)
+      "./src/lib/fonts/Prompt-SemiBold.ttf",
+      "./public/img/logo-480.webp",
     ],
   },
   experimental: {

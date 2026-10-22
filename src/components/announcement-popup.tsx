@@ -1,25 +1,63 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import type { PublicAnnouncement } from "@/lib/queries";
+import { withBase } from "@/lib/urls";
 
-type Announcement = { id: string; title: string; body: string; linkUrl: string | null; linkLabel: string | null };
+const SEEN_KEY = "seen-announcements";
 
-const SEEN_KEY = "seen-announcement";
+function readSeen(): string[] {
+  try {
+    const old = localStorage.getItem("seen-announcement"); // single id kept by the first version
+    return [...JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]"), ...(old ? [old] : [])];
+  } catch {
+    return [];
+  }
+}
 
-/** Admin message, shown once per browser until a newer one is sent. */
-export function AnnouncementPopup({ announcement: a }: { announcement: Announcement }) {
+const live = (a: PublicAnnouncement, now: number) => Date.parse(a.startsAt) <= now && (!a.endsAt || Date.parse(a.endsAt) > now);
+
+/**
+ * Admin messages: `everyone` comes with the page, signed-in users also get the ones sent
+ * to them. The newest one that is on now and not yet seen in this browser pops up.
+ */
+export function AnnouncementPopup({ everyone }: { everyone: PublicAnnouncement[] }) {
+  const { data: session, isPending } = authClient.useSession();
+  const [a, setA] = useState<PublicAnnouncement | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem(SEEN_KEY) === a.id) return;
-    } catch {}
+    if (isPending) return;
+    let cancelled = false;
+    (async () => {
+      let mine: PublicAnnouncement[] = [];
+      if (session) {
+        try {
+          mine = await (await fetch(withBase("/api/announcements"))).json();
+        } catch {}
+      }
+      const seen = readSeen();
+      const now = Date.now();
+      const next = [...mine, ...everyone]
+        .filter((x) => live(x, now) && !seen.includes(x.id))
+        .sort((x, y) => Date.parse(y.startsAt) - Date.parse(x.startsAt))[0];
+      if (!cancelled && next) setA(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isPending, session, everyone]);
+
+  useEffect(() => {
+    if (!a) return;
     dialog.current?.showModal();
     // The browser would focus (and ring) the close button; focus the message instead
     box.current?.focus();
-  }, [a.id]);
+  }, [a]);
 
+  if (!a) return null;
   const close = () => dialog.current?.close();
 
   return (
@@ -27,7 +65,7 @@ export function AnnouncementPopup({ announcement: a }: { announcement: Announcem
       ref={dialog}
       onClose={() => {
         try {
-          localStorage.setItem(SEEN_KEY, a.id);
+          localStorage.setItem(SEEN_KEY, JSON.stringify([a.id, ...readSeen()].slice(0, 30)));
         } catch {}
       }}
       onClick={(e) => e.target === e.currentTarget && close()} // backdrop

@@ -2,6 +2,7 @@ import "server-only";
 import { PDFDocument } from "pdf-lib";
 import sharp from "sharp";
 import { MAX_PAGES } from "@/lib/constants";
+import { addWatermark } from "@/lib/watermark";
 
 export class UserFacingError extends Error {}
 
@@ -78,6 +79,7 @@ export async function mergeToPdf(
   }
 
   if (out.getPageCount() === 0) throw new UserFacingError("ไม่พบหน้าเอกสารในไฟล์ที่อัปโหลด");
+  await addWatermark(out, meta.author);
   const bytes = await out.save({ useObjectStreams: true });
   return { bytes, pageCount: out.getPageCount() };
 }

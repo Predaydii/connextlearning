@@ -336,7 +336,7 @@ export function UploadForm({ userName }: { userName: string }) {
           <input type="checkbox" name="consent" required disabled={busy} className="mt-1 size-5 shrink-0 cursor-pointer accent-primary" />
           <span>
             <span className="block font-medium">ยินยอมให้เผยแพร่ชีทสรุปแบบระบุผู้จัดทำ</span>
-            <span className="block text-sm text-body">ชื่อของคุณจะแสดงบนชีทที่เผยแพร่</span>
+            <span className="block text-sm text-body">ระบบสร้างลายน้ำป้องกันการคัดลอกให้โดยอัตโนมัติ</span>
           </span>
         </label>
         <button type="submit" className="btn-primary w-full shrink-0 md:w-auto md:min-w-[240px]" disabled={busy}>

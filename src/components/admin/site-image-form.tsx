@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { setSiteImage, type ActionState } from "@/app/actions/admin";
+import { setSiteImage, setSiteName, type ActionState } from "@/app/actions/admin";
 import { ImagePick } from "@/components/admin/image-pick";
 import { shrinkInForm } from "@/lib/shrink-image";
 
@@ -36,6 +36,24 @@ export function SiteImageForm({ kind, src, isCustom }: { kind: "favicon" | "og";
         )}
       </div>
       {state?.message && <p role="status" className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>}
+    </form>
+  );
+}
+
+/** Home-page title shown next to the icon on the browser tab (blank = the built-in name). */
+export function SiteNameForm({ value, fallback }: { value: string | null; fallback: string }) {
+  const [state, action, pending] = useActionState(setSiteName, null);
+  return (
+    <form action={action} className="grid content-start gap-2">
+      <label className="grid gap-1 text-sm font-medium text-ink">
+        ชื่อเว็บบนแท็บ
+        <input name="siteName" defaultValue={value ?? ""} maxLength={80} placeholder={fallback} className="field font-normal" />
+      </label>
+      <p className="text-xs text-body">เว้นว่าง = ใช้ชื่อเริ่มต้น · หน้าอื่นแสดงเป็น “ชื่อหน้า | Connext Learning”</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <button disabled={pending} className="btn-primary btn-sm">{pending ? "กำลังบันทึก…" : "บันทึกชื่อ"}</button>
+        {state && <p role="status" className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>}
+      </div>
     </form>
   );
 }

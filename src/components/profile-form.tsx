@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { adminUpdateMember, register } from "@/app/actions/register";
 import { CONTACTS, type Contacts } from "@/lib/contacts";
+import { withBase } from "@/lib/urls";
 import { currentBuddhistYear, DEPARTMENTS, GRADES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
 
 const range = (from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => (from <= to ? from + i : from - i));
@@ -31,18 +32,37 @@ const str = (v: string | number | undefined) => (v === undefined ? "" : String(v
  * Registration (first sign-in) and "แก้ไขโปรไฟล์" share this form and the same server action.
  * With `userId`, an admin edits that user instead (/admin/users/[id]).
  */
-export function ProfileForm({ next, email, initial, submitLabel, userId }: { next: string; email: string; initial: ProfileValues; submitLabel: string; userId?: string }) {
+export function ProfileForm({
+  next,
+  email,
+  initial,
+  submitLabel,
+  userId,
+  consent,
+}: {
+  next: string;
+  email: string;
+  initial: ProfileValues;
+  submitLabel: string;
+  userId?: string;
+  /** First registration: ask for privacy consent in a popup before saving */
+  consent?: boolean;
+}) {
   const [state, action, pending] = useActionState(userId ? adminUpdateMember : register, null);
   const [type, setType] = useState<"STUDENT" | "ALUMNI" | "TEACHER">(initial.memberType ?? "STUDENT");
+  const [asking, setAsking] = useState<FormData | null>(null);
   const year = currentBuddhistYear();
 
+
   return (
+    <>
     <form
       // Submitted by hand so a validation error keeps what was typed (form actions reset the form)
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
-        startTransition(() => action(fd));
+        if (consent) setAsking(fd);
+        else startTransition(() => action(fd));
       }}
       className="grid gap-5"
     >
@@ -195,5 +215,54 @@ export function ProfileForm({ next, email, initial, submitLabel, userId }: { nex
 
       <button disabled={pending} className="btn-primary">{pending ? "กำลังบันทึก…" : submitLabel}</button>
     </form>
+    {asking && (
+      <ConsentDialog
+        onCancel={() => setAsking(null)}
+        onAccept={() => {
+          asking.set("consent", "1");
+          const fd = asking;
+          setAsking(null);
+          startTransition(() => action(fd));
+        }}
+      />
+    )}
+    </>
+  );
+}
+
+/** Privacy notice shown when registering; nothing is saved until "ยินยอม". */
+function ConsentDialog({ onAccept, onCancel }: { onAccept: () => void; onCancel: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => ref.current?.showModal(), []);
+  return (
+    <dialog
+      ref={ref}
+      onClose={onCancel}
+      aria-labelledby="consent-title"
+      className="m-auto w-[min(560px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl backdrop:bg-ink/55 backdrop:backdrop-blur-sm sm:p-8"
+    >
+      <h2 id="consent-title" className="text-xl font-bold">นโยบายความเป็นส่วนตัว</h2>
+      <p className="mt-2 text-sm">ก่อนลงทะเบียน โปรดอ่านและยินยอมให้ Connext Learning เก็บและใช้ข้อมูลของคุณดังนี้</p>
+      <ul className="mt-4 grid gap-2.5 text-sm">
+        {[
+          "เก็บชื่อ อีเมลโรงเรียน รูปโปรไฟล์ และข้อมูลที่กรอกในแบบลงทะเบียน เพื่อยืนยันว่าเป็นคนของโรงเรียน",
+          "ทุกคนเห็นชื่อ รูปโปรไฟล์ ชั้นและห้อง ช่องทางติดต่อที่คุณเลือกใส่ และชีทที่เผยแพร่ พร้อมลายน้ำชื่อผู้จัดทำบนไฟล์ชีท",
+          "ผู้ดูแลระบบเห็นข้อมูลการลงทะเบียนทั้งหมด เพื่อดูแลระบบเท่านั้น",
+          "ไม่มีโฆษณา ไม่ขายข้อมูล และคุณขอแก้ไขหรือลบข้อมูลได้ทุกเมื่อ",
+        ].map((t) => (
+          <li key={t} className="flex gap-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden><path d="m5 12 5 5 9-10" /></svg>
+            {t}
+          </li>
+        ))}
+      </ul>
+      <a href={withBase("/privacy")} target="_blank" rel="noopener" className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
+        อ่านนโยบายฉบับเต็ม ↗
+      </a>
+      <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button type="button" onClick={() => ref.current?.close()} className="btn-outline">ยกเลิก</button>
+        <button type="button" onClick={onAccept} autoFocus className="btn-primary">ยินยอมและลงทะเบียน</button>
+      </div>
+    </dialog>
   );
 }

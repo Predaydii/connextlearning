@@ -108,8 +108,12 @@ function failed(err: unknown, where: string): RegisterState {
 /** First registration and later profile edits (/profile). */
 export async function register(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
   let next: string;
+  let first: boolean;
   try {
     const user = await assertSignedIn();
+    first = !user.registered;
+    // The form asks in a popup; checked here too so no one is registered without it
+    if (first && formData.get("consent") !== "1") throw new AuthError("กรุณายินยอมนโยบายความเป็นส่วนตัวก่อนลงทะเบียน");
     const data = memberUpdate(formData);
     next = safeNext(formData.get("next"));
     await db.user.update({
@@ -122,7 +126,8 @@ export async function register(_prev: RegisterState, formData: FormData): Promis
   } catch (err) {
     return failed(err, "register");
   }
-  redirect(next);
+  // First registration: a "done" screen, then on to `next`
+  redirect(first ? `/register/done?next=${encodeURIComponent(next)}` : next);
 }
 
 /** Admins correcting someone else's registration (/admin/users/[id]). formData: userId + the profile form. */

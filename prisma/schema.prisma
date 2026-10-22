@@ -161,6 +161,7 @@ model SiteSetting {
   homeVideoMobileKey String? // the same spot on phones: portrait 9:16 (falls back to homeVideoKey)
   // Admin-set site icon and link-preview image (R2 prefix "covers/<uuid>"; null = built-in)
   faviconKey       String?
+  siteName         String? // browser-tab and link-preview name; null = "Connext Learning"
   ogImageKey       String?
   updatedAt       DateTime  @updatedAt
 }
@@ -273,6 +274,11 @@ model Announcement {
   linkUrl   String?
   linkLabel String?
   active    Boolean  @default(true)
+  // Who sees it: empty = every visitor; otherwise only these signed-in users (User.id)
+  userIds   String[] @default([])
+  // Shown from startsAt until endsAt (null = until an admin stops it)
+  startsAt  DateTime @default(now())
+  endsAt    DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
