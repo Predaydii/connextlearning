@@ -1,6 +1,6 @@
 import "server-only";
 import path from "node:path";
-import type { PDFDocument } from "pdf-lib";
+import { degrees, type PDFDocument } from "pdf-lib";
 
 // Shipped with the functions via outputFileTracingIncludes (next.config.ts)
 const FONT = path.join(process.cwd(), "src/lib/fonts/Prompt-SemiBold.ttf");
@@ -33,21 +33,39 @@ export async function watermarkImage(author: string) {
   return canvas.encode("png");
 }
 
+/** R2 prefix of sheet PDFs that carry this watermark; older ones get it from the admin button. */
+export const WATERMARKED_PREFIX = "sheets/w/";
+
+/** Sheet filter: uploaded before the watermark (demo sheets have no file). */
+export const UNWATERMARKED = { NOT: [{ pdfKey: { startsWith: WATERMARKED_PREFIX } }, { pdfKey: { startsWith: "demo/" } }] };
+
 /**
- * A faint logo + copyright mark in the middle of every page; tall pages (long
- * screenshots) get one mark per screen-height so a crop cannot drop it.
+ * The mark tiled diagonally over the whole page (staggered rows, faint), so no crop
+ * of the page can leave it out. Long pages simply get more rows.
  */
 export async function addWatermark(doc: PDFDocument, author: string) {
   const mark = await doc.embedPng(await watermarkImage(author));
+  const angle = 30;
+  const t = (angle * Math.PI) / 180;
   for (const page of doc.getPages()) {
-    // ponytail: pages with a /Rotate entry get the mark turned with them; counter-rotate if that ever shows up
+    // ponytail: pages with a /Rotate entry get the pattern turned with them; counter-rotate if that ever shows up
     const { x: ox, y: oy, width, height } = page.getMediaBox();
-    const w = width * 0.55;
+    const w = width * 0.5;
     const h = (mark.height / mark.width) * w;
-    const count = Math.max(1, Math.round(height / (width * 1.3)));
-    for (let i = 0; i < count; i++) {
-      const cy = (height * (i + 0.5)) / count;
-      page.drawImage(mark, { x: ox + (width - w) / 2, y: oy + cy - h / 2, width: w, height: h, opacity: 0.12 });
+    const dx = width * 0.62;
+    const dy = width * 0.36;
+    for (let row = 0, cy = dy / 2; cy < height + dy; row++, cy += dy) {
+      for (let cx = row % 2 ? 0 : dx / 2; cx < width + dx; cx += dx) {
+        // drawImage rotates around the image's corner: place that corner so the centre lands on (cx, cy)
+        page.drawImage(mark, {
+          x: ox + cx - (w / 2) * Math.cos(t) + (h / 2) * Math.sin(t),
+          y: oy + cy - (w / 2) * Math.sin(t) - (h / 2) * Math.cos(t),
+          width: w,
+          height: h,
+          rotate: degrees(angle),
+          opacity: 0.09,
+        });
+      }
     }
   }
 }

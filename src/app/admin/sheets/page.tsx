@@ -8,8 +8,12 @@ import { gradeLabel } from "@/lib/constants";
 import { formatNumber, formatThaiDateTime } from "@/lib/format";
 import type { Prisma, SheetStatus } from "@/generated/prisma/client";
 import { adminHref } from "@/lib/urls";
+import { UNWATERMARKED } from "@/lib/watermark";
+import { WatermarkOldSheets } from "@/components/admin/watermark-old-sheets";
 
 export const metadata = { title: "ตรวจสอบชีท" };
+// "ใส่ลายน้ำ" rewrites a few PDFs per click
+export const maxDuration = 120;
 
 const PER_PAGE = 30;
 const TABS: { value: SheetStatus | "ALL"; label: string }[] = [
@@ -38,7 +42,7 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
     }),
   };
 
-  const [rows, total, counts] = await Promise.all([
+  const [rows, total, counts, unmarked] = await Promise.all([
     db.sheet.findMany({
       where,
       // Oldest pending first (a queue); newest first otherwise
@@ -54,6 +58,7 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
     }),
     db.sheet.count({ where }),
     db.sheet.groupBy({ by: ["status"], _count: { _all: true } }),
+    db.sheet.count({ where: UNWATERMARKED }),
   ]);
   const countOf = (s: SheetStatus | "ALL") =>
     s === "ALL" ? counts.reduce((n, c) => n + c._count._all, 0) : counts.find((c) => c.status === s)?._count._all ?? 0;
@@ -69,6 +74,7 @@ export default async function AdminSheetsPage(props: PageProps<"/admin/sheets">)
       {sp.deleted === "1" && (
         <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">ลบชีทถาวรแล้ว</p>
       )}
+      {unmarked > 0 && <WatermarkOldSheets count={unmarked} />}
       {/* min-w-0: the tab row scrolls inside instead of widening the whole page on phones */}
       <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <nav aria-label="สถานะ" className="-mx-1 flex min-w-0 gap-1 overflow-x-auto rounded-full bg-white p-1 shadow-card ring-1 ring-line [scrollbar-width:none] lg:mx-0">

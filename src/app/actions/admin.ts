@@ -12,6 +12,8 @@ import { assertAdmin, assertSuperAdmin, AuthError } from "@/lib/session";
 import { adminEmails } from "@/lib/env";
 import { TAG_ANNOUNCEMENT, TAG_NEWS, TAG_SETTINGS, TAG_SHEETS } from "@/lib/queries";
 import { storePageCover } from "@/lib/page-cover";
+import { PDFDocument } from "pdf-lib";
+import { addWatermark, UNWATERMARKED, WATERMARKED_PREFIX } from "@/lib/watermark";
 import { getObjectBytes } from "@/lib/r2";
 import {
   ACADEMIC_YEARS,
@@ -267,6 +269,47 @@ export async function makeMissingPageCovers(): Promise<ActionState> {
     return {
       ok: failed === 0,
       message: `สร้างภาพแล้ว ${sheets.length - failed} ชีท${failed ? ` · สร้างไม่ได้ ${failed} ชีท` : ""}${left > 0 ? ` · เหลืออีก ${left} ชีท กดอีกครั้ง` : ""}`,
+    };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+const WATERMARK_BATCH = 4; // large PDFs: keeps one click well inside the function time limit
+
+/**
+ * Add the watermark to older sheets: the new file goes to a new key, then the sheet
+ * points at it and the old file is removed, so a failure leaves the sheet as it was.
+ */
+export async function watermarkOldSheets(): Promise<ActionState> {
+  try {
+    await assertAdmin();
+    const sheets = await db.sheet.findMany({
+      where: UNWATERMARKED,
+      select: { id: true, pdfKey: true, author: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+      take: WATERMARK_BATCH,
+    });
+    let failed = 0;
+    for (const sheet of sheets) {
+      try {
+        const doc = await PDFDocument.load(await getObjectBytes(sheet.pdfKey), { updateMetadata: false });
+        await addWatermark(doc, sheet.author.name);
+        const bytes = await doc.save({ useObjectStreams: true });
+        const pdfKey = `${WATERMARKED_PREFIX}${randomUUID()}.pdf`;
+        await putObject(pdfKey, bytes, "application/pdf");
+        await db.sheet.update({ where: { id: sheet.id }, data: { pdfKey, pdfBytes: bytes.byteLength } });
+        await deleteObjects([sheet.pdfKey]);
+      } catch (err) {
+        console.error("[watermark]", sheet.id, err);
+        failed++;
+      }
+    }
+    const left = (await db.sheet.count({ where: UNWATERMARKED })) - failed;
+    refreshSheets();
+    return {
+      ok: failed === 0,
+      message: `ใส่ลายน้ำแล้ว ${sheets.length - failed} ชีท${failed ? ` · ใส่ไม่ได้ ${failed} ชีท` : ""}${left > 0 ? ` · เหลืออีก ${left} ชีท กดอีกครั้ง` : ""}`,
     };
   } catch (err) {
     return fail(err);
