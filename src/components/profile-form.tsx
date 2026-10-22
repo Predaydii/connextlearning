@@ -3,7 +3,8 @@
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { adminUpdateMember, register } from "@/app/actions/register";
 import { CONTACTS, type Contacts } from "@/lib/contacts";
-import { withBase } from "@/lib/urls";
+import { LegalContact } from "@/components/legal-page";
+import { PRIVACY_INTRO, PrivacyContent } from "@/components/privacy-content";
 import { currentBuddhistYear, DEPARTMENTS, GRADES, MAX_ROOMS, MAX_STUDENT_NO, NAME_PREFIXES, THAI_MONTHS } from "@/lib/constants";
 
 const range = (from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => (from <= to ? from + i : from - i));
@@ -230,38 +231,69 @@ export function ProfileForm({
   );
 }
 
-/** Privacy notice shown when registering; nothing is saved until "ยินยอม". */
+/**
+ * The full privacy policy, scrollable, when registering: "ยืนยันการลงทะเบียน" works
+ * only after ticking the box, and nothing is saved before that (Esc or × closes it).
+ */
 function ConsentDialog({ onAccept, onCancel }: { onAccept: () => void; onCancel: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [agreed, setAgreed] = useState(false);
   useEffect(() => ref.current?.showModal(), []);
   return (
     <dialog
       ref={ref}
       onClose={onCancel}
       aria-labelledby="consent-title"
-      className="m-auto w-[min(560px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl backdrop:bg-ink/55 backdrop:backdrop-blur-sm sm:p-8"
+      className="m-auto w-[min(640px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-hidden rounded-3xl bg-white p-0 shadow-2xl backdrop:bg-ink/55 backdrop:backdrop-blur-sm"
     >
-      <h2 id="consent-title" className="text-xl font-bold">นโยบายความเป็นส่วนตัว</h2>
-      <p className="mt-2 text-sm">ก่อนลงทะเบียน โปรดอ่านและยินยอมให้ Connext Learning เก็บและใช้ข้อมูลของคุณดังนี้</p>
-      <ul className="mt-4 grid gap-2.5 text-sm">
-        {[
-          "เก็บชื่อ อีเมลโรงเรียน รูปโปรไฟล์ และข้อมูลที่กรอกในแบบลงทะเบียน เพื่อยืนยันว่าเป็นคนของโรงเรียน",
-          "ทุกคนเห็นชื่อ รูปโปรไฟล์ ชั้นและห้อง ช่องทางติดต่อที่คุณเลือกใส่ และชีทที่เผยแพร่ พร้อมลายน้ำชื่อผู้จัดทำบนไฟล์ชีท",
-          "ผู้ดูแลระบบเห็นข้อมูลการลงทะเบียนทั้งหมด เพื่อดูแลระบบเท่านั้น",
-          "ไม่มีโฆษณา ไม่ขายข้อมูล และคุณขอแก้ไขหรือลบข้อมูลได้ทุกเมื่อ",
-        ].map((t) => (
-          <li key={t} className="flex gap-2.5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden><path d="m5 12 5 5 9-10" /></svg>
-            {t}
-          </li>
-        ))}
-      </ul>
-      <a href={withBase("/privacy")} target="_blank" rel="noopener" className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
-        อ่านนโยบายฉบับเต็ม ↗
-      </a>
-      <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <button type="button" onClick={() => ref.current?.close()} className="btn-outline">ยกเลิก</button>
-        <button type="button" onClick={onAccept} autoFocus className="btn-primary">ยินยอมและลงทะเบียน</button>
+      <div className="flex max-h-[calc(100dvh-24px)] flex-col">
+        <header className="flex items-center gap-3 px-5 pt-5 pb-4 sm:px-8 sm:pt-6">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-brand sm:size-11">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6" aria-hidden>
+              <path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          </span>
+          <h2 id="consent-title" className="min-w-0 flex-1 text-lg font-bold whitespace-nowrap sm:text-xl">นโยบายความเป็นส่วนตัว</h2>
+          <button
+            type="button"
+            onClick={() => ref.current?.close()}
+            aria-label="ปิด"
+            className="-mr-2 grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-body transition hover:bg-primary-50 hover:text-primary"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5" aria-hidden><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+
+        {/* the policy scrolls; the header and the confirm bar stay put */}
+        <div
+          tabIndex={0}
+          aria-label="เนื้อหานโยบายความเป็นส่วนตัว"
+          className="consent-policy min-h-0 flex-1 overflow-y-auto overscroll-contain border-y border-line px-5 pt-5 pb-7 text-[15px] outline-none sm:px-8"
+        >
+          <p className="!mt-0 rounded-2xl bg-ink/[0.03] p-4 text-ink">{PRIVACY_INTRO}</p>
+          <PrivacyContent />
+          <LegalContact />
+        </div>
+
+        <footer className="grid gap-3 px-5 py-4 sm:gap-4 sm:px-8 sm:py-5">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-2xl p-3.5 text-sm font-medium ring-1 transition ${
+              agreed ? "bg-primary-50 text-primary-800 ring-primary/40" : "text-ink ring-line hover:ring-primary/30"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 size-5 shrink-0 cursor-pointer accent-primary"
+            />
+            ฉันได้อ่านและยินยอมตามนโยบายความเป็นส่วนตัวของ Connext Learning
+          </label>
+          <button type="button" onClick={onAccept} disabled={!agreed} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
+            ยืนยันการลงทะเบียน
+          </button>
+        </footer>
       </div>
     </dialog>
   );

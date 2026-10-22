@@ -377,6 +377,23 @@ html.intro .intro-screen span {
   .legal ul + p {
     @apply mt-3;
   }
+
+  /* Registration consent pop-up: the same policy text, laid out for reading in a small box */
+  .consent-policy h2 {
+    @apply mt-7 mb-3 flex items-center gap-2.5 text-base font-semibold text-primary-800 before:h-5 before:w-1 before:shrink-0 before:rounded-full before:bg-primary;
+  }
+  .consent-policy ul {
+    @apply grid gap-2.5 rounded-2xl bg-primary-50/70 p-4 ring-1 ring-primary/10;
+  }
+  .consent-policy li {
+    @apply relative pl-5 leading-relaxed before:absolute before:top-[0.65em] before:left-1 before:size-1.5 before:rounded-full before:bg-primary;
+  }
+  .consent-policy p {
+    @apply mt-3 leading-relaxed;
+  }
+  .consent-policy strong {
+    @apply font-semibold text-ink;
+  }
 }
 
 /* Typewriter caret (hero line) */

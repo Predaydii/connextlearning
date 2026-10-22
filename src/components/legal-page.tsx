@@ -2,6 +2,19 @@ import Link from "next/link";
 
 const UPDATED = "21 ตุลาคม 2569";
 
+/** "ติดต่อเรา" block at the end of every policy (also in the registration consent pop-up). */
+export function LegalContact() {
+  return (
+    <>
+      <h2>ติดต่อเรา</h2>
+      <p>
+        สภานักเรียนโรงเรียนตราษตระการคุณ 494 ถ.เนินตาแมว ต.วังกระแจะ อ.เมืองตราด จ.ตราด 23000
+        หรือทางช่องทางโซเชียลที่ด้านล่างของเว็บไซต์
+      </p>
+    </>
+  );
+}
+
 /** Shared layout for /privacy, /terms and /cookies. */
 export function LegalPage({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {
   return (
@@ -17,11 +30,7 @@ export function LegalPage({ title, intro, children }: { title: string; intro: st
           <p className="mt-1 text-sm">ปรับปรุงล่าสุด {UPDATED}</p>
           <p className="mt-6">{intro}</p>
           <div className="mt-2">{children}</div>
-          <h2>ติดต่อเรา</h2>
-          <p>
-            สภานักเรียนโรงเรียนตราษตระการคุณ 494 ถ.เนินตาแมว ต.วังกระแจะ อ.เมืองตราด จ.ตราด 23000
-            หรือทางช่องทางโซเชียลที่ด้านล่างของเว็บไซต์
-          </p>
+          <LegalContact />
         </div>
       </article>
     </div>
